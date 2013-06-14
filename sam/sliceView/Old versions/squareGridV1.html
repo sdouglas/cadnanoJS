@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="two.min.js"></script>
+</head>
+<body>
+<script>
+<!-- parameters -->
+var r = 11; <!-- radius -->
+var xg = 50; <!-- # of horizontal circles -->
+var yg = 50; <!-- # of vertical circles -->
+
+<!-- setting up the window -->
+var windowsize = {width: 10+2*xg*r, height: 10+2*yg*r};
+var canvas = new Two(windowsize).appendTo(document.body);
+
+<!-- a 2D array of circles -->
+var grid = new Array();
+for(var i=0; i<xg; i++) {
+  var tempGrid = new Array();
+  for(var j=0; j<yg; j++) {
+    var circle = canvas.makeCircle(5+r+2*i*r,5+r+2*j*r,r);
+    circle.stroke = "#808080";
+    circle.fill = "#D0D0D0";
+    circle.lineWidth = 1;
+    tempGrid[j] = circle;
+  }
+  grid[i] = tempGrid;
+}
+
+<!-- initial image -->
+canvas.update();
+
+<!-- highlight the circle mouse is pointing at -->
+document.body.onmousemove = handler;
+function handler(e) {
+  <!-- the extra 8/9 is due to webpage margin -->
+  var x = Math.round((e.clientX-13-r)/(2*r));
+  var y = Math.round((e.clientY-14-r)/(2*r));
+  for(var i=0; i<xg; i++) {
+    for(var j=0; j<yg; j++) {
+      if(x == i && y == j && Math.sqrt((2*r*x+13+r-e.clientX)*(2*r*x+13+r-e.clientX)+(2*r*y+14+r-e.clientY)*(2*r*y+14+r-e.clientY))<=r) {
+        grid[i][j].fill = "#0000FF";
+      }
+      else {
+        grid[i][j].stroke = "#808080";
+        grid[i][j].fill = "#F0F0F0";
+      }
+    }
+  }
+  canvas.update();
+}
+</script>
+</body>
+</html>
