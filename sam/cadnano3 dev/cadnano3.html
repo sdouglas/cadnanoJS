@@ -1,45 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title> caDNAno3 UI </title>
+<title> Cadnano3 UI </title>
 
-<link type="text/css" rel="stylesheet" href="http://layout.jquery-dev.net/lib/css/layout-default-latest.css">
+<link type="text/css" rel="stylesheet" href="layout-default.css">
 <style type="text/css">
-  .drawnPanels {
-    border: 0;
+  .ui-layout-pane {
+    border: 0px;
     padding: 0;
   }
+  .pathButtons, .sliceButtons {
+    background: #EEE;
+  }
   .button {
-    overflow: hidden;
+    margin-top: 0px;
+    margin-left: 0px;
+    margin-bottom: 6px;
+    margin-right: 6px;
+    border: none;
+    background: none;
     float: left;
   }
 </style>
 
-<script type="text/javascript" src="http://layout.jquery-dev.net/lib/js/jquery-latest.js"> </script>
-<script type="text/javascript" src="http://layout.jquery-dev.net/lib/js/jquery-ui-latest.js"> </script>
-<script type="text/javascript" src="http://layout.jquery-dev.net/lib/js/jquery.layout-latest.js"> </script>
+<script type="text/javascript" src="./lib/jquery-1.9.1.min.js"> </script>
+<script type="text/javascript" src="./lib/jquery.ui-1.9.2.js"> </script>
+<script type="text/javascript" src="./lib/jquery.layout-1.3.0.min.js"> </script>
 
 <!-- pane layout -->
 <script>
 $(document).ready(function() {
   $("body").layout({
-    applyDefaultStyles: true
-    ,north__paneSelector: ".toolbar"
+    north__paneSelector: ".toolbar"
+    ,north__spacing_open: 0
+    ,north__spacing_closed: 0
     ,north__resizable: false
-    ,north__slidable: false
     ,north__closable: false
-    ,north__size: 80
+    ,north__size: 54
     ,center__paneSelector: ".mainWindow"
     ,center__childOptions: {
       west__paneSelector: ".sliceButtons"
-      ,west__size: 80
+      ,west__size: 45
+      ,west__spacing_open: 0
+      ,west__spacing_closed: 0
       ,west__resizable: false
-      ,west__slidable: false
       ,west__closable: false
       ,east__paneSelector: ".pathButtons"
-      ,east__size: 80
+      ,east__size: 45
+      ,east__spacing_open: 0
+      ,east__spacing_closed: 0
       ,east__resizable: false
-      ,east__slidable: false
       ,east__closable: false
       ,center__paneSelector: ".drawnPanels"
       ,center__childOptions: {
@@ -55,21 +65,34 @@ $(document).ready(function() {
 </head>
 
 <body>
-<div class="toolbar">
-   <button type="button" onclick="" class="button"><img src="./icons/data-new_32.png" width="32" height="32"><br>New</br></button><!--
---><button type="button" onclick="" class="button"><img src="./icons/data-open_32.png" width="32" height="32"><br>Open</br></button><!--
---><button type="button" onclick=""><img src="./icons/data-save_32.png" width="32" height="32"><br>Save</br></button><!--
---><button type="button" onclick=""><img src="./icons/data-svg.png" width="32" height="32"><br>SVG</br></button><!--
---><button type="button" onclick=""><img src="./icons/export-staples.png" width="32" height="32"><br>Export</br></button><!--
---><button type="button" onclick=""><img src="./icons/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button><!--
---><button type="button" onclick=""><img src="./icons/part-new-square.png" width="32" height="32"><br>Square</br></button><!--
---><button type="button" onclick=""><img src="./icons/path-staple.png" width="32" height="32"><br>AutoStaple</br></button><!--
---><button type="button" onclick=""><img src="./icons/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
+<div class="toolbar" style="background: #DDD">
+  <button type="button" onclick="" class="button"><img src="./images/data-new_32.png" width="32" height="32"><br>New</br></button>
+  <button type="button" onclick="" class="button"><img src="./images/data-open_32.png" width="32" height="32"><br>Open</br></button>
+  <button type="button" onclick="" class="button"><img src="./images/data-save_32.png" width="32" height="32"><br>Save</br></button>
+  <button type="button" onclick="" class="button"><img src="./images/data-svg.png" width="32" height="32"><br>SVG</br></button>
+  <button type="button" onclick="" class="button"><img src="./images/export-staples.png" width="32" height="32"><br>Export</br></button>
+  <button type="button" onclick="" class="button"><img src="./images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
+  <button type="button" onclick="" class="button"><img src="./images/part-new-square.png" width="32" height="32"><br>Square</br></button>
+  <button type="button" onclick="" class="button"><img src="./images/path-staple.png" width="32" height="32"><br>AutoStaple</br></button>
+  <button type="button" onclick="" class="button"><img src="./images/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
+  &nbsp; &nbsp; Selectable: coming soon!
 </div>
 
 <div class="mainWindow">
-  <div class="sliceButtons"> SB </div>
-  <div class="pathButtons"> PB </div>
+  <div class="sliceButtons">
+    <button type="button" onclick="" class="button"><img src="./images/slice-go-first.png" width="32" height="32"><br>First</br></button>
+    <p><button type="button" onclick="" class="button"><img src="./images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
+    <p><button type="button" onclick="" class="button"><img src="./images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
+  </div>
+  <div class="pathButtons">
+    <button type="button" onclick="" class="button"><img src="./images/path-edit_32.png" width="32" height="32"><br>Select</br></button>
+    <p><button type="button" onclick="" class="button"><img src="./images/path-force-xover.png" width="32" height="32"><br>Pencil</br></button></p>
+    <p><button type="button" onclick="" class="button"><img src="./images/path-break_48.png" width="32" height="32"><br>Break</br></button></p>
+    <p><button type="button" onclick="" class="button"><img src="./images/path-insert_48x48.png" width="32" height="32"><br>Insert</br></button></p>
+    <p><button type="button" onclick="" class="button"><img src="./images/path-skip_48x48.png" width="32" height="32"><br>Skip</br></button></p>
+    <p><button type="button" onclick="" class="button"><img src="./images/path-paint_48.png" width="32" height="32"><br>Paint</br></button></p>
+    <p><button type="button" onclick="" class="button"><img src="./images/path-addseq.png" width="32" height="32"><br>Seq</br></button></p>
+  </div>
   <div class="drawnPanels">
     <div class="sliceView"> Slice View </div>
     <div class="pathView"> Path View </div>
