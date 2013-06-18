@@ -2,18 +2,78 @@
 <html>
 <head>
 <title> caDNAno3 UI </title>
-<link rel="stylesheet" href="pure-min.css">
-<script src="./jquery/jquery-1.10.1.min.js"> </script>
+
+<link type="text/css" rel="stylesheet" href="http://layout.jquery-dev.net/lib/css/layout-default-latest.css">
+<style type="text/css">
+  .drawnPanels {
+    border: 0;
+    padding: 0;
+  }
+  .button {
+    overflow: hidden;
+    float: left;
+  }
+</style>
+
+<script type="text/javascript" src="http://layout.jquery-dev.net/lib/js/jquery-latest.js"> </script>
+<script type="text/javascript" src="http://layout.jquery-dev.net/lib/js/jquery-ui-latest.js"> </script>
+<script type="text/javascript" src="http://layout.jquery-dev.net/lib/js/jquery.layout-latest.js"> </script>
+
+<!-- pane layout -->
+<script>
+$(document).ready(function() {
+  $("body").layout({
+    applyDefaultStyles: true
+    ,north__paneSelector: ".toolbar"
+    ,north__resizable: false
+    ,north__slidable: false
+    ,north__closable: false
+    ,north__size: 80
+    ,center__paneSelector: ".mainWindow"
+    ,center__childOptions: {
+      west__paneSelector: ".sliceButtons"
+      ,west__size: 80
+      ,west__resizable: false
+      ,west__slidable: false
+      ,west__closable: false
+      ,east__paneSelector: ".pathButtons"
+      ,east__size: 80
+      ,east__resizable: false
+      ,east__slidable: false
+      ,east__closable: false
+      ,center__paneSelector: ".drawnPanels"
+      ,center__childOptions: {
+        west__paneSelector: ".sliceView"
+        ,west__size: .50
+        ,west__closable: false
+        ,center__paneSelector: ".pathView"
+      }
+    }
+  });
+});
+</script>
 </head>
+
 <body>
-<button type="button" onclick=""> <img src="./icons/data-new_32.png" width="32" height="32"> <br>New</br> </button>
-<button type="button" onclick=""> <img src="./icons/data-open_32.png" width="32" height="32"> <br>Open</br> </button>
-<button type="button" onclick=""> <img src="./icons/data-save_32.png" width="32" height="32"> <br>Save</br> </button>
-<button type="button" onclick=""> <img src="./icons/data-svg.png" width="32" height="32"> <br>SVG</br> </button>
-<button type="button" onclick=""> <img src="./icons/export-staples.png" width="32" height="32"> <br>Export</br> </button>
-<button type="button" onclick=""> <img src="./icons/part-new-honeycomb.png" width="32" height="32"> <br>Honeycomb</br> </button>
-<button type="button" onclick=""> <img src="./icons/part-new-square.png" width="32" height="32"> <br>Square</br> </button>
-<button type="button" onclick=""> <img src="./icons/path-staple.png" width="32" height="32"> <br>AutoStaple</br> </button>
-<button type="button" onclick=""> <img src="./icons/path-autobreak.png" width="32" height="32"> <br>AutoBreak</br> </button>
+<div class="toolbar">
+   <button type="button" onclick="" class="button"><img src="./icons/data-new_32.png" width="32" height="32"><br>New</br></button><!--
+--><button type="button" onclick="" class="button"><img src="./icons/data-open_32.png" width="32" height="32"><br>Open</br></button><!--
+--><button type="button" onclick=""><img src="./icons/data-save_32.png" width="32" height="32"><br>Save</br></button><!--
+--><button type="button" onclick=""><img src="./icons/data-svg.png" width="32" height="32"><br>SVG</br></button><!--
+--><button type="button" onclick=""><img src="./icons/export-staples.png" width="32" height="32"><br>Export</br></button><!--
+--><button type="button" onclick=""><img src="./icons/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button><!--
+--><button type="button" onclick=""><img src="./icons/part-new-square.png" width="32" height="32"><br>Square</br></button><!--
+--><button type="button" onclick=""><img src="./icons/path-staple.png" width="32" height="32"><br>AutoStaple</br></button><!--
+--><button type="button" onclick=""><img src="./icons/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
+</div>
+
+<div class="mainWindow">
+  <div class="sliceButtons"> SB </div>
+  <div class="pathButtons"> PB </div>
+  <div class="drawnPanels">
+    <div class="sliceView"> Slice View </div>
+    <div class="pathView"> Path View </div>
+  </div>
+</div>
 </body>
 </html>
