@@ -9,7 +9,6 @@
 <script type="text/javascript" src="./lib/two.js"> </script>
 <script type="text/javascript" src="./lib/sliceStack.js"> </script>
 <script type="text/javascript" src="./lib/squareGrid.js"> </script>
-<script type="text/javascript" src="./lib/honeycombGrid.js"> </script>
 
 <link type="text/css" rel="stylesheet" href="layout-default.css">
 <style type="text/css">
