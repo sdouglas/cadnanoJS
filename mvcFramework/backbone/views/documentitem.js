@@ -18,9 +18,9 @@ var DocumentItem = Backbone.View.extend({
                  console.log("clicked on edit");
              },
 
-    initialize: function(doc){
-        this.currDoc = doc;
-        this.listenTo(doc,'change',this.documentPartAddedSlot);
+    initialize: function(){
+        this.currDoc = this.options.currDoc;
+        this.listenTo(this.currDoc,'change',this.documentPartAddedSlot);
         console.log("called init");
     },
 
@@ -28,21 +28,24 @@ var DocumentItem = Backbone.View.extend({
         console.log("called documentPartAddedSlot");
         //Slice View Parameters.
         var sliceViewWidth = $('#slice-view').css('width');
-        if(null === sliceViewWidth) sliceViewWidth = Constants.defaultViewWidth;
+        if('0px' === sliceViewWidth) sliceViewWidth = Constants.SliceViewWidth;
+
         var sliceViewHeight = $('#slice-view').css('height');
-        if(null === sliceViewHeight) sliceViewHeight = Constants.defaultViewHeight;
+        if('0px' === sliceViewHeight) sliceViewHeight = Constants.SliceViewHeight;
 
         var sliceViewParams = {type: Two.Types.svg, width: sliceViewWidth, height: sliceViewHeight};
-        var sliceView = new SlicePartItem(this.currDoc.part(), sliceViewParams, Constants.RendererTwo);
+        var sliceView = new SlicePartItem({part:this.currDoc.part(), params:sliceViewParams, who:Constants.RendererTwo});
 
         //Path View Parameters.
         var pathViewWidth = $('#path-view').css('width');
-        if(null === pathViewWidth) pathViewWidth = Constants.defaultViewWidth;
+        if('0px' === pathViewWidth) pathViewWidth = Constants.SliceViewWidth;
         var pathViewHeight = $('#path-view').css('height');
-        if(null === pathViewHeight) pathViewHeight = Constants.defaultViewHeight;
+        if('0px' === pathViewHeight) pathViewHeight = Constants.SliceViewHeight;
+        console.log(sliceViewParams);
 
         var pathViewParams = {type: Two.Types.svg, width: pathViewWidth, height: pathViewHeight};
-        var pathView = new PathPartItem(this.currDoc.part(), pathViewParams, Constants.RendererTwo);
+        console.log(pathViewParams);
+        var pathView = new PathPartItem({part:this.currDoc.part(), params:pathViewParams, who:Constants.RendererTwo});
     },
 
     reset: function(){

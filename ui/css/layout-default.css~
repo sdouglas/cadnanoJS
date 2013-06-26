@@ -20,7 +20,8 @@
  */
 body {
 	font-family: Geneva, Arial, Helvetica, sans-serif;
-	font-size:   75%;
+	font-size:   100%;
+	*font-size:  80%;
 }
 
 /*
