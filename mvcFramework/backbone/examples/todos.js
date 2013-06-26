@@ -100,10 +100,8 @@ $(function(){
     render: function() {
       this.$el.html(this.template(this.model.toJSON()));
       this.$el.toggleClass('done1', this.model.get('done'));
-      //this.$el.toggleClass('done');
       this.input = this.$('.edit');
       console.log(this.input);
-      console.log(this.input[0]);
       return this;
     },
 
@@ -214,7 +212,7 @@ $(function(){
     // If you hit return in the main input field, create new **Todo** model,
     // persisting it to *localStorage*.
     createOnEnter: function(e) {
-                       console.log("heylo");
+      console.log("heylo");
       if (e.keyCode != 13) return;
       if (!this.input.val()) return;
 

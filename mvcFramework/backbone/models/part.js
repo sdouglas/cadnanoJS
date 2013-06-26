@@ -1,6 +1,7 @@
 var Part = Backbone.Model.extend({
     step: 21,
-    radius: 1.125,
+    //radius: 1.125,
+    radius: 20,
     turnsPerStep:2,
     helicalPitch: this.step/this.turnsPerStep,
     twistPerBase: 360/this.helicalPitch,
@@ -8,13 +9,12 @@ var Part = Backbone.Model.extend({
     maxCol: 10,
     root3: 1.732051,
 
-    initialize: function(doc){
-        this.currDoc = doc;
+    initialize: function(){
         console.log("added a new part");
     },
     
-    currDoc: function(){
-        return this.currDoc;
+    setDoc: function(doc){
+        this.currDoc = doc;
     },
     
     addVirtualHelix: function(){

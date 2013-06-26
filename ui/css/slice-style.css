@@ -2,12 +2,14 @@
     border:1px solid black;
     width: 500;
     height: 500;
-    background-color:#D4D4D4;
     float: left;
     padding: 3px;
+    position:relative;
 }
-#slice-view #lattice{}
-#lattice svg {float:left}
+#slice-view #lattice{
+    z-index:10;
+    position:absolute;
+}
 
 #path-view{
     border:1px solid black;

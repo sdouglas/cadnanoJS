@@ -10,10 +10,14 @@ var Document = Backbone.Model.extend({
         return true;
     },
     createHoneyCombPart: function(){
-            this.addPart(new HoneyCombPart(this));
+        var mypart = new HoneyCombPart();
+        mypart.setDoc(this);
+        this.addPart(mypart);
     },
     createSquarePart: function(){
-            this.addPart(new SquarePart(this));
+        var mypart = new SquarePart();
+        mypart.setDoc(this);
+        this.addPart(mypart);
     },
     part: function(){
          return this.parts[0]; 

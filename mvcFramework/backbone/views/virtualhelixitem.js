@@ -1,7 +1,12 @@
 var VirtualHelixItem = Backbone.View.extend ({
-    initialize: function(PartItem, row, col, handler){
-        this.partItem = PartItem;
+    initialize: function(){
+          //          console.log(this.options);
+        this.partItem = this.options.pItem;
+        var row = this.options.row;
+        var col = this.options.col;
         var pos = this.partItem.part.latticeCoordToPositionXY(row,col);
-        handler.createCircle(pos.x, pos.y, this.partItem.radius);
+        var handler = this.options.handler;
+        //console.log(pos.x + "," + pos.y + "," + this.partItem.part.radius);
+        handler.createCircle(pos.x, pos.y, this.partItem.part.radius);
     },
 });

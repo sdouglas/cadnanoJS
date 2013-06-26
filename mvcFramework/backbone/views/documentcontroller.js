@@ -17,7 +17,7 @@ var DocumentController = Backbone.View.extend({
             this.DocumentWindow.reset();
         }
         this.currDoc = new Document();
-        this.DocumentWindow = new DocumentItem(this.currDoc);
+        this.DocumentWindow = new DocumentItem({currDoc:this.currDoc});
         return true;
     },
     
