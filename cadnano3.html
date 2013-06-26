@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title> Cadnano3 UI </title>
+<title> Cadnano3 (incomplete) </title>
 
 <script type="text/javascript" src="includes/jquery-1.9.1.min.js"> </script>
 <script type="text/javascript" src="includes/jquery.ui-1.9.2.js"> </script>
 <script type="text/javascript" src="includes/jquery.layout-1.3.0.min.js"> </script>
-<script type="text/javascript" src="includes/two.min.js"> </script>
-<script type="text/javascript" src="ui/lib/sliceStack.js"> </script>
-<script type="text/javascript" src="ui/lib/squareGrid.js"> </script>
-<script type="text/javascript" src="ui/lib/honeycombGrid.js"> </script>
+<script type="text/javascript" src="includes/kinetic-4.5.4.min.js"> </script>
+<script type="text/javascript" src="ui/lib/SliceStack.js"> </script>
+<script type="text/javascript" src="ui/lib/SliceGrid.js"> </script>
 
 <link type="text/css" rel="stylesheet" href="ui/css/layout-default.css">
 <style type="text/css">
@@ -24,7 +23,7 @@
   .toolbar {
     background: #DDD;
   }
-  /* Buttons: margins, (to be implemented) custom checkbox/radio */
+  /* Buttons: margins, (to be implemented) image checkbox/radio */
   .button {
     margin-top: 0px;
     margin-left: 0px;
@@ -34,16 +33,24 @@
     background: none;
     float: left;
   }
-  .input_hidden {
-    position: absolute;
-    left: -9999px;
+  input[type=radio] {
+    display:none;
   }
-  .selected {
-    background-color: #CCC;
+  input[type=radio] + label
+  {
+    background: #EEE;
+    height: 60px;
+    width: 45px;
+    display:inline-block;
+    padding: 0 0 0 0px;
   }
-  .pathButtons label {
-    display: inline-block;
-    cursor: pointer;
+  input[type=radio]:checked + label
+  {
+    background: #00FF00;
+    height: 60px;
+    width: 45px;
+    display:inline-block;
+    padding: 0 0 0 0px;
   }
 </style>
 
@@ -73,10 +80,10 @@ $(document).ready(function() {
       ,east__closable: false
       ,center__paneSelector: ".drawnPanels"
       ,center__childOptions: {
-        west__paneSelector: ".sliceView"
+        west__paneSelector: "#sliceView"
         ,west__size: .50
         ,west__closable: false
-        ,center__paneSelector: ".pathView"
+        ,center__paneSelector: "#pathView"
       }
     }
   });
@@ -91,11 +98,19 @@ $(document).ready(function() {
   <button type="button" onclick="" class="button"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/data-svg.png" width="32" height="32"><br>SVG</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/export-staples.png" width="32" height="32"><br>Export</br></button>
-  <button type="button" onclick="initHoneycombGrid()" class="button"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
-  <button type="button" onclick="initSquareGrid();" class="button"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
+  <button type="button" onclick="SliceGrid(45,30,'honeycomb')" class="button"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
+  <button type="button" onclick="SliceGrid(40,40,'square');" class="button"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/path-staple.png" width="32" height="32"><br>AutoStaple</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
-  &nbsp; &nbsp; Selectable: coming soon!
+  <div style="position: absolute; top:16px; left: 600px">Selectable:</div>
+  <div style="position: absolute; top:8px; left: 700px">
+    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-scaf.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-stap.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-handle.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-endpoint.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-xover.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-strand.png" width="32" height="32"></button>
+  </div>
 </div>
 
 <div class="mainWindow">
@@ -105,25 +120,21 @@ $(document).ready(function() {
     <p><button type="button" onclick="" class="button"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
   </div>
   <div class="pathButtons">
-    <button type="button" onclick="" class="button"/><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></button>
-    <p><button type="button" onclick="" class="button"/><img src="ui/images/path-force-xover.png" width="32" height="32"><br>Pencil</br></button></p>
-    <p><button type="button" onclick="" class="button"><img src="ui/images/path-break_48.png" width="32" height="32"><br>Break</br></button></p>
-    <p><button type="button" onclick="" class="button"><img src="ui/images/path-insert_48x48.png" width="32" height="32"><br>Insert</br></button></p>
-    <p><button type="button" onclick="" class="button"><img src="ui/images/path-skip_48x48.png" width="32" height="32"><br>Skip</br></button></p>
-    <p><button type="button" onclick="" class="button"><img src="ui/images/path-paint_48.png" width="32" height="32"><br>Paint</br></button></p>
-    <p><button type="button" onclick="" class="button"><img src="ui/images/path-addseq.png" width="32" height="32"><br>Seq</br></button></p>
+    <input type='radio' name='pathButtons' value='1' id="a"/><label for="a"><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></label>
+    <p><input type='radio' name='pathButtons' value='2' id="b"/><label for="b"><img src="ui/images/path-force-xover.png" width="32" height="32"><br>Pencil</br></label></p>
+    <p><input type='radio' name='pathButtons' value='3' id="c"/><label for="c"><img src="ui/images/path-break_48.png" width="32" height="32"><br>Break</br></label></p>
+    <p><input type='radio' name='pathButtons' value='4' id="d"/><label for="d"><img src="ui/images/path-insert_48x48.png" width="32" height="32"><br>Insert</br></label></p>
+    <p><input type='radio' name='pathButtons' value='5' id="e"/><label for="e"><img src="ui/images/path-skip_48x48.png" width="32" height="32"><br>Skip</br></label></p>
+    <p><input type='radio' name='pathButtons' value='6' id="f"/><label for="f"><img src="ui/images/path-paint_48.png" width="32" height="32"><br>Paint</br></label></p>
+    <p><input type='radio' name='pathButtons' value='7' id="g"/><label for="g"><img src="ui/images/path-addseq.png" width="32" height="32"><br>Seq</br></label></p>
   </div>
   <div class="drawnPanels">
-    <div class="sliceView"> </div>
-    <div class="pathView"> Path View </div>
+    <div id="sliceView"> </div>
+    <div id="pathView"> Path View </div>
   </div>
 </div>
 
 <script>
-$('.pathButtons input:radio').addClass('input_hidden');
-$('.pathButtons label').click(function(){
-    $(this).addClass('selected').siblings().removeClass('selected');
-});
 </script>
 </body>
 
