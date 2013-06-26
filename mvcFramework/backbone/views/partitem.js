@@ -12,31 +12,32 @@ var PartItem = Backbone.View.extend({
     },
 
     spawnEmptyHelixItemAt: function(coord){
-        //console.log("trying to spawn helix " + "row:" + coord.row + ", col:" + coord.col);
-        helix = new VirtualHelixItem({pItem: this, row:coord.row, col:coord.col, handler: this.handler});
-        //helix = new VirtualHelixItem(this, coord.row, coord.column, this.handler);
-        console.log(this);
-        if(typeof this.emptyHelixHash[coord.row] === 'undefined'){
-            this.emptyHelixHash[coord.row] = new Array();
-        }
-        this.emptyHelixHash[coord.row][coord.col] = helix;
+        helix = new VirtualHelixItem({
+            pItem:      this, 
+            row:        coord.row, 
+            col:        coord.col, 
+            handler:    this.handler
+        });
+        console.log("Spawn helix " + 
+            "row:" + coord.row + ", col:" + coord.col);
+        
+        //if(typeof this.emptyHelixHash[coord.row] === 'undefined'){
+        //    this.emptyHelixHash[coord.row] = new Array();
+        //}
+        //this.emptyHelixHash[coord.row][coord.col] = helix;
     },
 
 });
 
 var SlicePartItem = PartItem.extend({
-//var SlicePartItem = Backbone.View.extend({
-    el: $("#slice-view"),
     initialize: function(){
         this.part = this.options.part;
         this._super({part:this.options.part,param:this.options.params,who:this.options.who});
-        console.log(this.handler);
-        var elem = $('#slice-view');
-        console.log(elem);
         this.render();
     },
     render: function(){
-        this.handler.addTo(this.$el);
+        console.log(this.el);
+        this.handler.addToDom(this.el);
         this.setLattice(this.part.generatorFullLattice());
         this.handler.render();
         console.log('just called render');
@@ -47,15 +48,14 @@ var SlicePartItem = PartItem.extend({
             this.spawnEmptyHelixItemAt(newCoords[i]);
         }
     },
-    //
 });
 
-//var PathPartItem = PartItem.extend({
-var PathPartItem = Backbone.View.extend({
-    el: $("#path-view"),
+var PathPartItem = PartItem.extend({
     initialize: function(){
-        this._super({part:this.options.part,param:this.options.params,who:this.options.who});
-        //var elem = $('#path-view');
-        //this.handler.addTo(elem[0]);
+        this._super({
+            part:   this.options.part,
+            param:  this.options.params,
+            who:    this.options.who
+        });
     },
 });

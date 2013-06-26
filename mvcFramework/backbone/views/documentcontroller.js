@@ -1,8 +1,6 @@
 $(document).ready(main);
 
-function main(){
 var DocumentController = Backbone.View.extend({
-    el: $("#complete-doc"),
     initialize: function(){
         this.newDocument();
         console.log("creating new doc");
@@ -17,7 +15,9 @@ var DocumentController = Backbone.View.extend({
             this.DocumentWindow.reset();
         }
         this.currDoc = new Document();
-        this.DocumentWindow = new DocumentItem({currDoc:this.currDoc});
+        this.DocumentWindow = new DocumentItem({
+            currDoc:    this.currDoc,
+        });
         return true;
     },
     
@@ -31,5 +31,8 @@ var DocumentController = Backbone.View.extend({
     },
 });
 
-DocControl = new DocumentController();
+function main(){
+    DocControl = new DocumentController({
+        el: $("#complete-doc"),
+    });
 }
