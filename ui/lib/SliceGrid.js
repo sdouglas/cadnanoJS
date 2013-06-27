@@ -28,7 +28,7 @@ function SliceGrid(xg, yg, mode) {
     var canvas = new Kinetic.Stage(canvasSettings);
     var textLayer = new Kinetic.Layer();
     var shapeLayer = new Kinetic.Layer();
-    var activeHelixes = new SliceStack();
+    var activeHelices = new SliceStack();
     var sliceGrid = new Array();
     //grid construction
     for(var i=0; i<gridWidth; i++) {
@@ -56,38 +56,36 @@ function SliceGrid(xg, yg, mode) {
 		    strokeWidth: 1
 	    });
 	    shapeLayer.add(circle);
-            circle.on("mouseover", function() {
-		    if(activeHelixes.contains(this.getX(),this.getY()) === -1) {
+            circle.on("mouseenter", function() {
+		    if(activeHelices.contains(this.getX(),this.getY()) === -1) {
 			this.setFill(hoverFill);
 			shapeLayer.draw();
 		    }
 	    });
-            circle.on("mouseout", function() {
-		    if(activeHelixes.contains(this.getX(),this.getY()) === -1) {
+            circle.on("mouseleave", function() {
+		    if(activeHelices.contains(this.getX(),this.getY()) === -1) {
 			this.setFill(emptyFill);
 			shapeLayer.draw();
 		    }
 	    });
 	    circle.on("click", function() {
-		    if(activeHelixes.contains(this.getX(),this.getY()) === -1) {
-			activeHelixes.add(this.getX(),this.getY());
+		    if(activeHelices.contains(this.getX(),this.getY()) === -1) {
+			activeHelices.add(this.getX(),this.getY());
 			this.setFill(activeFill);
 			//number on the circle
-			var helixNum = activeHelixes.stack.length-1;
-			var textX;
-			if(helixNum < 10) {textX = this.getX()-r/4;}
-			else if(helixNum < 100) {textX = this.getX()-r/2;}
-			else {textX = this.getX()-r*3/4;}
-			var textY = this.getY()-r/2;
+			var helixNum = activeHelices.stack.length-1;
 			var helixNumText = new Kinetic.Text({
-				x: textX,
-				y: textY,
+				x: this.getX(),
+				y: this.getY()-r/2,
 				text: helixNum,
 				fontSize: 12,
 				fontFamily: "Calibri",
 				fill: "#000000",
 				align: "CENTER"
 			});
+			helixNumText.setOffset({
+				x: helixNumText.getWidth()/2
+			    });
 			//end: number on the circle
 			textLayer.add(helixNumText);
 			shapeLayer.draw();
