@@ -1,62 +1,129 @@
+//Path panel item creates new canvas in a DOM element of choice and all attached items are drawn on this canvas.
 function PathPanelItem(elem) {
-    this.canvasSettings = {container: elem, width: 1500, height: 3000};
+    this.canvasSettings = {container: elem, width: 3000, height: 3000};
     this.canvas = new Kinetic.Stage(this.canvasSettings);
 }
 
 //This class keeps track of all VHI (virtual helix item) and maintains an uniform standard for VHIs.
-function VirtualHelixSet(panel,len,sx,sy) {
+function VirtualHelixSet(panel,gridMode,sqlen,sx,sy) {
+    //copying input params so attached items can use them
     this.canvas = panel.canvas;
-    this.sqLength = len;
+    this.mode = gridMode;
+    this.sqLength = sqlen;
     this.startX = sx;
     this.startY = sy;
+    //items that latch on to the set: an array of VirtualHelixItem and PathSlidebarItem
     this.vhiArray = new Array();
-    this.slidebar = new PathSlidebar(this);
+    this.slidebar; //initialize only when vhiArray is not empty
+    //grid and divider
+    this.grLength;
+    this.divLength;
+    if(this.mode === "honeycomb") {
+	this.grLength = 42;
+	this.divLength = 7;
+    }
+    else if(this.mode === "square") {
+	this.grLength = 64;
+	this.divLength = 8;
+    }
+    else { //You better check for typos!
+	alert("Grid type does not exist, script aborted");
+	throw "stop execution";
+    }
 }
+//add & remove VHI to vhiArray, as well as slidebar update
 VirtualHelixSet.prototype.addVHI = function() {
     this.vhiArray.push(new VirtualHelixItem(this));
     if(this.vhiArray.length === 1) {
-	this.slidebar.init();
+	this.slidebar = new PathSlidebarItem(this);
     }
     this.slidebar.update();
 };
+VirtualHelixSet.prototype.removeVHI = function() {
+    this.vhiArray[this.vhiArray.length-1].layer.remove();
+    this.vhiArray.pop();
+    if(this.vhiArray.length != 0) {
+	this.slidebar.update();
+    }
+    else {
+	this.slidebar.layer.remove();
+	this.slidebar = undefined;
+    }
+};
+//updates existing VHIs to correct length and changes grLength for future VHIs
+VirtualHelixSet.prototype.updateLen = function(newLen) {
+    for(var k=0; k<this.vhiArray.length; k++) {
+	var vhi = this.vhiArray[k];
+	//adding bases
+	if(newLen >= this.grLength) {
+	    for(var i=this.grLength; i<newLen; i++) {
+		for(var j=0; j<2; j++) {
+		    var rect = new Kinetic.Rect({
+			    x: vhi.startX+i*vhi.sqLength+2*Math.floor(i/this.divLength),
+			    y: vhi.startY+j*vhi.sqLength,
+			    width: vhi.sqLength,
+			    height: vhi.sqLength,
+			    fill: "#FFFFFF",
+			    stroke: "#DDDDDD",
+			    strokeWidth: 2
+			});
+		    vhi.baseArray[j][i] = rect;
+		    vhi.layer.add(rect);
+		}
+	    }
+	}
+	//removing bases
+	else {
+	    for(var i=newLen; i<this.grLength; i++) {
+		for(var j=0; j<2; j++) {
+		    vhi.baseArray[j][i].remove();
+		    vhi.baseArray[j][i] = undefined;
+		}
+	    }
+	}
+	vhi.layer.draw();
+    }
+    this.grLength = newLen;
+};
 
+//VHI is the collection of bases as well as the corresponding HelixCounterItem
 function VirtualHelixItem(vhiSet) {
+    this.helixset = vhiSet;
+    //taking params from VirtualHelixSet
     this.num = vhiSet.vhiArray.length;
     this.sqLength = vhiSet.sqLength;
     this.startX = vhiSet.startX;
     this.startY = vhiSet.startY + 4*this.num*this.sqLength;
     this.canvas = vhiSet.canvas;
     this.layer = new Kinetic.Layer();
-    //lines
-    for(var i=0; i<=42; i++) {
-	var strokeThickness;
-	if(i%7 === 0) {
-	    strokeThickness = 4;
+    this.counter = new HelixCounterItem(this);
+    //an 2D array that keeps track of bases; it's in (y,x) instead of the more popular form (x,y) because of eaiser base addition & removal
+    this.baseArray = new Array();
+    this.baseArray[0] = new Array();
+    this.baseArray[1] = new Array();
+    //array construction
+    for(var i=0; i<vhiSet.grLength; i++) {
+	for(var j=0; j<2; j++) {
+	    var rect = new Kinetic.Rect({
+		    x: this.startX+i*this.sqLength+2*Math.floor(i/vhiSet.divLength),
+		    y: this.startY+j*this.sqLength,
+		    width: this.sqLength,
+		    height: this.sqLength,
+		    fill: "#FFFFFF",
+		    stroke: "#DDDDDD",
+		    strokeWidth: 2
+		});
+	    this.baseArray[j][i] = rect;
+	    this.layer.add(rect);
 	}
-	else {
-	    strokeThickness = 2;
-	}
-	var vLine = new Kinetic.Line({
-		points: [this.startX+i*this.sqLength, this.startY, this.startX+i*this.sqLength, this.startY+2*this.sqLength],
-		stroke: "#DDDDDD",
-		strokeWidth: strokeThickness
-	    });
-	this.layer.add(vLine);
-    }
-    for(var j=0; j<=2; j++) {
-	var hLine = new Kinetic.Line({
-		points: [this.startX-2, this.startY+j*this.sqLength, this.startX+42*this.sqLength+2, this.startY+j*this.sqLength],
-		stroke: "#DDDDDD",
-		strokeWidth: 2
-	    });
-	this.layer.add(hLine);
     }
     //add layer to canvas
     this.canvas.add(this.layer);
 };
 
+//The name of this class is rather self-explanatory...
 function HelixCounterItem(vhi) {
-    var layer = new Kinetic.Layer();
+    var layer = vhi.layer;
     //circle
     var circle = new Kinetic.Circle({
 	    radius: vhi.sqLength,
@@ -69,7 +136,7 @@ function HelixCounterItem(vhi) {
     layer.add(circle);
     circle.on("mouseenter", function() {circle.setStroke("#3333FF"); layer.draw();});
     circle.on("mouseleave", function() {circle.setStroke("#808080"); layer.draw();});
-    //number
+    //number in the middle of circle
     var helixNumText = new Kinetic.Text({
 	    x: circle.getX(),
 	    y: circle.getY()-circle.getRadius()/2,
@@ -85,20 +152,19 @@ function HelixCounterItem(vhi) {
     //bug fix: circle not highlighted when mouse is on text
     helixNumText.on("mouseenter", function() {circle.setStroke("#3333FF"); layer.draw();});
     helixNumText.on("mouseleave", function() {circle.setStroke("#808080"); layer.draw();});
-    //add layer to canvas
-    vhi.canvas.add(layer);
 }
 
-function PathSlidebar(vhis) {
+//draggable slidebar on top of VHIs
+function PathSlidebarItem(vhis) {
     var counter = 0;
     this.vhiSet = vhis;
     this.layer = new Kinetic.Layer();
     this.rectWidth = this.vhiSet.sqLength;
-    this.top = 0;
+    this.top = this.vhiSet.vhiArray[0].startY-2*this.vhiSet.sqLength;
     this.bot = 0;
     this.rect = new Kinetic.Rect({
 	    x: this.vhiSet.startX+counter*this.vhiSet.sqLength,
-	    y: -100,
+	    y: this.top,
 	    width: this.rectWidth,
 	    height: this.bot-this.top,
 	    fill: "#FFAA80",
@@ -106,9 +172,10 @@ function PathSlidebar(vhis) {
 	    strokeWidth: 1,
 	    opacity: 0.5
 	});
+    var rect = this.rect;
     this.counterText = new Kinetic.Text({
 	    x: this.vhiSet.startX+(counter+0.5)*this.vhiSet.sqLength,
-	    y: -100,
+	    y: this.top-18,
 	    text: counter,
 	    fontSize: 16,
 	    fontFamily: "Calibri",
@@ -121,8 +188,13 @@ function PathSlidebar(vhis) {
     this.group = new Kinetic.Group({
 	    draggable: true,
 	    dragBoundFunc: function(pos) {
+		//changing text settings; these lines are here so it can be in sync with the bar
+		//if you still don't understand, put the 2 lines after counter mechanism and drag your mouse near border
+		counterText.setText(counter);
+		counterText.setOffset({x: counterText.getWidth()/2});
+		//limit slidebar to be right on top of bases
 		return {
-		    x: counter*vhis.sqLength,
+		    x: counter*vhis.sqLength+2*Math.floor(counter/vhis.divLength), //more ugly code thanks for thicker divider
 		    y: this.getAbsolutePosition().y
 		}
 	    }
@@ -130,19 +202,16 @@ function PathSlidebar(vhis) {
     this.group.add(this.rect);
     this.group.add(this.counterText);
     this.group.on("dragmove", function(pos) {
-	    counter = Math.min(Math.max(0,Math.round((pos.x-vhis.startX)/vhis.sqLength)-1),41);
-	    counterText.setText(counter);
-	    counterText.setOffset({x: counterText.getWidth()/2})
+	    //actually, that wasn't too bad compared to this... welcome to the new counter calculation mecahnism
+	    var blockLen = vhis.divLength*vhis.sqLength+2;
+	    var blockNum = Math.floor((pos.x-vhis.startX-1)/blockLen);
+	    var tempCounter = Math.floor((pos.x-(blockNum*blockLen+vhis.startX+1))/vhis.sqLength)+blockNum*vhis.divLength;
+	    counter = Math.min(Math.max(0,tempCounter),vhis.grLength-1);
 	});
     this.layer.add(this.group);
     this.vhiSet.canvas.add(this.layer);
 }
-PathSlidebar.prototype.init = function() {
-    this.top = this.vhiSet.vhiArray[0].startY-2*this.vhiSet.sqLength;
-    this.rect.setY(this.top);
-    this.counterText.setY(this.top-18);
-};
-PathSlidebar.prototype.update = function() {
+PathSlidebarItem.prototype.update = function() {
     this.bot = this.vhiSet.vhiArray[this.vhiSet.vhiArray.length-1].startY+4*this.vhiSet.sqLength;
     this.rect.setHeight(this.bot-this.top);
     this.layer.moveToTop();
