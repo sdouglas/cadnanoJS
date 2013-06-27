@@ -24,7 +24,7 @@ var Document = Backbone.Model.extend({
     },
     addPart: function(modelPart){
         this.parts.push(modelPart);
-        this.set({hasPart:"yes"});
+        this.trigger(cadnanoEvents.documentPartAddedSignal);
         //trigger an event?
     },
 });

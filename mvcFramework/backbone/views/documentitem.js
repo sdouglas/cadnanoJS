@@ -1,6 +1,5 @@
 /*******DOCUMENTITEM*********/
 var DocumentItem = Backbone.View.extend({
-    el: $(".complete-doc"),
 
     events: {
     "click" : "Zooming",
@@ -20,7 +19,10 @@ var DocumentItem = Backbone.View.extend({
 
     initialize: function(){
         this.currDoc = this.options.currDoc;
-        this.listenTo(this.currDoc,'change',this.documentPartAddedSlot);
+        this.listenTo(  this.currDoc,
+                        cadnanoEvents.documentPartAddedSignal,
+                        this.documentPartAddedSlot
+                        );
         console.log("called init");
     },
 
@@ -28,56 +30,61 @@ var DocumentItem = Backbone.View.extend({
         console.log("called documentPartAddedSlot");
 
         //Slice View Parameters.
-        var sliceViewWidth = $('#slice-view').css('width');
-        if('0px' === sliceViewWidth) 
-            sliceViewWidth = Constants.SliceViewWidth;
+        var jSliceView = $('#sliceView');
+        var svWidth = jSliceView.css('width');
+        if('0px' === svWidth) 
+            svWidth = Constants.SliceViewWidth;
 
-        var sliceViewHeight = $('#slice-view').css('height');
-        if('0px' === sliceViewHeight) 
-            sliceViewHeight = Constants.SliceViewHeight;
+        var svHeight = jSliceView.css('height');
+        if('0px' === svHeight) 
+            svHeight = Constants.SliceViewHeight;
 
-        var sliceViewParams = {
-            type:   Two.Types.svg, 
-            width:  sliceViewWidth, 
-            height: sliceViewHeight,
+        var svParams = {
+            container:   'sliceView', 
+            width:  svWidth, 
+            height: svHeight,
         };
         
         //Note: Its important to pass in the "el" element in the constructor
         //since the jquery selectors only function after the DOM is loaded.
         //However, we are using our functions before the DOM is loaded.
-        
+        /*
         var sliceView = new SlicePartItem({
-            el:     $('#slice-view'),
+            el:     jSliceView,
             part:   this.currDoc.part(), 
-            params: sliceViewParams, 
-            who:    Constants.RendererTwo,
+            params: svParams, 
+            who:    Constants.RendererKinetic,
         });
-
+        */
+        var handler = new viewHandlerKinetic();
+        handler.setParams(svParams);
+        handler.createCircle(150,150,40);
+        handler.render();
+        console.log(document.getElementById('sliceView'));
         //Path View Parameters.
-        var pathViewWidth = $('#path-view').css('width');
-        if('0px' === pathViewWidth) 
-            pathViewWidth = Constants.SliceViewWidth;
+        var jPathView = $('#pathView');
+        var pvWidth = jPathView.css('width');
+        if('0px' === pvWidth) 
+            pvWidth = Constants.SliceViewWidth;
         
-        var pathViewHeight = $('#path-view').css('height');
-        if('0px' === pathViewHeight) 
-            pathViewHeight = Constants.SliceViewHeight;
+        var pvHeight = jPathView.css('height');
+        if('0px' === pvHeight) 
+            pvHeight = Constants.SliceViewHeight;
         
-        console.log(sliceViewParams);
-
-        var pathViewParams = {
-            type:   Two.Types.svg, 
-            width:  pathViewWidth, 
-            height: pathViewHeight,
+        var pvParams = {
+            container:   'pathView', 
+            width:  pvWidth, 
+            height: pvHeight,
         };
         
-        console.log(pathViewParams);
-        
+        /*
         var pathView = new PathPartItem({
-            el:     $('#path-view'),
+            el:     jPathView,
             part:   this.currDoc.part(), 
-            params: pathViewParams, 
-            who:    Constants.RendererTwo,
+            params: pvParams, 
+            who:    Constants.RendererKinetic,
         });
+        */
     },
 
     reset: function(){

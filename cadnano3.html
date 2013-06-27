@@ -3,13 +3,35 @@
 <head>
 <title> Cadnano3 (incomplete) </title>
 
+<!-- EXTERNAL JAVASCRIPT LIBRARIES -->
 <script type="text/javascript" src="includes/jquery-1.9.1.min.js"> </script>
 <script type="text/javascript" src="includes/jquery.ui-1.9.2.js"> </script>
 <script type="text/javascript" src="includes/jquery.layout-1.3.0.min.js"> </script>
 <script type="text/javascript" src="includes/kinetic-4.5.4.min.js"> </script>
+<script type="text/javascript" src="includes/two.min.js"> </script>
+
+<script type="text/javascript" src="includes/json2.js"></script>
+<script type="text/javascript" src="includes/underscore.js"></script>
+<script type="text/javascript" src="includes/backbone.js"></script>
+<script type="text/javascript" src="includes/backbone-super-min.js"></script>
+<script type="text/javascript" src="includes/backbone.localStorage.js"></script>
+
+<!-- INTERNAL JAVASCRIPT LIBRARIES -->
 <script type="text/javascript" src="ui/lib/SliceStack.js"> </script>
 <script type="text/javascript" src="ui/lib/SliceGrid.js"> </script>
 
+<script src="utils/constants.js"></script>
+<script src="utils/twohandler.js"></script>
+<script src="utils/kinetichandler.js"></script>
+<script src="utils/util.js"></script>
+<script src="current/views/virtualhelixitem.js"></script>
+<script src="current/models/part.js"></script>
+<script src="current/views/partitem.js"></script>
+<script src="current/models/document.js"></script>
+<script src="current/views/documentitem.js"></script>
+<script src="current/views/documentcontroller.js"></script>
+
+<!-- CSS STYLING -->
 <link type="text/css" rel="stylesheet" href="ui/css/layout-default.css">
 <style type="text/css">
   /* Split panel aesthetics */
@@ -93,13 +115,13 @@ $(document).ready(function() {
 
 <body>
 <div class="toolbar">
-  <button type="button" onclick="" class="button"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
+  <button type="button" onclick="DocControl.newDocument()" class="button"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/data-open_32.png" width="32" height="32"><br>Open</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/data-svg.png" width="32" height="32"><br>SVG</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/export-staples.png" width="32" height="32"><br>Export</br></button>
-  <button type="button" onclick="SliceGrid(45,30,'honeycomb')" class="button"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
-  <button type="button" onclick="SliceGrid(40,40,'square');" class="button"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
+  <button type="button" onclick="DocControl.createHoneyCombLattice()" class="button"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
+  <button type="button" onclick="DocControl.createSquareLattice()" class="button"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/path-staple.png" width="32" height="32"><br>AutoStaple</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
   <div style="position: absolute; top:16px; left: 600px">Selectable:</div>

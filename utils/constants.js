@@ -5,5 +5,10 @@ var Constants = {
     SliceViewHeight: '500px',
     Renderer: 'two',
     RendererTwo: 'two',
-    RendererThree: 'three'
+    RendererThree: 'three',
+    RendererKinetic: 'kinetic',
+};
+
+var cadnanoEvents = {
+    documentPartAddedSignal: 'documentPartAddedSignal',
 };
