@@ -1,11 +1,13 @@
 //Path panel item creates new canvas in a DOM element of choice and all attached items are drawn on this canvas.
-function PathPanelItem(elem) {
-    this.canvasSettings = {container: elem, width: 3000, height: 3000};
+function PathPanelItem(elem,w,h) {
+    this.domele = elem;
+    this.canvasSettings = {container: elem, width: w, height: h};
     this.canvas = new Kinetic.Stage(this.canvasSettings);
 }
 
 //This class keeps track of all VHI (virtual helix item) and maintains an uniform standard for VHIs.
 function VirtualHelixSet(panel,gridMode,sqlen,sx,sy) {
+    this.pathpanel = panel;
     //copying input params so attached items can use them
     this.canvas = panel.canvas;
     this.mode = gridMode;
@@ -31,6 +33,10 @@ function VirtualHelixSet(panel,gridMode,sqlen,sx,sy) {
 	throw "stop execution";
     }
 }
+//resizes panel such that everything just fits in; this function shouldn't really be in this class but w/e...
+VirtualHelixSet.prototype.resize = function() {
+    this.canvas.setSize(2*this.startX+this.sqLength*this.grLength+2*Math.floor(this.grLength/this.divLength),2*this.startY+4*this.vhiArray.length*this.sqLength);
+};
 //add & remove VHI to vhiArray, as well as slidebar update
 VirtualHelixSet.prototype.addVHI = function() {
     this.vhiArray.push(new VirtualHelixItem(this));
@@ -38,6 +44,7 @@ VirtualHelixSet.prototype.addVHI = function() {
 	this.slidebar = new PathSlidebarItem(this);
     }
     this.slidebar.update();
+    this.resize();
 };
 VirtualHelixSet.prototype.removeVHI = function() {
     this.vhiArray[this.vhiArray.length-1].layer.remove();
@@ -49,6 +56,7 @@ VirtualHelixSet.prototype.removeVHI = function() {
 	this.slidebar.layer.remove();
 	this.slidebar = undefined;
     }
+    this.resize();
 };
 //updates existing VHIs to correct length and changes grLength for future VHIs
 VirtualHelixSet.prototype.updateLen = function(newLen) {
@@ -83,7 +91,15 @@ VirtualHelixSet.prototype.updateLen = function(newLen) {
 	}
 	vhi.layer.draw();
     }
+    //if removing bases, move the slidebar to visible area
+    if(newLen < this.grLength && newLen-1 < this.slidebar.getCounter()) {
+	this.slidebar.setCounter(newLen-1);
+	this.slidebar.group.setX(this.slidebar.getCounter()*this.sqLength+2*Math.floor(this.slidebar.getCounter()/this.divLength));
+	this.slidebar.counterText.setText(this.slidebar.getCounter());
+	this.slidebar.layer.draw();
+    }
     this.grLength = newLen;
+    this.resize();
 };
 
 //VHI is the collection of bases as well as the corresponding HelixCounterItem
@@ -156,16 +172,15 @@ function HelixCounterItem(vhi) {
 
 //draggable slidebar on top of VHIs
 function PathSlidebarItem(vhis) {
-    var counter = 0;
+    this.counter = 0;
     this.vhiSet = vhis;
     this.layer = new Kinetic.Layer();
-    this.rectWidth = this.vhiSet.sqLength;
     this.top = this.vhiSet.vhiArray[0].startY-2*this.vhiSet.sqLength;
     this.bot = 0;
     this.rect = new Kinetic.Rect({
-	    x: this.vhiSet.startX+counter*this.vhiSet.sqLength,
+	    x: this.vhiSet.startX+this.getCounter()*this.vhiSet.sqLength,
 	    y: this.top,
-	    width: this.rectWidth,
+	    width: this.vhiSet.sqLength,
 	    height: this.bot-this.top,
 	    fill: "#FFAA80",
 	    stroke: "#000000",
@@ -174,27 +189,27 @@ function PathSlidebarItem(vhis) {
 	});
     var rect = this.rect;
     this.counterText = new Kinetic.Text({
-	    x: this.vhiSet.startX+(counter+0.5)*this.vhiSet.sqLength,
+	    x: this.vhiSet.startX+(this.getCounter()+0.5)*this.vhiSet.sqLength,
 	    y: this.top-18,
-	    text: counter,
+	    text: this.getCounter(),
 	    fontSize: 16,
 	    fontFamily: "Calibri",
 	    fill: "#000000",
 	});
-    this.counterText.setOffset({
-	    x: this.counterText.getWidth()/2
-	});
     var counterText = this.counterText;
+    counterText.setOffset({
+	    x: counterText.getWidth()/2
+	});
     this.group = new Kinetic.Group({
 	    draggable: true,
 	    dragBoundFunc: function(pos) {
 		//changing text settings; these lines are here so it can be in sync with the bar
 		//if you still don't understand, put the 2 lines after counter mechanism and drag your mouse near border
-		counterText.setText(counter);
+		counterText.setText(vhis.slidebar.getCounter());
 		counterText.setOffset({x: counterText.getWidth()/2});
 		//limit slidebar to be right on top of bases
 		return {
-		    x: counter*vhis.sqLength+2*Math.floor(counter/vhis.divLength), //more ugly code thanks for thicker divider
+		    x: vhis.slidebar.getCounter()*vhis.sqLength+2*Math.floor(vhis.slidebar.getCounter()/vhis.divLength), //more ugly code thanks for thicker divider
 		    y: this.getAbsolutePosition().y
 		}
 	    }
@@ -204,13 +219,23 @@ function PathSlidebarItem(vhis) {
     this.group.on("dragmove", function(pos) {
 	    //actually, that wasn't too bad compared to this... welcome to the new counter calculation mecahnism
 	    var blockLen = vhis.divLength*vhis.sqLength+2;
-	    var blockNum = Math.floor((pos.x-vhis.startX-1)/blockLen);
-	    var tempCounter = Math.floor((pos.x-(blockNum*blockLen+vhis.startX+1))/vhis.sqLength)+blockNum*vhis.divLength;
-	    counter = Math.min(Math.max(0,tempCounter),vhis.grLength-1);
+
+	    //Delete these 2 lines and uncomment the now commented 2 lines when integrating with cadnano3.html
+	    var blockNum = Math.floor((pos.x+document.body.scrollLeft-vhis.startX-1)/blockLen);
+	    var tempCounter = Math.floor((pos.x+document.body.scrollLeft-(blockNum*blockLen+vhis.startX+1))/vhis.sqLength)+blockNum*vhis.divLength;
+
+	    //These two lines are commented because it's the document body that scrolls in the test and not the div
+	    //var blockNum = Math.floor((pos.x+document.getElementById(vhis.pathpanel.domele).scrollLeft-vhis.startX-1)/blockLen);
+	    //var tempCounter = Math.floor((pos.x+document.getElementById(vhis.pathpanel.domele).scrollLeft-(blockNum*blockLen+vhis.startX+1))/vhis.sqLength)+blockNum*vhis.divLength;
+	    vhis.slidebar.setCounter(Math.min(Math.max(0,tempCounter),vhis.grLength-1));
 	});
     this.layer.add(this.group);
     this.vhiSet.canvas.add(this.layer);
 }
+//accessor and mutator functions
+PathSlidebarItem.prototype.getCounter = function() {return this.counter;};
+PathSlidebarItem.prototype.setCounter = function(n) {this.counter = n;};
+//update slidebar info
 PathSlidebarItem.prototype.update = function() {
     this.bot = this.vhiSet.vhiArray[this.vhiSet.vhiArray.length-1].startY+4*this.vhiSet.sqLength;
     this.rect.setHeight(this.bot-this.top);

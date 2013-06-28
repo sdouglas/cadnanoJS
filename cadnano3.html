@@ -9,6 +9,7 @@
 <script type="text/javascript" src="includes/kinetic-4.5.4.min.js"> </script>
 <script type="text/javascript" src="ui/lib/SliceStack.js"> </script>
 <script type="text/javascript" src="ui/lib/SliceGrid.js"> </script>
+<script type="text/javascript" src="ui/lib/PathPanelView.js"> </script>
 
 <link type="text/css" rel="stylesheet" href="ui/css/layout-default.css">
 <style type="text/css">
@@ -130,11 +131,17 @@ $(document).ready(function() {
   </div>
   <div class="drawnPanels">
     <div id="sliceView"> </div>
-    <div id="pathView"> Path View </div>
+    <div id="pathView">
+      <button type="button" onclick="vhis.addVHI()" class="button"> Add Helix </button>
+      <button type="button" onclick="vhis.removeVHI()" class="button"> Remove Helix </button>
+      <button type="button" onclick="vhis.updateLen(prompt('New base length:',0))" class="button"> Change length to ?? </button>
+     </div>
   </div>
 </div>
 
 <script>
+var pp = new PathPanelItem("pathView");
+var vhis = new VirtualHelixSet(pp,"honeycomb",20,100,60);
 </script>
 </body>
 
