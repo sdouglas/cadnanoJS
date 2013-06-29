@@ -26,14 +26,14 @@ function SliceGrid(xg, yg, mode) {
     //setup
     var canvasSettings = {container: "sliceView", width: windowWidth, height: windowHeight};
     var canvas = new Kinetic.Stage(canvasSettings);
+    var textLayer = new Kinetic.Layer();
+    var shapeLayer = new Kinetic.Layer();
     var activeHelices = new SliceStack();
-    var sliceGrid = new Array(); //2d layer of layers, each with a circle
+    var sliceGrid = new Array();
     //grid construction
     for(var i=0; i<gridWidth; i++) {
 	sliceGrid[i] = new Array();
-	//getting center for circles
         for(var j=0; j<gridHeight; j++) {
-	    var layer = new Kinetic.Layer();
 	    var centerX;
 	    var centerY;
 	    if(mode === "honeycomb") {
@@ -47,7 +47,6 @@ function SliceGrid(xg, yg, mode) {
 		centerX = 2*r+2*i*r;
 		centerY = 2*r+2*j*r;
 	    }
-	    //actually making the circle
 	    var circle = new Kinetic.Circle({
 		    radius: r,
 		    x: centerX,
@@ -56,18 +55,17 @@ function SliceGrid(xg, yg, mode) {
 		    stroke: circStroke,
 		    strokeWidth: 1
 	    });
-	    //mouse actions
+	    shapeLayer.add(circle);
             circle.on("mouseenter", function() {
 		    if(activeHelices.contains(this.getX(),this.getY()) === -1) {
 			this.setFill(hoverFill);
-			layer.draw();
-			console.log("good");
+			shapeLayer.draw();
 		    }
 	    });
             circle.on("mouseleave", function() {
 		    if(activeHelices.contains(this.getX(),this.getY()) === -1) {
 			this.setFill(emptyFill);
-			layer.draw();
+			shapeLayer.draw();
 		    }
 	    });
 	    circle.on("click", function() {
@@ -89,14 +87,13 @@ function SliceGrid(xg, yg, mode) {
 				x: helixNumText.getWidth()/2
 			    });
 			//end: number on the circle
-			layer.add(helixNumText);
-			layer.draw();
+			textLayer.add(helixNumText);
+			shapeLayer.draw();
+			textLayer.draw();
 		    }
 	    });
-	    //adding circle to array
-	    layer.add(circle);
-	    sliceGrid[i][j] = layer;	    
-	    canvas.add(layer);
 	}
     }
+    canvas.add(shapeLayer);
+    canvas.add(textLayer);
 }
