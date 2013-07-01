@@ -1,35 +1,66 @@
 var Part = Backbone.Model.extend({
     step: 21,
-    radius: 1.125,
+    //TODO: what is this used for in cadnano2?
+    //radius: 1.125,
+    radius: 20,
     turnsPerStep:2,
     helicalPitch: this.step/this.turnsPerStep,
     twistPerBase: 360/this.helicalPitch,
-    maxRow: 10,
-    maxCol: 10,
+    maxRow: 50,
+    maxCol: 50,
     root3: 1.732051,
     largestUnusedOddNumber: -1,
     largestUnusedEvenNumber: -2,
+    origin:  50,                    //In order to shift away from the origin.
 
     initialize: function(){
         console.log("added a new part");
+        this.chosenHelixHash = new Array();
+        this.virtualHelixSet = new VirtualHelixSet();
     },
     
     setDoc: function(doc){
         this.currDoc = doc;
     },
+
+    addVirtualHelix: function(helix){
+        if(!this.chosenHelixHash[helix.getRow()]){
+            this.chosenHelixHash[helix.getRow()] = new Array();
+        }
+        this.chosenHelixHash[helix.getRow()][helix.getCol()] = helix;
+        //Add to the backbone collection.
+        this.virtualHelixSet.add(helix);
+    },
     
-    createVirtualHelix: function(){
+    initializedHelices: function(){
+        this.trigger(cadnanoEvents.partHelicesInitializedSignal);
+        console.log('triggered helices done');
+    },
+
+    createVirtualHelix: function(hrow,hcol){
         //Get row/column of helix that was clicked.
-        var parityEven = this.isEvenParity(row,col);
+        var parityEven = this.isEvenParity(hrow,hcol);
         var idNum = this.reserveHelixIDNumber(parityEven);
         var helix = new VirtualHelix({
             row:    hrow,
             col:    hcol,
-            id:     idNum
+            id:     idNum,
+            part:   this,
         });
+        console.log(hrow + ',' + hcol);
 
-        this.trigger(cadnanoEvents.partVirtualHelixAddedSignal);
-        this.trigger(cadnanoEvents.partActiveSliceResizeSignal);
+        //Add the VirtualHelix to a hash map in order
+        //to retrieve it later.
+        this.addVirtualHelix(helix);
+
+        //Send out the signals to PartItem in order to
+        //update their views.
+        //this.trigger(cadnanoEvents.partVirtualHelixAddedSignal, 
+        //        helix
+        //);
+        //this.trigger(cadnanoEvents.partActiveSliceResizeSignal, 
+        //        helix
+        //);
     },
 
     generatorFullLattice: function(){
@@ -53,6 +84,12 @@ var Part = Backbone.Model.extend({
             return this.largestUnusedOddNumber;
         }
     },
+
+    isHelixSelected: function(row,col){
+        if(this.chosenHelixHash[row][col])
+            return true;
+        return false;
+    },
 });
 
 var HoneyCombPart = Part.extend({
@@ -74,7 +111,10 @@ var HoneyCombPart = Part.extend({
             ypos = row*radius*3 + radius;
         }
         else ypos = row*radius*3;
-        return ({x:scaleFactor*xpos,y:scaleFactor*ypos}); 
+        return ({
+            x:  this.origin+scaleFactor*xpos,
+            y:  this.origin+scaleFactor*ypos
+        }); 
     },
 
     positionToCoord: function(row,column,scaleFactor){

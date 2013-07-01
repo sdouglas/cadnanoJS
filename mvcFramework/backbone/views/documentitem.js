@@ -39,28 +39,25 @@ var DocumentItem = Backbone.View.extend({
         if('0px' === svHeight) 
             svHeight = Constants.SliceViewHeight;
 
+        //The parseInt converts the string to a number.
+        //Kinetic.js doesn't work with 100px, but works with
+        //the literal 100.
         var svParams = {
             container:   'sliceView', 
-            width:  svWidth, 
-            height: svHeight,
+            width:  parseInt(svWidth,10), 
+            height: parseInt(svHeight,10),
         };
         
         //Note: Its important to pass in the "el" element in the constructor
         //since the jquery selectors only function after the DOM is loaded.
         //However, we are using our functions before the DOM is loaded.
-        /*
         var sliceView = new SlicePartItem({
             el:     jSliceView,
             part:   this.currDoc.part(), 
             params: svParams, 
             who:    Constants.RendererKinetic,
         });
-        */
-        var handler = new viewHandlerKinetic();
-        handler.setParams(svParams);
-        handler.createCircle(150,150,40);
-        handler.render();
-        console.log(document.getElementById('sliceView'));
+
         //Path View Parameters.
         var jPathView = $('#pathView');
         var pvWidth = jPathView.css('width');
@@ -73,8 +70,8 @@ var DocumentItem = Backbone.View.extend({
         
         var pvParams = {
             container:   'pathView', 
-            width:  pvWidth, 
-            height: pvHeight,
+            width:  parseInt(pvWidth,10), 
+            height: parseInt(pvHeight,10),
         };
         
         /*

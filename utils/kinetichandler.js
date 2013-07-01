@@ -8,16 +8,12 @@ function viewHandlerKinetic(){
 		    radius:     r,
 		    x:          centerX,
 		    y:          centerY,
-            fill:       '#F2AA77',
-            stroke:     '#000000',
-            strokeWidth:1,
-		    //fill:       this.defaultFill,
-		    //stroke:     this.defaultStroke,
-		    //strokeWidth: this.defaultLineWidth,
+            fill:       this.emptyFill,
+            stroke:     this.defaultStroke,
+            strokeWidth:this.defaultLineWidth,
 	    });
         this.shapeLayer.add(circle);
-        this.shapeLayer.draw();
-        console.log('creating circle');
+        return circle;
     }
 
     this.init = function(){
@@ -25,13 +21,16 @@ function viewHandlerKinetic(){
         this.textLayer = new Kinetic.Layer();
         this.shapeLayer = new Kinetic.Layer();
 
-        this.defaultFill = '#F2AA77';
+        this.emptyFill = '#F0F0F0';
+        this.hoverFill = '#33CCFF';
+        this.selectedFill = '#FFE400';
         this.defaultStroke = 'black';
         this.defaultLineWidth = 1;
     }
 
     this.setParams = function(params){
         console.log('setting up the stage');
+        console.log(params);
         this.handler = new Kinetic.Stage(params);
     };
 
@@ -43,8 +42,6 @@ function viewHandlerKinetic(){
         console.log("calling kinetic update");
         this.handler.add(this.shapeLayer);
         this.handler.add(this.textLayer);
-        this.shapeLayer.draw();
-        this.textLayer.draw();
     };
 
     this.getX = function(){

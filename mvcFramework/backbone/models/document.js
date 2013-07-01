@@ -10,12 +10,16 @@ var Document = Backbone.Model.extend({
         return true;
     },
     createHoneyCombPart: function(){
-        var mypart = new HoneyCombPart();
+        var mypart = new HoneyCombPart({
+            currDoc:this,
+        });
         mypart.setDoc(this);
         this.addPart(mypart);
     },
     createSquarePart: function(){
-        var mypart = new SquarePart();
+        var mypart = new SquarePart({
+            currDoc:this,
+        });
         mypart.setDoc(this);
         this.addPart(mypart);
     },
@@ -24,7 +28,8 @@ var Document = Backbone.Model.extend({
     },
     addPart: function(modelPart){
         this.parts.push(modelPart);
-        this.trigger(cadnanoEvents.documentPartAddedSignal);
+        this.trigger(cadnanoEvents.documentPartAddedSignal, 
+                modelPart);
         //trigger an event?
     },
 });

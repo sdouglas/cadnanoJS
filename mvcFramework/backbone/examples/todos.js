@@ -82,7 +82,7 @@ $(function(){
     // The DOM events specific to an item.
     events: {
       "click .toggle"   : "toggleDone",
-      "dblclick .view"  : "edit",
+      "dblclick .edit"  : "edit",
       "click a.destroy" : "clear",
       "keypress .edit"  : "updateOnEnter",
       "blur .edit"      : "close"

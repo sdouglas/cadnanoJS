@@ -11,4 +11,7 @@ var Constants = {
 
 var cadnanoEvents = {
     documentPartAddedSignal: 'documentPartAddedSignal',
+    partVirtualHelixAddedSignal: 'partVirtualHelixAddedSignal',
+    partActiveSliceResizedSignal: 'partActiveSliceResizedSignal',
+    partHelicesInitializedSignal: 'partHelicesInitializedSignal',
 };
