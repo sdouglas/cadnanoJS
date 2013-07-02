@@ -20,17 +20,9 @@ var PartItem = Backbone.View.extend({
             );
     },
 
-    spawnEmptyHelixItemAt: function(coord){
-        this.part.createVirtualHelix(coord.row, coord.col);
-    },
-
-    addVirtualHelixItem: function(vhItem, row, col){
-        console.log(row + "," + col);
-        if(!this.chosenHelixHash[row]){
-            this.chosenHelixHash[row] = new Array();
-        }
-        this.chosenHelixHash[row][col] =  vhItem;
-        console.log(this.chosenHelixHash);
+    createVirtualHelixItem: function(vh){
+        //update the rendering of the item.
+        this.vhItemSet.render();
     },
 
     isHelixSelected: function(row,col){
@@ -48,27 +40,25 @@ var SlicePartItem = PartItem.extend({
             param:  this.options.params,
             who:    this.options.who,
         });
-        vhItemSet = new VirtualHelixSetItem({
+        this.emptyItemSet = new EmptyHelixSetItem({
             el:$('#sliceView'),
-            collection: this.part.virtualHelixSet,
+            part: this.options.part,
             handler: this.handler,
         });
         console.log(this.handler);
 
+        this.vhItemSet = new VirtualHelixSetItem({
+            el: $('#sliceView'),
+            part: this.options.part,
+            handler: this.handler,
+            collection: this.options.part.getVHSet(),
+        });
+
         //console.log(this.el);
         //this.handler.addToDom(this.el);
-        console.log(this.part.generatorFullLattice());
-        //this.setLattice(this.part.generatorFullLattice());
+        this.setLattice(this.part.generatorFullLattice());
     },
     
-    events: {
-        "click" :   "sliceViewClicked",
-    },
-
-    sliceViewClicked: function(){
-        console.log("clicked the slice view");
-    },
-
     render: function(){
         this.handler.render();
         console.log('just called render');
@@ -76,25 +66,22 @@ var SlicePartItem = PartItem.extend({
     },
 
     setLattice: function(newCoords){
-        console.log(this);
         for (var i in newCoords){
-            this.spawnEmptyHelixItemAt(newCoords[i]);
+            this.emptyItemSet.createEmptyHelix(newCoords[i]);
         }
         this.part.initializedHelices(true);
     },
     partHelicesInitializedSlot: function(){
         console.log('received helix added signal');
-        vhItemSet.render();
+        this.emptyItemSet.render();
     },
     partVirtualHelixAddedSlot: function(virtualHelix){
         //Add the virtual helix item to a hash.
         //Change the color of the virtual helix item
         //to show selection.
         console.log("currently in partVirtualHelixAddedSlot");
-        this.addVirtualHelixItem(virtualHelix, 
-                virtualHelix.getRow(),
-                virtualHelix.getCol()
-        );
+
+        this.createVirtualHelixItem(virtualHelix);
     },
     //TODO
     //addScafifStapIsMissing

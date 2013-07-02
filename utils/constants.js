@@ -15,3 +15,19 @@ var cadnanoEvents = {
     partActiveSliceResizedSignal: 'partActiveSliceResizedSignal',
     partHelicesInitializedSignal: 'partHelicesInitializedSignal',
 };
+
+
+/* Slice View Colours */
+var colours = {
+    bluefill: '#99ccff',
+    bluestroke: '#0066cc',
+    bluishstroke: '',
+    orangefill: '#ffcc99',
+    orangestroke: '#cc6633',
+    lightorangefill: '',
+    lightorangestroke: '',
+    grayfill: '#eeeeee',
+    graystroke: '#666666',
+    strokewidth: 1,
+    hoverstrokewidth: 3,
+};

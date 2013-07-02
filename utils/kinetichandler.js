@@ -1,16 +1,19 @@
 function viewHandlerKinetic(){
-    this.createCircle = function(centerX,centerY,r){
+    this.createCircle = function(centerX,centerY,r, params){
         this.x = centerX;
         this.y = centerY;
         this.r = r;
+        var fill = params.fill?params.fill:colours.grayfill;
+        var stroke=params.stroke?params.stroke:colours.graystroke;
+        var strokewidth=params.strokewidth?params.strokewidth:colours.strokewidth;
 
 	    var circle = new Kinetic.Circle({
 		    radius:     r,
 		    x:          centerX,
 		    y:          centerY,
-            fill:       this.emptyFill,
-            stroke:     this.defaultStroke,
-            strokeWidth:this.defaultLineWidth,
+            fill:       fill,
+            stroke:     stroke,
+            strokeWidth:strokewidth,
 	    });
         this.shapeLayer.add(circle);
         return circle;
@@ -20,12 +23,6 @@ function viewHandlerKinetic(){
         console.log('in function init of handler');
         this.textLayer = new Kinetic.Layer();
         this.shapeLayer = new Kinetic.Layer();
-
-        this.emptyFill = '#F0F0F0';
-        this.hoverFill = '#33CCFF';
-        this.selectedFill = '#FFE400';
-        this.defaultStroke = 'black';
-        this.defaultLineWidth = 1;
     }
 
     this.setParams = function(params){

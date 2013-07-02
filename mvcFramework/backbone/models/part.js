@@ -6,8 +6,9 @@ var Part = Backbone.Model.extend({
     turnsPerStep:2,
     helicalPitch: this.step/this.turnsPerStep,
     twistPerBase: 360/this.helicalPitch,
-    maxRow: 50,
-    maxCol: 50,
+    maxRow: 10,
+    maxCol: 10,
+    maxRowsEver: 1000,
     root3: 1.732051,
     largestUnusedOddNumber: -1,
     largestUnusedEvenNumber: -2,
@@ -17,6 +18,10 @@ var Part = Backbone.Model.extend({
         console.log("added a new part");
         this.chosenHelixHash = new Array();
         this.virtualHelixSet = new VirtualHelixSet();
+    },
+
+    getVHSet: function(){
+        return this.virtualHelixSet;
     },
     
     setDoc: function(doc){
@@ -37,6 +42,24 @@ var Part = Backbone.Model.extend({
         console.log('triggered helices done');
     },
 
+    getStorageID: function(row,col){
+        return row*this.maxRowsEver+col;
+    },
+
+    getCoordFromStorageID: function(id){
+        var rw = id/this.maxRowsEver;
+        var cl = id%this.maxRowsEver;
+        return {row:rw,col:cl};
+    },
+
+    getModelHelix: function(id){
+        var coord = this.getCoordFromStorageID(id);
+        console.log(this.chosenHelixHash);
+        if(this.chosenHelixHash[coord.row])
+            return this.chosenHelixHash[coord.row][coord.col];
+        return null;
+    },
+
     createVirtualHelix: function(hrow,hcol){
         //Get row/column of helix that was clicked.
         var parityEven = this.isEvenParity(hrow,hcol);
@@ -44,7 +67,8 @@ var Part = Backbone.Model.extend({
         var helix = new VirtualHelix({
             row:    hrow,
             col:    hcol,
-            id:     idNum,
+            hID:    idNum,
+            id:     this.getStorageID(hrow,hcol),
             part:   this,
         });
         console.log(hrow + ',' + hcol);
@@ -55,9 +79,9 @@ var Part = Backbone.Model.extend({
 
         //Send out the signals to PartItem in order to
         //update their views.
-        //this.trigger(cadnanoEvents.partVirtualHelixAddedSignal, 
-        //        helix
-        //);
+        this.trigger(cadnanoEvents.partVirtualHelixAddedSignal, 
+                helix
+        );
         //this.trigger(cadnanoEvents.partActiveSliceResizeSignal, 
         //        helix
         //);
