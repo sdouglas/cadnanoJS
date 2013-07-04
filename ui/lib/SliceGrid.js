@@ -8,11 +8,18 @@ function SliceGrid(xg, yg, mode, p) {
     var emptyFill = "#F0F0F0";
     var hoverFill = "#33CCFF";
     var activeFill = "#FFE400";
-    //layers
+    //layers and groups
     var emptyLayer = new Kinetic.Layer(); //bottom layer just for background
     var hoverLayer = new Kinetic.Layer(); //layer of circles triggered by mouseover functions
     var activeLayer = new Kinetic.Layer(); //layer of active helixes (clicked by mouse)
+    var emptyGroup = new Kinetic.Group();
+    emptyLayer.add(emptyGroup);
+    var hoverGroup = new Kinetic.Group(); //hoverGroup exists purely for uniformity as the group has only one shape
+    hoverLayer.add(hoverGroup);
+    var activeGroup = new Kinetic.Group();
+    activeLayer.add(activeGroup);
     //window properties
+    var zoomfactor = 1;
     var windowWidth;
     var windowHeight;
     if(mode === "honeycomb") {
@@ -28,7 +35,7 @@ function SliceGrid(xg, yg, mode, p) {
 	throw "stop execution";
     }
     //setup
-    var panel = document.getElementById(p); //dynamic canvas location makes the view more flexible in terms of its location in browser (not really since a few numbers in inCircle still needs to be changed)
+    var panel = document.getElementById(p); //dynamic canvas location. screws up inCircle function though so it's pretty useless.
     var canvasSettings = {container: p, width: windowWidth, height: windowHeight};
     var canvas = new Kinetic.Stage(canvasSettings);
     canvas.add(emptyLayer);
@@ -68,7 +75,7 @@ function SliceGrid(xg, yg, mode, p) {
 		    stroke: circStroke,
 		    strokeWidth: 1
 		});
-	    emptyLayer.add(circle);
+	    emptyGroup.add(circle);
 	}
 	emptyLayer.draw();
     }
@@ -87,9 +94,9 @@ function SliceGrid(xg, yg, mode, p) {
 	      The two circles closest to the given coords is found and their distance to the given coords is calculated.
 	      Then we just take the circle with distance less than r (if it exists).
 	    */
-	    var xLeft = Math.floor((xPos-45-2*r+panel.scrollLeft)/(1.732*r));
-	    var xRight = Math.ceil((xPos-45-2*r+panel.scrollLeft)/(1.732*r));
-	    var y = Math.floor((yPos-54-r+panel.scrollTop)/(3*r));
+	    var xLeft = Math.floor((xPos-45-2*r*zoomfactor+panel.scrollLeft)/(1.732*r*zoomfactor));
+	    var xRight = Math.ceil((xPos-45-2*r*zoomfactor+panel.scrollLeft)/(1.732*r*zoomfactor));
+	    var y = Math.floor((yPos-54-r*zoomfactor+panel.scrollTop)/(3*r*zoomfactor));
 	    if(xRight < 0 || xLeft >= gridWidth || y < 0 || y>= gridHeight) { //outside array boundary, return [-1,-1]
 		result[0] = -1;
 		result[1] = -1;
@@ -100,27 +107,27 @@ function SliceGrid(xg, yg, mode, p) {
 	    var centerYL = 0;
 	    var distL = 0;
 	    if(xLeft >= 0) { //avoids the case when xLeft = -1 but xRight = 0
-		centerXL = circleCenters[xLeft][y][0];
-		centerYL = circleCenters[xLeft][y][1];
+		centerXL = circleCenters[xLeft][y][0]*zoomfactor;
+		centerYL = circleCenters[xLeft][y][1]*zoomfactor;
 		distL = dist(xPos-45+panel.scrollLeft,yPos-54+panel.scrollTop,centerXL,centerYL);
 	    }
-	    else {distL = 2*r;} //this distL allows us to skip the (distL <= r) conditional
+	    else {distL = 2*r*zoomfactor;} //this distL allows us to skip the (distL <= r*zf) conditional
 	    var centerXR = 0;
 	    var centerYR = 0;
 	    //right circle
 	    var distR = 0;
 	    if(xRight < gridWidth) {
-		centerXR = circleCenters[xRight][y][0];
-		centerYR = circleCenters[xRight][y][1];
+		centerXR = circleCenters[xRight][y][0]*zoomfactor;
+		centerYR = circleCenters[xRight][y][1]*zoomfactor;
 		distR = dist(xPos-45+panel.scrollLeft,yPos-54+panel.scrollTop,centerXR,centerYR);
 	    }
-	    else {distR = 2*r;}
+	    else {distR = 2*r*zoomfactor;}
 	    //checking distance from center
-	    if(distL <= r) { //we do not need to compare distL to distR because they cannot both be <= r (or else there should be circle overlap)
+	    if(distL <= r*zoomfactor) { //we do not need to compare distL to distR because they cannot both be <= r*zf (or else there should be circle overlap)
 		result[0] = xLeft;
 		result[1] = y;
 	    }
-	    else if(distR <= r) {
+	    else if(distR <= r*zoomfactor) {
 		result[0] = xRight;
 		result[1] = y;
 	    }
@@ -130,16 +137,16 @@ function SliceGrid(xg, yg, mode, p) {
 	    }
 	}
 	else { //square mode - this part of search function is rather straightforward
-	    var x = Math.floor((xPos-45-r+panel.scrollLeft)/(2*r));
-	    var y = Math.floor((yPos-54-r+panel.scrollTop)/(2*r));
-	    if(xRight < 0 || x >= gridWidth || y < 0 || y>= gridHeight) { //outside array boundary, return [-1,-1]
+	    var x = Math.floor((xPos-45-r*zoomfactor+panel.scrollLeft)/(2*r*zoomfactor));
+	    var y = Math.floor((yPos-54-r*zoomfactor+panel.scrollTop)/(2*r*zoomfactor));
+	    if(x < 0 || x >= gridWidth || y < 0 || y>= gridHeight) { //outside array boundary, return [-1,-1]
 		result[0] = -1;
 		result[1] = -1;
 		return result;
 	    }
-	    var centerX = circleCenters[x][y][0];
-	    var centerY = circleCenters[x][y][1];
-	    if(dist(xPos-45+panel.scrollLeft,yPos-54+panel.scrollTop,centerX,centerY) <= r) {
+	    var centerX = circleCenters[x][y][0]*zoomfactor;
+	    var centerY = circleCenters[x][y][1]*zoomfactor;
+	    if(dist(xPos-45+panel.scrollLeft,yPos-54+panel.scrollTop,centerX,centerY) <= r*zoomfactor) {
 		result[0] = x;
 		result[1] = y;
 	    }
@@ -154,10 +161,10 @@ function SliceGrid(xg, yg, mode, p) {
     //hover layer
     panel.onmousemove = mmhandle;
     function mmhandle(e) {
-	hoverLayer.removeChildren(); //clear the layer and redraw the current hovering helix
+	hoverGroup.removeChildren(); //clear the group and redraw the current hovering helix
 	var cx = inCircle(e.pageX,e.pageY)[0];
 	var cy = inCircle(e.pageX,e.pageY)[1];
-	if(cx != -1 && cy != -1) {//the if statement checks if the mouse is hovering on a helix
+	if(cx != -1 && cy != -1) { //the if statement checks if the mouse is hovering on a helix
 	    var circle = new Kinetic.Circle({
 		    radius:r,
 		    x: circleCenters[cx][cy][0],
@@ -166,7 +173,7 @@ function SliceGrid(xg, yg, mode, p) {
 		    stroke: circStroke,
 		    strokeWidth: 1
 		});
-	    hoverLayer.add(circle);
+	    hoverGroup.add(circle);
 	}
 	hoverLayer.draw();
     }
@@ -202,12 +209,32 @@ function SliceGrid(xg, yg, mode, p) {
 	    helixNumText.setOffset({
 		    x: helixNumText.getWidth()/2
 			});
-	    //adding shapes to layer
-	    activeLayer.add(circle);
-	    activeLayer.add(helixNumText);
+	    //adding shapes to group
+	    activeGroup.add(circle);
+	    activeGroup.add(helixNumText);
 	    activeLayer.draw();
-	    //You can (not) redo
+	    //You Can (Not) Redo
 	    activeHelices.undostack = new Array();
 	}
+    }
+
+    //zoom with wheel
+    panel.onmousewheel = mwhandle;
+    function mwhandle(e) {
+	    zoomfactor += e.wheelDelta*0.0004;
+	    zoomfactor = Math.min(Math.max(zoomfactor,0.5),5);
+	    if(mode === "honeycomb") {
+		canvas.setSize(zoomfactor*(2*r+1.732*gridWidth*r),zoomfactor*(2*r+3*gridHeight*r));
+		//things would be easier if we can store previous zf as we can use getWidth() and getHeight()...
+	    }
+	    else {
+		canvas.setSize(zoomfactor*(2*r+2*gridWidth*r),zoomfactor*(2*r+2*gridHeight*r));
+	    }
+	    emptyGroup.setScale(zoomfactor);
+	    hoverGroup.setScale(zoomfactor);
+	    activeGroup.setScale(zoomfactor);
+	    emptyLayer.draw();
+	    hoverLayer.draw();
+	    activeLayer.draw();
     }
 }
