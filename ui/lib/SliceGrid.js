@@ -1,3 +1,13 @@
+function initGrid(xg, yg, mode, p) { //avoids multiple instantiation of panels
+    if(gridMode === undefined) {
+	SliceGrid(xg, yg, mode, p);
+	gridMode = mode;
+    }
+    else {
+	alert("Use \"New\" to make a different grid!");
+    }
+}
+
 function SliceGrid(xg, yg, mode, p) {
     //grid properties
     var gridWidth = xg;
@@ -34,6 +44,8 @@ function SliceGrid(xg, yg, mode, p) {
 	alert("Grid type does not exist, script aborted.");
 	throw "stop execution";
     }
+    //link a VirtualHelixSet to path panel
+    vhis = new VirtualHelixSet(pp,mode,20);
     //setup
     var panel = document.getElementById(p); //dynamic canvas location. screws up inCircle function though so it's pretty useless.
     var canvasSettings = {container: p, width: windowWidth, height: windowHeight};
@@ -193,7 +205,8 @@ function SliceGrid(xg, yg, mode, p) {
 		    y: circleCenters[cx][cy][1],
 		    fill: activeFill,
 		    stroke: circStroke,
-		    strokeWidth: 1
+		    strokeWidth: 1,
+		    id: "activecirc."+cx+"."+cy
 		});
 	    //number on the circle                                                                                             
 	    var helixNum = activeHelices.stack.length-1;
@@ -204,7 +217,8 @@ function SliceGrid(xg, yg, mode, p) {
 		    fontSize: 12,
 		    fontFamily: "Calibri",
 		    fill: "#000000",
-		    align: "CENTER"
+		    align: "CENTER",
+		    id: "activecirctext."+cx+"."+cy
 		});
 	    helixNumText.setOffset({
 		    x: helixNumText.getWidth()/2
@@ -213,7 +227,9 @@ function SliceGrid(xg, yg, mode, p) {
 	    activeGroup.add(circle);
 	    activeGroup.add(helixNumText);
 	    activeLayer.draw();
-	    //You Can (Not) Redo
+	    //add a VirtualHelixItem in path panel
+	    vhis.addVHI();
+	    //you can (not) redo
 	    activeHelices.undostack = new Array();
 	}
     }
@@ -236,5 +252,27 @@ function SliceGrid(xg, yg, mode, p) {
 	    emptyLayer.draw();
 	    hoverLayer.draw();
 	    activeLayer.draw();
+    }
+
+    //Kinetic.js does not support keyboard event
+    //This event triggers only when mouse is inside panel when a key is pressed
+    panel.onmouseover = function() {
+	document.onkeypress = function(e) {
+	    if(e.keyCode === 90 || e.keyCode === 122) {
+		undo();
+	    }
+	};
+    };
+    function undo() {
+	if(activeHelices.stack.length !== 0) {
+	    var carray = activeHelices.stack[activeHelices.stack.length-1];
+	    var cx = carray[0];
+	    var cy = carray[1];
+	    activeGroup.get("#activecirctext."+cx+"."+cy).remove();
+	    activeGroup.get("#activecirc."+cx+"."+cy).remove();
+	}
+	activeHelices.undo();
+	activeLayer.draw();
+	vhis.removeVHI();
     }
 }

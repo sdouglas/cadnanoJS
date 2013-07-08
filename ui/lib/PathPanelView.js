@@ -13,10 +13,11 @@ function VirtualHelixSet(panel,gridMode,sqlen,sx,sy) {
     this.mode = gridMode;
     this.sqLength = sqlen;
     this.startX = 5*this.sqLength;
-    this.startY = 3*this.sqLength;
+    this.startY = 5*this.sqLength;
     //items that latch on to the set: an array of VirtualHelixItem and PathSlidebarItem
     this.vhiArray = new Array();
     this.slidebar; //initialize only when vhiArray is not empty
+    this.basechanger; //initialize only when vhiArray is nonempty
     //grid and divider
     this.grLength = new Number;
     this.divLength = new Number;
@@ -42,21 +43,26 @@ VirtualHelixSet.prototype.addVHI = function() {
     this.vhiArray.push(new VirtualHelixItem(this));
     if(this.vhiArray.length === 1) {
 	this.slidebar = new PathSlidebarItem(this);
+	this.basechanger = new BaseLengthChanger(this);
     }
     this.slidebar.update();
     this.resize();
 };
 VirtualHelixSet.prototype.removeVHI = function() {
-    this.vhiArray[this.vhiArray.length-1].layer.remove();
-    this.vhiArray.pop();
     if(this.vhiArray.length != 0) {
-	this.slidebar.update();
+	this.vhiArray[this.vhiArray.length-1].layer.remove();
+	this.vhiArray.pop();
+	if(this.vhiArray.length > 0) {
+	    this.slidebar.update();
+	}
+	else {
+	    this.slidebar.layer.remove();
+	    this.slidebar = undefined;
+	    this.basechanger.layer.remove();
+	    this.basechanger = undefined;
+	}
+	this.resize();
     }
-    else {
-	this.slidebar.layer.remove();
-	this.slidebar = undefined;
-    }
-    this.resize();
 };
 //updates existing VHIs to correct length and changes grLength for future VHIs
 VirtualHelixSet.prototype.updateLen = function(nl) {
@@ -138,9 +144,9 @@ function VirtualHelixItem(vhiSet) {
     this.canvas.add(this.layer);
 };
 
-//The name of this class is rather self-explanatory...
+//The name of this class says it all
 function HelixCounterItem(vhi) {
-    var layer = vhi.layer;
+    this.group = new Kinetic.Group();
     //circle
     var circle = new Kinetic.Circle({
 	    radius: vhi.sqLength,
@@ -150,9 +156,7 @@ function HelixCounterItem(vhi) {
 	    stroke: "#808080",
 	    strokeWidth: 2
         });
-    layer.add(circle);
-    circle.on("mouseenter", function() {circle.setStroke("#3333FF"); layer.draw();});
-    circle.on("mouseleave", function() {circle.setStroke("#808080"); layer.draw();});
+    this.group.add(circle);
     //number in the middle of circle
     var helixNumText = new Kinetic.Text({
 	    x: circle.getX(),
@@ -165,10 +169,10 @@ function HelixCounterItem(vhi) {
     helixNumText.setOffset({
 	    x: helixNumText.getWidth()/2
 	});
-    layer.add(helixNumText);
-    //bug fix: circle not highlighted when mouse is on text
-    helixNumText.on("mouseenter", function() {circle.setStroke("#3333FF"); layer.draw();});
-    helixNumText.on("mouseleave", function() {circle.setStroke("#808080"); layer.draw();});
+    this.group.add(helixNumText);
+    this.group.on("mouseenter", function() {circle.setStroke("#3333FF"); vhi.layer.draw();});
+    this.group.on("mouseleave", function() {circle.setStroke("#808080"); vhi.layer.draw();});
+    vhi.layer.add(this.group);
 }
 
 //draggable slidebar on top of VHIs
@@ -238,3 +242,35 @@ PathSlidebarItem.prototype.update = function() {
     this.layer.moveToTop();
     this.layer.draw();
 };
+
+//A psuedo-button that changes base length. This function merges the two arrow buttons in cadnano2.
+function BaseLengthChanger(vhis) {
+    this.layer = new Kinetic.Layer();
+    this.group = new Kinetic.Group();
+    //These params for rect and text is only good for vhis.sqLength = 20 (direct scaling doesn't work either)
+    this.rect = new Kinetic.Rect({
+	    x: 0,
+	    y: 0,
+	    width: 125,
+	    height: 20,
+	    stroke: '#000000',
+	    strokeWidth: 1,
+	    fill: '#88FF88'
+	});
+    this.text = new Kinetic.Text({
+	    x: 3,
+	    y: 3,
+	    text: "change base length",
+	    fontSize: 15,
+	    fontFamily: "Calibri",
+	    fill: "#000000",
+	});
+    this.group.add(this.rect);
+    this.group.add(this.text);
+    this.group.on("click", function() {
+	    var newLen = prompt("Enter new length:","");
+	    vhis.updateLen(newLen);
+	});
+    this.layer.add(this.group);
+    vhis.canvas.add(this.layer);
+}

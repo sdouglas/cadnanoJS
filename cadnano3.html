@@ -7,9 +7,9 @@
 <script type="text/javascript" src="includes/jquery.ui-1.9.2.js"> </script>
 <script type="text/javascript" src="includes/jquery.layout-1.3.0.min.js"> </script>
 <script type="text/javascript" src="includes/kinetic-4.5.4.min.js"> </script>
+<script type="text/javascript" src="ui/lib/PathPanelView.js"> </script>
 <script type="text/javascript" src="ui/lib/SliceStack.js"> </script>
 <script type="text/javascript" src="ui/lib/SliceGrid.js"> </script>
-<script type="text/javascript" src="ui/lib/PathPanelView.js"> </script>
 
 <link type="text/css" rel="stylesheet" href="ui/css/layout-default.css">
 <style type="text/css">
@@ -25,14 +25,19 @@
     background: #DDD;
   }
   /* Buttons: margins, (to be implemented) image checkbox/radio */
-  .button {
+  .hbutton, .vbutton {
     margin-top: 0px;
     margin-left: 0px;
-    margin-bottom: 6px;
     margin-right: 6px;
     border: none;
     background: none;
     float: left;
+  }
+  .hbutton {
+    margin-bottom: 0px;
+  }
+  .vbutton {
+    margin-bottom: 6px;
   }
   input[type=radio] {
     display:none;
@@ -100,30 +105,30 @@ $(document).ready(function($) {
 
 <body>
 <div id="toolbar">
-  <button type="button" onclick="" class="button"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/data-open_32.png" width="32" height="32"><br>Open</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/data-svg.png" width="32" height="32"><br>SVG</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/export-staples.png" width="32" height="32"><br>Export</br></button>
-  <button type="button" onclick="SliceGrid(40,30,'honeycomb','sliceView')" class="button"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
-  <button type="button" onclick="SliceGrid(40,40,'square','sliceView');" class="button"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/path-staple.png" width="32" height="32"><br>AutoStaple</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-open_32.png" width="32" height="32"><br>Open</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-svg.png" width="32" height="32"><br>SVG</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/export-staples.png" width="32" height="32"><br>Export</br></button>
+  <button type="button" onclick="initGrid(40,30,'honeycomb','sliceView')" class="hbutton"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
+  <button type="button" onclick="initGrid(40,40,'square','sliceView')" class="hbutton"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/path-staple.png" width="32" height="32"><br>AutoStaple</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
   <div style="position: absolute; top:16px; left: 600px">Selectable:</div>
   <div style="position: absolute; top:8px; left: 700px">
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-scaf.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-stap.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-handle.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-endpoint.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-xover.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-strand.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="hbutton"><img src="ui/images/part-filter-scaf.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="hbutton"><img src="ui/images/part-filter-stap.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="hbutton"><img src="ui/images/part-filter-handle.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="hbutton"><img src="ui/images/part-filter-endpoint.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="hbutton"><img src="ui/images/part-filter-xover.png" width="32" height="32"></button>
+    <button type="button" onclick="" class="hbutton"><img src="ui/images/part-filter-strand.png" width="32" height="32"></button>
   </div>
 </div>
 <div id="mainWindow">
   <div id="sliceButtons">
-    <button type="button" onclick="" class="button"><img src="ui/images/slice-go-first.png" width="32" height="32"><br>First</br></button>
-    <p><button type="button" onclick="" class="button"><img src="ui/images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
-    <p><button type="button" onclick="" class="button"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
+    <button type="button" onclick="" class="vbutton"><img src="ui/images/slice-go-first.png" width="32" height="32"><br>First</br></button>
+    <p><button type="button" onclick="" class="vbutton"><img src="ui/images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
+    <p><button type="button" onclick="" class="vbutton"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
   </div>
   <div id="pathButtons">
     <input type='radio' name='pathButtons' value='1' id="a"/><label for="a"><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></label>
@@ -141,8 +146,9 @@ $(document).ready(function($) {
 </div>
 
 <script>
+var gridMode = undefined;
 var pp = new PathPanelItem("pathView",300,300);
-var vhis = new VirtualHelixSet(pp,"honeycomb",20);
+var vhis;
 </script>
 </body>
 </html>
