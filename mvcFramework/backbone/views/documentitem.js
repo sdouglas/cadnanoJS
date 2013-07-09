@@ -2,21 +2,8 @@
 var DocumentItem = Backbone.View.extend({
 
     events: {
-    "click" : "Zooming",
-    "click .slice-button" : "Moving",
-    "click #edit" : "Editing",
-    "keydown" : "undohere",
+        "keydown" : "undohere",
     },
-
-    Zooming: function(){
-                 console.log("clicked on zoom");
-             },
-    Moving: function(){
-                 console.log("clicked on move");
-             },
-    Editing: function(){
-                 console.log("clicked on edit");
-             },
 
     initialize: function(){
         //These keys are to bind a keypress to a function.
@@ -85,14 +72,12 @@ var DocumentItem = Backbone.View.extend({
             height: parseInt(pvHeight,10),
         };
         
-        /*
-        var pathView = new PathPartItem({
+        this.pathView = new PathPartItem({
             el:     jPathView,
             part:   this.currDoc.part(), 
             params: pvParams, 
             who:    Constants.RendererKinetic,
         });
-        */
     },
 
     documentClearSelectionsSlot: function(){
