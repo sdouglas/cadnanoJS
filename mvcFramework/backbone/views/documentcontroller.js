@@ -16,7 +16,7 @@ var DocumentController = Backbone.View.extend({
         }
         this.currDoc = new Document();
         this.DocumentWindow = new DocumentItem({
-            el:         $("#drawnPanels"),
+            el:         $(".drawnPanels"),
             currDoc:    this.currDoc,
         });
         return true;
@@ -34,6 +34,6 @@ var DocumentController = Backbone.View.extend({
 
 function main(){
     DocControl = new DocumentController({
-        el: $("#mainWindow"),
+        el: $(".mainWindow"),
     });
 }

@@ -10,6 +10,8 @@ var PartItem = Backbone.View.extend({
     },
 
     connectSignalsSlots: function(){
+                             console.log(this.handler);
+                             console.log('connecting signals slots in partitem');
         this.listenTo(this.part,
             cadnanoEvents.partVirtualHelixAddedSignal,
             this.partVirtualHelixAddedSlot
@@ -17,6 +19,10 @@ var PartItem = Backbone.View.extend({
         this.listenTo(this.part,
             cadnanoEvents.partHelicesInitializedSignal,
             this.partHelicesInitializedSlot
+            );
+        this.listenTo(this.part,
+            cadnanoEvents.partRemovedSignal,
+            this.partRemovedSlot
             );
     },
 
@@ -35,17 +41,17 @@ var PartItem = Backbone.View.extend({
 var SlicePartItem = PartItem.extend({
     initialize: function(){
         this.part = this.options.part;
+        console.log(this.part);
         this._super({
             part:   this.options.part,
             param:  this.options.params,
             who:    this.options.who,
         });
         this.emptyItemSet = new EmptyHelixSetItem({
-            el:$('#sliceView'),
+            el: $('#sliceView'),
             part: this.options.part,
             handler: this.handler,
         });
-        console.log(this.handler);
 
         this.vhItemSet = new VirtualHelixSetItem({
             el: $('#sliceView'),
@@ -72,7 +78,7 @@ var SlicePartItem = PartItem.extend({
         this.part.initializedHelices(true);
     },
     partHelicesInitializedSlot: function(){
-        console.log('received helix added signal');
+        console.log('received empty helices initialized signal');
         this.emptyItemSet.render();
     },
     partVirtualHelixAddedSlot: function(virtualHelix){
@@ -82,6 +88,17 @@ var SlicePartItem = PartItem.extend({
         console.log("currently in partVirtualHelixAddedSlot");
 
         this.createVirtualHelixItem(virtualHelix);
+    },
+    partRemovedSlot: function(){
+        console.log(this.part);
+        this.emptyItemSet.remove();
+        this.vhItemSet.remove();
+        //TODO: remove the if condition - a hack.
+        if(this.handler){
+        this.handler.remove();
+        this.handler.render();
+        delete this.handler;
+        }
     },
     //TODO
     //addScafifStapIsMissing

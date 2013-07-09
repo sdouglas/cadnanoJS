@@ -14,6 +14,8 @@ var cadnanoEvents = {
     partVirtualHelixAddedSignal: 'partVirtualHelixAddedSignal',
     partActiveSliceResizedSignal: 'partActiveSliceResizedSignal',
     partHelicesInitializedSignal: 'partHelicesInitializedSignal',
+    partRemovedSignal: 'partRemovedSignal',
+    documentClearSelectionsSignal: 'documentClearSelectionsSignal',
 };
 
 

@@ -53,6 +53,11 @@ var EmptyHelixSetItem = Backbone.View.extend({
             //helix.scafStrandSet.createStrand(startIdx,endIdx);
         //}
     },
+
+    remove: function(){
+        delete this.emptyHelixHash;
+        this.render();
+    },
 });
 
 var EmptyHelixItem = Backbone.View.extend ({
@@ -62,11 +67,11 @@ var EmptyHelixItem = Backbone.View.extend ({
         this.col = this.options.col;
         var pos = this.part.latticeCoordToPositionXY(this.row,
             this.col);
-        console.log(this.row + ',' + this.col);
+        //console.log(this.row + ',' + this.col);
         this.handler = this.options.handler;
 
-        console.log(this.part);
-        console.log(pos.x + ',' + pos.y);
+        //console.log(this.part);
+        //console.log(pos.x + ',' + pos.y);
         var params = {
             fill: colours.grayfill,
             stroke: colours.graystroke,

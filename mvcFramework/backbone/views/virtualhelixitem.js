@@ -28,6 +28,9 @@ var VirtualHelixSetItem = Backbone.View.extend({
         console.log(helixModel);
     },
 
+    remove: function(){
+    },
+
 });
 
 var VirtualHelixItem = Backbone.View.extend ({

@@ -28,6 +28,7 @@ function viewHandlerKinetic(){
     this.setParams = function(params){
         console.log('setting up the stage');
         console.log(params);
+        console.log(this);
         this.handler = new Kinetic.Stage(params);
     };
 
@@ -73,6 +74,12 @@ function viewHandlerKinetic(){
         //end: number on the circle
         textLayer.add(helixNumText);
     };
+
+    this.remove = function(){
+        this.shapeLayer.destroy();
+        this.textLayer.destroy();
+        this.handler.clear();
+    }
 
     this.init();
 };
