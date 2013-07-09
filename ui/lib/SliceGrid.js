@@ -52,7 +52,7 @@ function SliceGrid(xg, yg, mode, p) {
 	throw "stop execution";
     }
     //link a VirtualHelixSet to path panel
-    vhis = new VirtualHelixSet(pp,mode,20);
+    vhis = new UI_VirtualHelixSet(pp,mode,20);
     //setup
     var panel = document.getElementById(p); //dynamic canvas location. screws up inCircle function though so it's pretty useless.
     var canvasSettings = {container: p, width: windowWidth, height: windowHeight};
@@ -261,14 +261,14 @@ function SliceGrid(xg, yg, mode, p) {
 		var vhi = vhis.vhiArray[helixnum];
 		function counterLimit(n) {return Math.max(0,Math.min(n,vhis.grLength-1));}
 		if(helixnum%2 == 0) {
-		    var epi1 = new EndpointItem(vhi,counterLimit(counter-1),0,5);
-                    var epi2 = new EndpointItem(vhi,counterLimit(counter+1),0,3);
-                    var strand = new StrandItem(epi1,epi2);
+		    var epi1 = new UI_EndpointItem(vhi,counterLimit(counter-1),0,5);
+                    var epi2 = new UI_EndpointItem(vhi,counterLimit(counter+1),0,3);
+                    var strand = new UI_StrandItem(epi1,epi2);
 		}
 		else {
-		    var epi1 = new EndpointItem(vhi,counterLimit(counter+1),1,5);
-                    var epi2 = new EndpointItem(vhi,counterLimit(counter-1),1,3);
-                    var strand = new StrandItem(epi1,epi2);
+		    var epi1 = new UI_EndpointItem(vhi,counterLimit(counter+1),1,5);
+                    var epi2 = new UI_EndpointItem(vhi,counterLimit(counter-1),1,3);
+                    var strand = new UI_StrandItem(epi1,epi2);
 		}
 	    }
 	    //you can (not) redo!Q

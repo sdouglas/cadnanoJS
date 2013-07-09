@@ -1,10 +1,10 @@
-function EndpointItem(vhi, baseX, baseY, type) { //type can only be 3 or 5
+function UI_EndpointItem(vhi, baseX, baseY, type) { //type can only be 3 or 5
     this.strand = undefined;
     this.helixitem = vhi;
     var self = this;
     var vhis = vhi.helixset;
     var initcounter = baseX;
-    var counter = initcounter;
+    this.counter = initcounter;
     this.layer = new Kinetic.Layer();
     this.centerX = vhi.startX+(baseX+0.5)*vhi.sqLength+2*Math.floor(baseX/vhi.helixset.divLength);
     this.centerY = vhi.startY+(baseY+0.5)*vhi.sqLength;
@@ -36,7 +36,7 @@ function EndpointItem(vhi, baseX, baseY, type) { //type can only be 3 or 5
 	    //copy pasta from PathSlidebarItem in PathPanelItem.js
 	    dragBoundFunc: function(pos) {
 		return {
-		    x: (counter-initcounter)*vhis.sqLength+2*Math.floor(counter/vhis.divLength)-2*Math.floor(initcounter/vhis.divLength),
+		    x: (this.epi.counter-initcounter)*vhis.sqLength+2*Math.floor(this.epi.counter/vhis.divLength)-2*Math.floor(initcounter/vhis.divLength),
 		    y: this.getAbsolutePosition().y
 		}
 	    }
@@ -47,18 +47,22 @@ function EndpointItem(vhi, baseX, baseY, type) { //type can only be 3 or 5
             var blockLen = vhis.divLength*vhis.sqLength+2;
             var blockNum = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-vhis.startX)/blockLen);
             var tempCounter = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-blockNum*blockLen-vhis.startX)/vhis.sqLength)+blockNum*vhis.divLength;
-            counter = Math.min(Math.max(0,tempCounter),vhis.grLength-1);
+	    if((this.epi.endtype === 3 && this.epi.parity === 0)||(this.epi.endtype === 5 && this.epi.parity === 1)) {
+		this.epi.counter = Math.min(Math.max(this.epi.strand.endptL.counter+1,tempCounter),vhis.grLength-1);
+	    }
+	    else {
+		this.epi.counter = Math.min(Math.max(0,tempCounter),this.epi.strand.endptR.counter-1);
+	    }
         });
     //when drag ends, update stats and redraw connection
     this.shape.on("dragend", function(pos) {
-	    this.epi.centerX = vhi.startX+(counter+0.5)*vhi.sqLength+2*Math.floor(counter/vhi.helixset.divLength);
+	    this.epi.centerX = vhi.startX+(this.epi.counter+0.5)*vhi.sqLength+2*Math.floor(this.epi.counter/vhi.helixset.divLength);
 	    this.epi.strand.connection.remove();
 	    this.epi.strand.connection = new Kinetic.Line({
-		    points: [this.epi.strand.endpt1.centerX, this.epi.strand.endpt1.centerY, this.epi.strand.endpt2.centerX, this.epi.strand.endpt2.centerY],
+		    points: [this.epi.strand.endptL.centerX, this.epi.strand.endptL.centerY, this.epi.strand.endptR.centerX, this.epi.strand.endptR.centerY],
 		    stroke: "#FF0000",
 		    strokeWidth: 3
 		});
-	    this.epi.strand.connection.moveToBottom();
 	    this.epi.strand.group.add(this.epi.strand.connection);
 	    this.epi.strand.layer.draw();
 	});
@@ -67,7 +71,7 @@ function EndpointItem(vhi, baseX, baseY, type) { //type can only be 3 or 5
     this.layer.draw();
 }
 
-function StrandItem(epi1, epi2) { //must have 2 EPIs to create a strand
+function UI_StrandItem(epi1, epi2) { //must have 2 EPIs to create a strand
     if(epi1.endtype + epi2.endtype != 8) {
 	alert("A strand's endpoints must be a 3\' and a 5\'!");
 	throw "stop execution";
@@ -76,8 +80,14 @@ function StrandItem(epi1, epi2) { //must have 2 EPIs to create a strand
 	alert("Two endpoints must be on the same helix!");
 	throw "stop execution";
     }
-    this.endpt1 = epi1;
-    this.endpt2 = epi2;
+    if(epi1.counter <  epi2.counter) {
+	this.endptL = epi1;
+	this.endptR = epi2;
+    }
+    else {
+	this.endptL = epi2;
+	this.endptR = epi1;
+    }
     epi1.strand = this;
     epi2.strand = this;
     this.layer = epi1.helixitem.helixset.slayer;
@@ -86,7 +96,9 @@ function StrandItem(epi1, epi2) { //must have 2 EPIs to create a strand
 	    stroke: "#FF0000",
 	    strokeWidth: 3
 	});
-    this.group = new Kinetic.Group();
+    this.group = new Kinetic.Group({
+	    draggable: true
+	});
     this.group.add(this.connection);
     epi1.shape.moveTo(this.group);
     epi1.layer.remove();

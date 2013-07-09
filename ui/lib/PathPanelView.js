@@ -1,12 +1,12 @@
 //Path panel item creates new canvas in a DOM element of choice and all attached items are drawn on this canvas.
-function PathPanelItem(elem,w,h) {
+function UI_PathPanelItem(elem,w,h) {
     this.domele = elem;
     this.canvasSettings = {container: elem, width: w, height: h};
     this.canvas = new Kinetic.Stage(this.canvasSettings);
 }
 
 //This class keeps track of all VHI (virtual helix item) and maintains an uniform standard for VHIs.
-function VirtualHelixSet(panel,gridMode,sqlen) {
+function UI_VirtualHelixSet(panel,gridMode,sqlen) {
     this.pathpanel = panel;
     //copying input params so attached items can use them
     this.canvas = panel.canvas;
@@ -38,20 +38,20 @@ function VirtualHelixSet(panel,gridMode,sqlen) {
     this.canvas.add(this.slayer);
 }
 //resizes panel such that everything just fits in; this function shouldn't really be in this class but w/e...
-VirtualHelixSet.prototype.resize = function() {
+UI_VirtualHelixSet.prototype.resize = function() {
     this.canvas.setSize(2*this.startX+this.sqLength*this.grLength+2*Math.floor(this.grLength/this.divLength),2*this.startY+4*this.vhiArray.length*this.sqLength);
 };
 //add & remove VHI to vhiArray, as well as slidebar update
-VirtualHelixSet.prototype.addVHI = function() {
-    this.vhiArray.push(new VirtualHelixItem(this));
+UI_VirtualHelixSet.prototype.addVHI = function() {
+    this.vhiArray.push(new UI_VirtualHelixItem(this));
     if(this.vhiArray.length === 1) {
-	this.slidebar = new PathSlidebarItem(this);
-	this.basechanger = new BaseLengthChanger(this);
+	this.slidebar = new UI_PathSlidebarItem(this);
+	this.basechanger = new UI_BaseLengthChanger(this);
     }
     this.slidebar.update();
     this.resize();
 };
-VirtualHelixSet.prototype.removeVHI = function() {
+UI_VirtualHelixSet.prototype.removeVHI = function() {
     if(this.vhiArray.length != 0) {
 	this.vhiArray[this.vhiArray.length-1].layer.remove();
 	this.vhiArray.pop();
@@ -68,7 +68,7 @@ VirtualHelixSet.prototype.removeVHI = function() {
     }
 };
 //updates existing VHIs to correct length and changes grLength for future VHIs
-VirtualHelixSet.prototype.updateLen = function(nl) {
+UI_VirtualHelixSet.prototype.updateLen = function(nl) {
     if(nl === null) {return;}
     var newLen = parseInt(nl,10); //nl (used to be newLen) and this.grLength was interpreted as strings, causing errors
     for(var k=0; k<this.vhiArray.length; k++) {
@@ -104,7 +104,9 @@ VirtualHelixSet.prototype.updateLen = function(nl) {
     //if removing bases, move the slidebar to visible area
     if(newLen < this.grLength && newLen-1 < this.slidebar.getCounter()) {
 	this.slidebar.setCounter(newLen-1);
-	this.slidebar.group.setX(this.slidebar.getCounter()*this.sqLength+2*Math.floor(this.slidebar.getCounter()/this.divLength));
+	var initX = this.slidebar.initcounter*this.sqLength+2*Math.floor(this.slidebar.initcounter/this.divLength);
+	var newX = this.slidebar.getCounter()*this.sqLength+2*Math.floor(this.slidebar.getCounter()/this.divLength);
+	this.slidebar.group.setX(newX-initX);
 	this.slidebar.counterText.setText(this.slidebar.getCounter());
 	this.slidebar.layer.draw();
     }
@@ -113,7 +115,7 @@ VirtualHelixSet.prototype.updateLen = function(nl) {
 };
 
 //VHI is the collection of bases as well as the corresponding HelixCounterItem
-function VirtualHelixItem(vhiSet) {
+function UI_VirtualHelixItem(vhiSet) {
     this.helixset = vhiSet;
     //taking params from VirtualHelixSet
     this.num = vhiSet.vhiArray.length;
@@ -122,7 +124,7 @@ function VirtualHelixItem(vhiSet) {
     this.startY = vhiSet.startY + 4*this.num*this.sqLength;
     this.canvas = vhiSet.canvas;
     this.layer = new Kinetic.Layer();
-    this.counter = new HelixCounterItem(this);
+    this.counter = new UI_HelixCounterItem(this);
     //an 2D array that keeps track of bases; it's in (y,x) instead of the more popular form (x,y) because of eaiser base addition & removal
     this.baseArray = new Array();
     this.baseArray[0] = new Array();
@@ -148,7 +150,7 @@ function VirtualHelixItem(vhiSet) {
 };
 
 //The name of this class says it all
-function HelixCounterItem(vhi) {
+function UI_HelixCounterItem(vhi) {
     this.group = new Kinetic.Group();
     //circle
     var circle = new Kinetic.Circle({
@@ -179,8 +181,9 @@ function HelixCounterItem(vhi) {
 }
 
 //draggable slidebar on top of VHIs
-function PathSlidebarItem(vhis) {
+function UI_PathSlidebarItem(vhis) {
     var initcounter = vhis.grLength/2;
+    this.initcounter = initcounter; //updateLen from VHelixSet needs to access this number
     this.counter = initcounter;
     this.vhiSet = vhis;
     this.layer = new Kinetic.Layer();
@@ -232,15 +235,16 @@ function PathSlidebarItem(vhis) {
 	    var blockNum = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-vhis.startX)/blockLen);
 	    var tempCounter = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-blockNum*blockLen-vhis.startX)/vhis.sqLength)+blockNum*vhis.divLength;
 	    vhis.slidebar.setCounter(Math.min(Math.max(0,tempCounter),vhis.grLength-1));
+	    //alternative method: estimate base length to be sqLength+2/divLength (easier computation, but potential problem near border)
 	});
     this.layer.add(this.group);
     this.vhiSet.canvas.add(this.layer);
 }
 //accessor and mutator functions
-PathSlidebarItem.prototype.getCounter = function() {return this.counter;};
-PathSlidebarItem.prototype.setCounter = function(n) {this.counter = n;};
+UI_PathSlidebarItem.prototype.getCounter = function() {return this.counter;};
+UI_PathSlidebarItem.prototype.setCounter = function(n) {this.counter = n;};
 //update slidebar info
-PathSlidebarItem.prototype.update = function() {
+UI_PathSlidebarItem.prototype.update = function() {
     this.bot = this.vhiSet.vhiArray[this.vhiSet.vhiArray.length-1].startY+4*this.vhiSet.sqLength;
     this.rect.setHeight(this.bot-this.top);
     this.layer.moveToTop();
@@ -248,7 +252,7 @@ PathSlidebarItem.prototype.update = function() {
 };
 
 //A psuedo-button that changes base length. This function merges the two arrow buttons in cadnano2.
-function BaseLengthChanger(vhis) {
+function UI_BaseLengthChanger(vhis) {
     this.layer = new Kinetic.Layer();
     this.group = new Kinetic.Group();
     //These params for rect and text is only good for vhis.sqLength = 20 (direct scaling doesn't work either)
