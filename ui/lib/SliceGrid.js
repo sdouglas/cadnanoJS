@@ -1,3 +1,13 @@
+function initGrid(xg, yg, mode, p) { //avoids multiple instantiation of panels
+    if(gridMode === undefined) {
+	SliceGrid(xg, yg, mode, p);
+	gridMode = mode;
+    }
+    else {
+	alert("Use \"New\" to make a different grid!");
+    }
+}
+
 function SliceGrid(xg, yg, mode, p) {
     //grid properties
     var gridWidth = xg;
@@ -8,16 +18,23 @@ function SliceGrid(xg, yg, mode, p) {
     var emptyFill = "#F0F0F0";
     var hoverFill = "#33CCFF";
     var activeFill = "#FFE400";
+    var scafFill = "#FFB366";
     //layers and groups
     var emptyLayer = new Kinetic.Layer(); //bottom layer just for background
     var hoverLayer = new Kinetic.Layer(); //layer of circles triggered by mouseover functions
     var activeLayer = new Kinetic.Layer(); //layer of active helixes (clicked by mouse)
-    var emptyGroup = new Kinetic.Group();
+    var scafLayer = new Kinetic.Layer(); //activated by clicking active helixes again, creates strand
+    var textLayer = new Kinetic.Layer(); //layer for all text created by activeLayer and scafLayer
+    var emptyGroup = new Kinetic.Group(); //every layer has a corresponding group for easy modification
     emptyLayer.add(emptyGroup);
     var hoverGroup = new Kinetic.Group(); //hoverGroup exists purely for uniformity as the group has only one shape
     hoverLayer.add(hoverGroup);
     var activeGroup = new Kinetic.Group();
     activeLayer.add(activeGroup);
+    var scafGroup = new Kinetic.Group();
+    scafLayer.add(scafGroup);
+    var textGroup = new Kinetic.Group();
+    textLayer.add(textGroup);
     //window properties
     var zoomfactor = 1;
     var windowWidth;
@@ -34,6 +51,8 @@ function SliceGrid(xg, yg, mode, p) {
 	alert("Grid type does not exist, script aborted.");
 	throw "stop execution";
     }
+    //link a VirtualHelixSet to path panel
+    vhis = new VirtualHelixSet(pp,mode,20);
     //setup
     var panel = document.getElementById(p); //dynamic canvas location. screws up inCircle function though so it's pretty useless.
     var canvasSettings = {container: p, width: windowWidth, height: windowHeight};
@@ -41,7 +60,10 @@ function SliceGrid(xg, yg, mode, p) {
     canvas.add(emptyLayer);
     canvas.add(hoverLayer);
     canvas.add(activeLayer);
+    canvas.add(scafLayer);
+    canvas.add(textLayer);
     var activeHelices = new SliceStack();
+    var scafHelices = new SliceStack();
     var circleCenters = new Array(); //3D array that stores center of circles; comes in handy later
     //grid construction
     for(var i=0; i<gridWidth; i++) {
@@ -178,42 +200,78 @@ function SliceGrid(xg, yg, mode, p) {
 	hoverLayer.draw();
     }
 
-    //active layer
+    //active layer and scaf layer
     panel.onclick = mchandle;
     function mchandle(e)
     {
 	var cx = inCircle(e.pageX,e.pageY)[0];
 	var cy = inCircle(e.pageX,e.pageY)[1];
-	if(cx != -1 && cy != -1 && activeHelices.contains(cx,cy) === -1) { //making sure mouse is on an unclicked helix
-	    activeHelices.add(cx,cy);
-	    //circle	    
-	    var circle = new Kinetic.Circle({
-		    radius:r,
-		    x: circleCenters[cx][cy][0],
-		    y: circleCenters[cx][cy][1],
-		    fill: activeFill,
-		    stroke: circStroke,
-		    strokeWidth: 1
-		});
-	    //number on the circle                                                                                             
-	    var helixNum = activeHelices.stack.length-1;
-	    var helixNumText = new Kinetic.Text({
-		    x: circle.getX(),
-		    y: circle.getY()-r/2,
-		    text: helixNum,
-		    fontSize: 12,
-		    fontFamily: "Calibri",
-		    fill: "#000000",
-		    align: "CENTER"
-		});
-	    helixNumText.setOffset({
-		    x: helixNumText.getWidth()/2
-			});
-	    //adding shapes to group
-	    activeGroup.add(circle);
-	    activeGroup.add(helixNumText);
-	    activeLayer.draw();
-	    //You Can (Not) Redo
+	if(cx != -1 && cy != -1) {
+	    if(activeHelices.contains(cx,cy) === -1) { //mouse is on an unclicked helix
+		activeHelices.add(cx,cy);
+		//circle
+		var circle = new Kinetic.Circle({
+			radius:r,
+			x: circleCenters[cx][cy][0],
+			y: circleCenters[cx][cy][1],
+			fill: activeFill,
+			stroke: circStroke,
+			strokeWidth: 1,
+			id: "activecirc."+cx+"."+cy
+		    });
+		//number on the circle                                                                                             
+		var helixNum = activeHelices.stack.length-1;
+		var helixNumText = new Kinetic.Text({
+			x: circle.getX(),
+			y: circle.getY()-r/2,
+			text: helixNum,
+			fontSize: 12,
+			fontFamily: "Calibri",
+			fill: "#000000",
+			align: "CENTER",
+			id: "activecirctext."+cx+"."+cy
+		    });
+		helixNumText.setOffset({
+			x: helixNumText.getWidth()/2
+		    });
+		//adding shapes to group
+		activeGroup.add(circle);
+		textGroup.add(helixNumText);
+		activeLayer.draw();
+		textLayer.draw();
+		//add a VirtualHelixItem in path panel
+		vhis.addVHI();
+	    }
+	    else if(scafHelices.contains(cx,cy) === -1) { //mouse is on active helix: scaf layer
+		scafHelices.add(cx,cy);
+		//circle
+		var circle = new Kinetic.Circle({
+			radius:r,
+			x: circleCenters[cx][cy][0],
+			y: circleCenters[cx][cy][1],
+			fill: scafFill,
+			stroke: circStroke,
+			strokeWidth: 1,
+		    });
+		scafGroup.add(circle);
+		scafLayer.draw();
+		//add a strand in path panel
+		var counter = vhis.slidebar.getCounter();
+		var helixnum = activeHelices.contains(cx,cy);
+		var vhi = vhis.vhiArray[helixnum];
+		function counterLimit(n) {return Math.max(0,Math.min(n,vhis.grLength-1));}
+		if(helixnum%2 == 0) {
+		    var epi1 = new EndpointItem(vhi,counterLimit(counter-1),0,5);
+                    var epi2 = new EndpointItem(vhi,counterLimit(counter+1),0,3);
+                    var strand = new StrandItem(epi1,epi2);
+		}
+		else {
+		    var epi1 = new EndpointItem(vhi,counterLimit(counter+1),1,5);
+                    var epi2 = new EndpointItem(vhi,counterLimit(counter-1),1,3);
+                    var strand = new StrandItem(epi1,epi2);
+		}
+	    }
+	    //you can (not) redo!Q
 	    activeHelices.undostack = new Array();
 	}
     }
@@ -233,8 +291,41 @@ function SliceGrid(xg, yg, mode, p) {
 	    emptyGroup.setScale(zoomfactor);
 	    hoverGroup.setScale(zoomfactor);
 	    activeGroup.setScale(zoomfactor);
+	    scafGroup.setScale(zoomfactor);
+	    textGroup.setScale(zoomfactor);
 	    emptyLayer.draw();
 	    hoverLayer.draw();
 	    activeLayer.draw();
+	    scafLayer.draw();
+	    textLayer.draw();
     }
+
+    /* 
+       Note: undo function will no longer be updated as it will be replaced in near future.
+       Only works for undoing active helices.
+
+     //Kinetic.js does not support keyboard event; this event triggers only when mouse is inside panel when a key is pressed
+    panel.onmouseover = function() {
+	document.onkeypress = function(e) {
+	    if(e.keyCode === 90 || e.keyCode === 122) { //button: Z/z
+		undo();
+	    }
+	};
+    };
+
+    function undo() {
+	if(activeHelices.stack.length !== 0) {
+	    var carray = activeHelices.stack[activeHelices.stack.length-1];
+	    var cx = carray[0];
+	    var cy = carray[1];
+	    textGroup.get("#activecirctext."+cx+"."+cy).remove();
+	    activeGroup.get("#activecirc."+cx+"."+cy).remove();
+	}
+	activeHelices.undo();
+	activeLayer.draw();
+	textLayer.draw();
+	vhis.removeVHI();
+    }
+    //I feel that a redo function isn't really needed
+    */
 }

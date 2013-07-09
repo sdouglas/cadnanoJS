@@ -8,7 +8,6 @@
 <script type="text/javascript" src="includes/jquery.ui-1.9.2.js"> </script>
 <script type="text/javascript" src="includes/jquery.layout-1.3.0.min.js"> </script>
 <script type="text/javascript" src="includes/kinetic-4.5.4.min.js"> </script>
-<script type="text/javascript" src="includes/two.min.js"> </script>
 
 <script type="text/javascript" src="includes/undo.js"> </script>
 <script type="text/javascript" src="includes/json2.js"></script>
@@ -18,9 +17,11 @@
 <script type="text/javascript" src="includes/backbone.localStorage.js"></script>
 
 <!-- INTERNAL JAVASCRIPT LIBRARIES -->
+<script type="text/javascript" src="ui/lib/tbSelectable.js"> </script>
+<script type="text/javascript" src="ui/lib/StrandItem.js"> </script>
+<script type="text/javascript" src="ui/lib/PathPanelView.js"> </script>
 <script type="text/javascript" src="ui/lib/SliceStack.js"> </script>
 <script type="text/javascript" src="ui/lib/SliceGrid.js"> </script>
-<script type="text/javascript" src="ui/lib/PathPanelView.js"> </script>
 
 <script src="utils/constants.js"></script>
 <script src="utils/twohandler.js"></script>
@@ -50,22 +51,53 @@
     background: #DDD;
   }
   /* Buttons: margins, (to be implemented) image checkbox/radio */
-  .button {
+  .hbutton, .vbutton {
     margin-top: 0px;
     margin-left: 0px;
-    margin-bottom: 6px;
     margin-right: 6px;
     border: none;
     background: none;
     float: left;
   }
+  .hbutton {
+    margin-bottom: 0px;
+  }
+  .vbutton {
+    margin-bottom: 6px;
+  }
+  input[type=checkbox] {
+    display:none;
+  }
+  input[type=checkbox] + label
+  {
+    border-style: solid;
+    border-width: thin;
+    border-color: #DDD;
+    background: #DDD;
+    height: 40px;
+    width: 32px;
+    display:inline-block;
+    padding: 0 0 0 0px;
+  }
+  input[type=checkbox]:checked + label
+  {
+    border-style: solid;
+    border-width: thin;
+    border-color: #000000;
+    background: #C0C0C0;
+    height: 40px;
+    width: 32px;
+    display:inline-block;
+    padding: 0 0 0 0px;
+  }
+
   input[type=radio] {
     display:none;
   }
   input[type=radio] + label
   {
     background: #EEE;
-    height: 60px;
+    height: 50px;
     width: 45px;
     display:inline-block;
     padding: 0 0 0 0px;
@@ -73,7 +105,7 @@
   input[type=radio]:checked + label
   {
     background: #00FF00;
-    height: 60px;
+    height: 50px;
     width: 45px;
     display:inline-block;
     padding: 0 0 0 0px;
@@ -125,39 +157,39 @@ $(document).ready(function($) {
 
 <body>
 <div id="toolbar">
-  <button type="button" onclick="DocControl.newDocument()" class="button"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/data-open_32.png" width="32" height="32"><br>Open</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/data-svg.png" width="32" height="32"><br>SVG</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/export-staples.png" width="32" height="32"><br>Export</br></button>
-  <button type="button" onclick="DocControl.createHoneyCombLattice()" class="button"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
-  <button type="button" onclick="DocControl.createSquareLattice()" class="button"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/path-staple.png" width="32" height="32"><br>AutoStaple</br></button>
-  <button type="button" onclick="" class="button"><img src="ui/images/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-open_32.png" width="32" height="32"><br>Open</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-svg.png" width="32" height="32"><br>SVG</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/export-staples.png" width="32" height="32"><br>Export</br></button>
+  <button type="button" onclick="initGrid(40,30,'honeycomb','sliceView')" class="hbutton"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
+  <button type="button" onclick="initGrid(40,40,'square','sliceView')" class="hbutton"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/path-staple.png" width="32" height="32"><br>AutoStaple</br></button>
+  <button type="button" onclick="" class="hbutton"><img src="ui/images/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
   <div style="position: absolute; top:16px; left: 600px">Selectable:</div>
-  <div style="position: absolute; top:8px; left: 700px">
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-scaf.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-stap.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-handle.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-endpoint.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-xover.png" width="32" height="32"></button>
-    <button type="button" onclick="" class="button"><img src="ui/images/part-filter-strand.png" width="32" height="32"></button>
+  <div style="position: absolute; top:6px; left: 675px">
+    <input type="checkbox" onclick="tbArrayChange(0)" name="selectable" value="0" id="tb0" checked="true"><label for="tb0"><img src="ui/images/part-filter-scaf.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(1)" name="selectable" value="1" id="tb1" checked="true"><label for="tb1"><img src="ui/images/part-filter-stap.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(2)" name="selectable" value="2" id="tb2"               ><label for="tb2"><img src="ui/images/part-filter-handle.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(3)" name="selectable" value="3" id="tb3" checked="true"><label for="tb3"><img src="ui/images/part-filter-endpoint.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(4)" name="selectable" value="4" id="tb4" checked="true"><label for="tb4"><img src="ui/images/part-filter-xover.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(5)" name="selectable" value="5" id="tb5"               ><label for="tb5"><img src="ui/images/part-filter-strand.png" width="32" height="32"></label>
   </div>
 </div>
 <div id="mainWindow">
   <div id="sliceButtons">
-    <button type="button" onclick="" class="button"><img src="ui/images/slice-go-first.png" width="32" height="32"><br>First</br></button>
-    <p><button type="button" onclick="" class="button"><img src="ui/images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
-    <p><button type="button" onclick="" class="button"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
+       <button type="button" onclick="" class="vbutton"><img src="ui/images/slice-go-first.png" width="32" height="32"><br>First</br></button>
+    <p><button type="button" onclick="" class="vbutton"><img src="ui/images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
+    <p><button type="button" onclick="" class="vbutton"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
   </div>
   <div id="pathButtons">
-    <input type='radio' name='pathButtons' value='1' id="a"/><label for="a"><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></label>
-    <p><input type='radio' name='pathButtons' value='2' id="b"/><label for="b"><img src="ui/images/path-force-xover.png" width="32" height="32"><br>Pencil</br></label></p>
-    <p><input type='radio' name='pathButtons' value='3' id="c"/><label for="c"><img src="ui/images/path-break_48.png" width="32" height="32"><br>Break</br></label></p>
-    <p><input type='radio' name='pathButtons' value='4' id="d"/><label for="d"><img src="ui/images/path-insert_48x48.png" width="32" height="32"><br>Insert</br></label></p>
-    <p><input type='radio' name='pathButtons' value='5' id="e"/><label for="e"><img src="ui/images/path-skip_48x48.png" width="32" height="32"><br>Skip</br></label></p>
-    <p><input type='radio' name='pathButtons' value='6' id="f"/><label for="f"><img src="ui/images/path-paint_48.png" width="32" height="32"><br>Paint</br></label></p>
-    <p><input type='radio' name='pathButtons' value='7' id="g"/><label for="g"><img src="ui/images/path-addseq.png" width="32" height="32"><br>Seq</br></label></p>
+       <input type='radio' name='pathButtons' value='0' id="pb0"/><label for="pb0"><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></label>
+    <p><input type='radio' name='pathButtons' value='1' id="pb1"/><label for="pb1"><img src="ui/images/path-force-xover.png" width="32" height="32"><br>Pencil</br></label></p>
+    <p><input type='radio' name='pathButtons' value='2' id="pb2"/><label for="pb2"><img src="ui/images/path-break_48.png" width="32" height="32"><br>Break</br></label></p>
+    <p><input type='radio' name='pathButtons' value='3' id="pb3"/><label for="pb3"><img src="ui/images/path-insert_48x48.png" width="32" height="32"><br>Insert</br></label></p>
+    <p><input type='radio' name='pathButtons' value='4' id="pb4"/><label for="pb4"><img src="ui/images/path-skip_48x48.png" width="32" height="32"><br>Skip</br></label></p>
+    <p><input type='radio' name='pathButtons' value='5' id="pb5"/><label for="pb5"><img src="ui/images/path-paint_48.png" width="32" height="32"><br>Paint</br></label></p>
+    <p><input type='radio' name='pathButtons' value='6' id="pb6"/><label for="pb6"><img src="ui/images/path-addseq.png" width="32" height="32"><br>Seq</br></label></p>
   </div>
   <div id="drawnPanels">
     <div id="sliceView"> </div>
@@ -166,8 +198,9 @@ $(document).ready(function($) {
 </div>
 
 <script>
+var gridMode = undefined;
 var pp = new PathPanelItem("pathView",300,300);
-var vhis = new VirtualHelixSet(pp,"honeycomb",20);
+var vhis;
 </script>
 </body>
 </html>

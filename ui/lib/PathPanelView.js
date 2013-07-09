@@ -6,17 +6,18 @@ function PathPanelItem(elem,w,h) {
 }
 
 //This class keeps track of all VHI (virtual helix item) and maintains an uniform standard for VHIs.
-function VirtualHelixSet(panel,gridMode,sqlen,sx,sy) {
+function VirtualHelixSet(panel,gridMode,sqlen) {
     this.pathpanel = panel;
     //copying input params so attached items can use them
     this.canvas = panel.canvas;
     this.mode = gridMode;
     this.sqLength = sqlen;
     this.startX = 5*this.sqLength;
-    this.startY = 3*this.sqLength;
+    this.startY = 5*this.sqLength;
     //items that latch on to the set: an array of VirtualHelixItem and PathSlidebarItem
     this.vhiArray = new Array();
     this.slidebar; //initialize only when vhiArray is not empty
+    this.basechanger; //initialize only when vhiArray is nonempty
     //grid and divider
     this.grLength = new Number;
     this.divLength = new Number;
@@ -25,13 +26,16 @@ function VirtualHelixSet(panel,gridMode,sqlen,sx,sy) {
 	this.divLength = 7;
     }
     else if(this.mode === "square") {
-	this.grLength = 64;
+	this.grLength = 48;
 	this.divLength = 8;
     }
     else { //You better check for typos!
 	alert("Grid type does not exist, script aborted");
 	throw "stop execution";
     }
+    //strand layer to increase efficiency
+    this.slayer = new Kinetic.Layer();
+    this.canvas.add(this.slayer);
 }
 //resizes panel such that everything just fits in; this function shouldn't really be in this class but w/e...
 VirtualHelixSet.prototype.resize = function() {
@@ -42,21 +46,26 @@ VirtualHelixSet.prototype.addVHI = function() {
     this.vhiArray.push(new VirtualHelixItem(this));
     if(this.vhiArray.length === 1) {
 	this.slidebar = new PathSlidebarItem(this);
+	this.basechanger = new BaseLengthChanger(this);
     }
     this.slidebar.update();
     this.resize();
 };
 VirtualHelixSet.prototype.removeVHI = function() {
-    this.vhiArray[this.vhiArray.length-1].layer.remove();
-    this.vhiArray.pop();
     if(this.vhiArray.length != 0) {
-	this.slidebar.update();
+	this.vhiArray[this.vhiArray.length-1].layer.remove();
+	this.vhiArray.pop();
+	if(this.vhiArray.length > 0) {
+	    this.slidebar.update();
+	}
+	else {
+	    this.slidebar.layer.remove();
+	    this.slidebar = undefined;
+	    this.basechanger.layer.remove();
+	    this.basechanger = undefined;
+	}
+	this.resize();
     }
-    else {
-	this.slidebar.layer.remove();
-	this.slidebar = undefined;
-    }
-    this.resize();
 };
 //updates existing VHIs to correct length and changes grLength for future VHIs
 VirtualHelixSet.prototype.updateLen = function(nl) {
@@ -138,9 +147,9 @@ function VirtualHelixItem(vhiSet) {
     this.canvas.add(this.layer);
 };
 
-//The name of this class is rather self-explanatory...
+//The name of this class says it all
 function HelixCounterItem(vhi) {
-    var layer = vhi.layer;
+    this.group = new Kinetic.Group();
     //circle
     var circle = new Kinetic.Circle({
 	    radius: vhi.sqLength,
@@ -150,9 +159,7 @@ function HelixCounterItem(vhi) {
 	    stroke: "#808080",
 	    strokeWidth: 2
         });
-    layer.add(circle);
-    circle.on("mouseenter", function() {circle.setStroke("#3333FF"); layer.draw();});
-    circle.on("mouseleave", function() {circle.setStroke("#808080"); layer.draw();});
+    this.group.add(circle);
     //number in the middle of circle
     var helixNumText = new Kinetic.Text({
 	    x: circle.getX(),
@@ -165,21 +172,22 @@ function HelixCounterItem(vhi) {
     helixNumText.setOffset({
 	    x: helixNumText.getWidth()/2
 	});
-    layer.add(helixNumText);
-    //bug fix: circle not highlighted when mouse is on text
-    helixNumText.on("mouseenter", function() {circle.setStroke("#3333FF"); layer.draw();});
-    helixNumText.on("mouseleave", function() {circle.setStroke("#808080"); layer.draw();});
+    this.group.add(helixNumText);
+    this.group.on("mouseenter", function() {circle.setStroke("#3333FF"); vhi.layer.draw();});
+    this.group.on("mouseleave", function() {circle.setStroke("#808080"); vhi.layer.draw();});
+    vhi.layer.add(this.group);
 }
 
 //draggable slidebar on top of VHIs
 function PathSlidebarItem(vhis) {
-    this.counter = 0;
+    var initcounter = vhis.grLength/2;
+    this.counter = initcounter;
     this.vhiSet = vhis;
     this.layer = new Kinetic.Layer();
     this.top = this.vhiSet.vhiArray[0].startY-2*this.vhiSet.sqLength;
     this.bot = 0;
     this.rect = new Kinetic.Rect({
-	    x: this.vhiSet.startX+this.getCounter()*this.vhiSet.sqLength,
+	    x: this.vhiSet.startX+this.getCounter()*this.vhiSet.sqLength+2*Math.floor(this.getCounter()/vhis.divLength),
 	    y: this.top,
 	    width: this.vhiSet.sqLength,
 	    height: this.bot-this.top,
@@ -190,7 +198,7 @@ function PathSlidebarItem(vhis) {
 	});
     var rect = this.rect;
     this.counterText = new Kinetic.Text({
-	    x: this.vhiSet.startX+(this.getCounter()+0.5)*this.vhiSet.sqLength,
+	    x: this.vhiSet.startX+(this.getCounter()+0.5)*this.vhiSet.sqLength+2*Math.floor(this.getCounter()/vhis.divLength),
 	    y: this.top-18,
 	    text: this.getCounter(),
 	    fontSize: 16,
@@ -210,7 +218,7 @@ function PathSlidebarItem(vhis) {
 		counterText.setOffset({x: counterText.getWidth()/2});
 		//limit slidebar to be right on top of bases
 		return {
-		    x: vhis.slidebar.getCounter()*vhis.sqLength+2*Math.floor(vhis.slidebar.getCounter()/vhis.divLength), //more ugly code thanks for thicker divider
+		    x: (vhis.slidebar.getCounter()-initcounter)*vhis.sqLength+2*Math.floor(vhis.slidebar.getCounter()/vhis.divLength)-2*Math.floor(initcounter/vhis.divLength),
 		    y: this.getAbsolutePosition().y
 		}
 	    }
@@ -221,8 +229,8 @@ function PathSlidebarItem(vhis) {
 	    //actually, that wasn't too bad compared to this... welcome to the new counter calculation mecahnism
 	    var blockLen = vhis.divLength*vhis.sqLength+2;
 	    //these 2 lines only work with current cadnano3.html panel layout but divs can be renamed
-	    var blockNum = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-vhis.startX-1)/blockLen);
-	    var tempCounter = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-(blockNum*blockLen+vhis.startX+1))/vhis.sqLength)+blockNum*vhis.divLength;
+	    var blockNum = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-vhis.startX)/blockLen);
+	    var tempCounter = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-blockNum*blockLen-vhis.startX)/vhis.sqLength)+blockNum*vhis.divLength;
 	    vhis.slidebar.setCounter(Math.min(Math.max(0,tempCounter),vhis.grLength-1));
 	});
     this.layer.add(this.group);
@@ -238,3 +246,35 @@ PathSlidebarItem.prototype.update = function() {
     this.layer.moveToTop();
     this.layer.draw();
 };
+
+//A psuedo-button that changes base length. This function merges the two arrow buttons in cadnano2.
+function BaseLengthChanger(vhis) {
+    this.layer = new Kinetic.Layer();
+    this.group = new Kinetic.Group();
+    //These params for rect and text is only good for vhis.sqLength = 20 (direct scaling doesn't work either)
+    this.rect = new Kinetic.Rect({
+	    x: 0,
+	    y: 0,
+	    width: 125,
+	    height: 20,
+	    stroke: '#000000',
+	    strokeWidth: 1,
+	    fill: '#88FF88'
+	});
+    this.text = new Kinetic.Text({
+	    x: 3,
+	    y: 3,
+	    text: "change base length",
+	    fontSize: 15,
+	    fontFamily: "Calibri",
+	    fill: "#000000",
+	});
+    this.group.add(this.rect);
+    this.group.add(this.text);
+    this.group.on("click", function() {
+	    var newLen = prompt("Enter new length:","");
+	    vhis.updateLen(newLen);
+	});
+    this.layer.add(this.group);
+    vhis.canvas.add(this.layer);
+}
