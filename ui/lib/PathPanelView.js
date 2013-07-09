@@ -33,6 +33,9 @@ function VirtualHelixSet(panel,gridMode,sqlen,sx,sy) {
 	alert("Grid type does not exist, script aborted");
 	throw "stop execution";
     }
+    //strand layer to increase efficiency
+    this.slayer = new Kinetic.Layer();
+    this.canvas.add(this.slayer);
 }
 //resizes panel such that everything just fits in; this function shouldn't really be in this class but w/e...
 VirtualHelixSet.prototype.resize = function() {
