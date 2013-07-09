@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title> Cadnano3 (incomplete) </title>
+<title> Cadnano3 UI </title>
 
 <!-- EXTERNAL JAVASCRIPT LIBRARIES -->
 <script type="text/javascript" src="includes/jquery-1.9.1.min.js"> </script>
@@ -20,6 +20,7 @@
 <!-- INTERNAL JAVASCRIPT LIBRARIES -->
 <script type="text/javascript" src="ui/lib/SliceStack.js"> </script>
 <script type="text/javascript" src="ui/lib/SliceGrid.js"> </script>
+<script type="text/javascript" src="ui/lib/PathPanelView.js"> </script>
 
 <script src="utils/constants.js"></script>
 <script src="utils/twohandler.js"></script>
@@ -42,10 +43,10 @@
     border: 0px;
     padding: 0;
   }
-  .pathButtons, .sliceButtons {
+  #pathButtons, #sliceButtons {
     background: #EEE;
   }
-  .toolbar {
+  #toolbar {
     background: #DDD;
   }
   /* Buttons: margins, (to be implemented) image checkbox/radio */
@@ -81,43 +82,49 @@
 
 <!-- pane layout -->
 <script>
-$(document).ready(function() {
-  $("body").layout({
-    north__paneSelector: ".toolbar"
-    ,north__spacing_open: 0
-    ,north__spacing_closed: 0
-    ,north__resizable: false
-    ,north__closable: false
-    ,north__size: 54
-    ,center__paneSelector: ".mainWindow"
-    ,center__childOptions: {
-      west__paneSelector: ".sliceButtons"
-      ,west__size: 45
-      ,west__spacing_open: 0
-      ,west__spacing_closed: 0
-      ,west__resizable: false
-      ,west__closable: false
-      ,east__paneSelector: ".pathButtons"
-      ,east__size: 45
-      ,east__spacing_open: 0
-      ,east__spacing_closed: 0
-      ,east__resizable: false
-      ,east__closable: false
-      ,center__paneSelector: ".drawnPanels"
-      ,center__childOptions: {
-        west__paneSelector: "#sliceView"
-        ,west__size: .50
-        ,west__closable: false
-        ,center__paneSelector: "#pathView"
-      }
-    }
-  });
+var outerLayoutSettings = {
+  north__paneSelector: "#toolbar"
+  ,north__spacing_open: 0
+  ,north__spacing_closed: 0
+  ,north__resizable: false
+  ,north__closable: false
+  ,north__size: 54
+  ,center__paneSelector: "#mainWindow"  
+};
+var midLayoutSettings = {
+  west__paneSelector: "#sliceButtons"
+  ,west__size: 45
+  ,west__spacing_open: 0
+  ,west__spacing_closed: 0
+  ,west__resizable: false
+  ,west__closable: false
+  ,east__paneSelector: "#pathButtons"
+  ,east__size: 45
+  ,east__spacing_open: 0
+  ,east__spacing_closed: 0
+  ,east__resizable: false
+  ,east__closable: false
+  ,center__paneSelector: "#drawnPanels"
+};
+var innerLayoutSettings = {
+  west__paneSelector: "#sliceView"
+  ,west__size: .50
+  ,west__closable: false
+  ,center__paneSelector: "#pathView"
+};
+var outerLayout;
+var midLayout;
+var innerLayout;
+$(document).ready(function($) {
+  outerLayout = $("body").layout(outerLayoutSettings);
+  midLayout = $(mainWindow).layout(midLayoutSettings);
+  innerLayout = $(drawnPanels).layout(innerLayoutSettings);
 });
 </script>
 </head>
 
 <body>
-<div class="toolbar">
+<div id="toolbar">
   <button type="button" onclick="DocControl.newDocument()" class="button"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/data-open_32.png" width="32" height="32"><br>Open</br></button>
   <button type="button" onclick="" class="button"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
@@ -137,14 +144,13 @@ $(document).ready(function() {
     <button type="button" onclick="" class="button"><img src="ui/images/part-filter-strand.png" width="32" height="32"></button>
   </div>
 </div>
-
-<div class="mainWindow">
-  <div class="sliceButtons">
+<div id="mainWindow">
+  <div id="sliceButtons">
     <button type="button" onclick="" class="button"><img src="ui/images/slice-go-first.png" width="32" height="32"><br>First</br></button>
     <p><button type="button" onclick="" class="button"><img src="ui/images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
     <p><button type="button" onclick="" class="button"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
   </div>
-  <div class="pathButtons">
+  <div id="pathButtons">
     <input type='radio' name='pathButtons' value='1' id="a"/><label for="a"><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></label>
     <p><input type='radio' name='pathButtons' value='2' id="b"/><label for="b"><img src="ui/images/path-force-xover.png" width="32" height="32"><br>Pencil</br></label></p>
     <p><input type='radio' name='pathButtons' value='3' id="c"/><label for="c"><img src="ui/images/path-break_48.png" width="32" height="32"><br>Break</br></label></p>
@@ -153,14 +159,15 @@ $(document).ready(function() {
     <p><input type='radio' name='pathButtons' value='6' id="f"/><label for="f"><img src="ui/images/path-paint_48.png" width="32" height="32"><br>Paint</br></label></p>
     <p><input type='radio' name='pathButtons' value='7' id="g"/><label for="g"><img src="ui/images/path-addseq.png" width="32" height="32"><br>Seq</br></label></p>
   </div>
-  <div class="drawnPanels">
+  <div id="drawnPanels">
     <div id="sliceView"> </div>
-    <div id="pathView"> Path View </div>
+    <div id="pathView"> </div>
   </div>
 </div>
 
 <script>
+var pp = new PathPanelItem("pathView",300,300);
+var vhis = new VirtualHelixSet(pp,"honeycomb",20);
 </script>
 </body>
-
 </html>
