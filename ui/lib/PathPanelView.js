@@ -6,7 +6,7 @@ function PathPanelItem(elem,w,h) {
 }
 
 //This class keeps track of all VHI (virtual helix item) and maintains an uniform standard for VHIs.
-function VirtualHelixSet(panel,gridMode,sqlen,sx,sy) {
+function VirtualHelixSet(panel,gridMode,sqlen) {
     this.pathpanel = panel;
     //copying input params so attached items can use them
     this.canvas = panel.canvas;
@@ -26,7 +26,7 @@ function VirtualHelixSet(panel,gridMode,sqlen,sx,sy) {
 	this.divLength = 7;
     }
     else if(this.mode === "square") {
-	this.grLength = 64;
+	this.grLength = 48;
 	this.divLength = 8;
     }
     else { //You better check for typos!
@@ -180,13 +180,14 @@ function HelixCounterItem(vhi) {
 
 //draggable slidebar on top of VHIs
 function PathSlidebarItem(vhis) {
-    this.counter = 0;
+    var initcounter = vhis.grLength/2;
+    this.counter = initcounter;
     this.vhiSet = vhis;
     this.layer = new Kinetic.Layer();
     this.top = this.vhiSet.vhiArray[0].startY-2*this.vhiSet.sqLength;
     this.bot = 0;
     this.rect = new Kinetic.Rect({
-	    x: this.vhiSet.startX+this.getCounter()*this.vhiSet.sqLength,
+	    x: this.vhiSet.startX+this.getCounter()*this.vhiSet.sqLength+2*Math.floor(this.getCounter()/vhis.divLength),
 	    y: this.top,
 	    width: this.vhiSet.sqLength,
 	    height: this.bot-this.top,
@@ -197,7 +198,7 @@ function PathSlidebarItem(vhis) {
 	});
     var rect = this.rect;
     this.counterText = new Kinetic.Text({
-	    x: this.vhiSet.startX+(this.getCounter()+0.5)*this.vhiSet.sqLength,
+	    x: this.vhiSet.startX+(this.getCounter()+0.5)*this.vhiSet.sqLength+2*Math.floor(this.getCounter()/vhis.divLength),
 	    y: this.top-18,
 	    text: this.getCounter(),
 	    fontSize: 16,
@@ -217,7 +218,7 @@ function PathSlidebarItem(vhis) {
 		counterText.setOffset({x: counterText.getWidth()/2});
 		//limit slidebar to be right on top of bases
 		return {
-		    x: vhis.slidebar.getCounter()*vhis.sqLength+2*Math.floor(vhis.slidebar.getCounter()/vhis.divLength), //more ugly code thanks for thicker divider
+		    x: (vhis.slidebar.getCounter()-initcounter)*vhis.sqLength+2*Math.floor(vhis.slidebar.getCounter()/vhis.divLength)-2*Math.floor(initcounter/vhis.divLength),
 		    y: this.getAbsolutePosition().y
 		}
 	    }
@@ -228,8 +229,8 @@ function PathSlidebarItem(vhis) {
 	    //actually, that wasn't too bad compared to this... welcome to the new counter calculation mecahnism
 	    var blockLen = vhis.divLength*vhis.sqLength+2;
 	    //these 2 lines only work with current cadnano3.html panel layout but divs can be renamed
-	    var blockNum = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-vhis.startX-1)/blockLen);
-	    var tempCounter = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-(blockNum*blockLen+vhis.startX+1))/vhis.sqLength)+blockNum*vhis.divLength;
+	    var blockNum = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-vhis.startX)/blockLen);
+	    var tempCounter = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+document.getElementById(vhis.pathpanel.domele).scrollLeft-blockNum*blockLen-vhis.startX)/vhis.sqLength)+blockNum*vhis.divLength;
 	    vhis.slidebar.setCounter(Math.min(Math.max(0,tempCounter),vhis.grLength-1));
 	});
     this.layer.add(this.group);
