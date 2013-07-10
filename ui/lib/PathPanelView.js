@@ -117,7 +117,7 @@ UI_VirtualHelixSet.prototype.updateLen = function(nl) {
 //VHI is the collection of bases as well as the corresponding HelixCounterItem
 function UI_VirtualHelixItem(vhiSet) {
     this.helixset = vhiSet;
-    //taking params from VirtualHelixSet
+    //taking params from SamVirtualHelixSet
     this.num = vhiSet.vhiArray.length;
     this.sqLength = vhiSet.sqLength;
     this.startX = vhiSet.startX;

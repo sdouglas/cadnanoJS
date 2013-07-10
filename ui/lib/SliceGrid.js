@@ -1,4 +1,5 @@
 function initGrid(xg, yg, mode, p) { //avoids multiple instantiation of panels
+    console.log('in initgrid');
     if(gridMode === undefined) {
 	SliceGrid(xg, yg, mode, p);
 	gridMode = mode;
