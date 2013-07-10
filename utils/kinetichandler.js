@@ -20,6 +20,8 @@ function viewHandlerKinetic(){
             console.log(helixNum);
             this.addTextToCircle(helixNum);
         }
+        this.shapeLayer.draw();
+        this.textLayer.draw();
         return circle;
     }
 
@@ -27,6 +29,7 @@ function viewHandlerKinetic(){
         console.log('in function init of handler');
         this.textLayer = new Kinetic.Layer();
         this.shapeLayer = new Kinetic.Layer();
+        this.hoverLayer = new Kinetic.Layer();
     }
 
     this.setParams = function(params){
@@ -34,6 +37,9 @@ function viewHandlerKinetic(){
         console.log(params);
         console.log(this);
         this.handler = new Kinetic.Stage(params);
+        this.handler.add(this.shapeLayer);
+        this.handler.add(this.hoverLayer);
+        this.handler.add(this.textLayer);
     };
 
     this.addToDom = function(el){
@@ -42,8 +48,6 @@ function viewHandlerKinetic(){
 
     this.render = function(){
         console.log("calling kinetic update");
-        this.handler.add(this.shapeLayer);
-        this.handler.add(this.textLayer);
     };
 
     this.getX = function(){
@@ -81,8 +85,28 @@ function viewHandlerKinetic(){
 
     this.remove = function(){
         this.shapeLayer.destroy();
+        this.hoverLayer.destroy();
         this.textLayer.destroy();
         this.handler.clear();
+    }
+
+    this.addHover = function(centerX,centerY,r,params){
+        var fill = params.fill?params.fill:colours.bluefill;
+        var stroke=params.stroke?params.stroke:colours.bluestroke;
+        var strokewidth=params.strokewidth?params.strokewidth:colours.hoverstrokewidth;
+
+	    var circle = new Kinetic.Circle({
+		    radius:     r,
+		    x:          centerX,
+		    y:          centerY,
+            fill:       fill,
+            stroke:     stroke,
+            strokeWidth:strokewidth,
+	    });
+        this.hoverLayer.removeChildren();
+        this.hoverLayer.add(circle);
+        this.hoverLayer.draw();
+        return circle;
     }
 
     this.init();

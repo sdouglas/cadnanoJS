@@ -166,9 +166,9 @@ var HoneyCombPart = Part.extend({
 	    */
 	    var xLeft = Math.floor((xPos-this.origin-45+panel.scrollLeft)/(1.732*r*zoomfactor));
 	    var xRight = Math.ceil((xPos-this.origin-45+panel.scrollLeft)/(1.732*r*zoomfactor));
-	    var y = Math.floor((yPos-this.origin-54+panel.scrollTop)/(3*r*zoomfactor));
-        console.log('clicked on :' + xPos + ',' + yPos);
-        console.log('found circl:' + xLeft+ ',' + y + ':' + xRight+ ',' + y);
+	    var y = Math.floor((yPos-this.origin-54+panel.scrollTop+r*zoomfactor)/(3*r*zoomfactor));
+        //console.log('clicked on :' + xPos + ',' + yPos);
+        //console.log('found circl:' + xLeft+ ',' + y + ':' + xRight+ ',' + y);
         
 	    //left circle
 	    var centerXL = 0;
@@ -184,7 +184,7 @@ var HoneyCombPart = Part.extend({
                         centerXL,
                         centerYL
                     );
-            console.log('distL = '+ distL);
+          //  console.log('distL = '+ distL);
 	    //}
         //this distL allows us to skip the (distL <= r*zf) conditional
 	    //else { distL = 2*r*zoomfactor; } 
@@ -204,7 +204,7 @@ var HoneyCombPart = Part.extend({
                         centerXR,
                         centerYR
                     );
-            console.log('distR = '+ distR);
+            //console.log('distR = '+ distR);
 	    //}
 	    //else {distR = 2*r*zoomfactor;}
 	    //checking distance from center
