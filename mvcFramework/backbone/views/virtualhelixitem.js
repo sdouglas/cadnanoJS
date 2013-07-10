@@ -8,7 +8,7 @@ var VirtualHelixSetItem = Backbone.View.extend({
         "mousemove" : "onMouseMove",
     },
     render: function(){
-        console.log('in render functin vhitemset');
+        console.log('in render function vhitemset');
         var h = this.handler;
         this.collection.each(function(vh){
             var vhItem = new VirtualHelixItem({
@@ -44,6 +44,8 @@ var VirtualHelixItem = Backbone.View.extend ({
             this.col);
         console.log(pos.x + ',' + pos.y);
         this.handler = this.options.handler;
+        var helixNum = this.options.model.hID;
+        console.log('This is the helixnum: ' + helixNum);
 
         var params = {
             fill: colours.orangefill,
@@ -51,6 +53,8 @@ var VirtualHelixItem = Backbone.View.extend ({
             strokewidth: colours.strokewidth,
         };
         this.polygon = this.handler.createCircle(pos.x, 
-            pos.y, this.part.radius, params);
+            pos.y, this.part.radius, params,
+            helixNum
+            );
     },
 });

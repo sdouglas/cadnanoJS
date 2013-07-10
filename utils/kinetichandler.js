@@ -1,5 +1,5 @@
 function viewHandlerKinetic(){
-    this.createCircle = function(centerX,centerY,r, params){
+    this.createCircle = function(centerX,centerY,r, params, helixNum){
         this.x = centerX;
         this.y = centerY;
         this.r = r;
@@ -16,6 +16,10 @@ function viewHandlerKinetic(){
             strokeWidth:strokewidth,
 	    });
         this.shapeLayer.add(circle);
+        if(typeof helixNum !== 'undefined'){
+            console.log(helixNum);
+            this.addTextToCircle(helixNum);
+        }
         return circle;
     }
 
@@ -55,13 +59,13 @@ function viewHandlerKinetic(){
     };
 
     this.addTextToCircle = function(helixNum){
-        this.setFill(activeFill);
         //number on the circle
         var textX;
         if(helixNum < 10) {textX = this.getX()-this.getR()/4;}
         else if(helixNum < 100) {textX = this.getX()-this.getR()/2;}
         else {textX = this.getX()-this.getR()*3/4;}
-        var textY = this.getY()-r/2;
+        var textY = this.getY()-this.getR()/2;
+        console.log(textX + '.' + textY + '.' + helixNum);
         var helixNumText = new Kinetic.Text({
             x: textX,
             y: textY,
@@ -72,7 +76,7 @@ function viewHandlerKinetic(){
             align: "CENTER"
         });
         //end: number on the circle
-        textLayer.add(helixNumText);
+        this.textLayer.add(helixNumText);
     };
 
     this.remove = function(){

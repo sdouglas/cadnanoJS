@@ -10,8 +10,8 @@ var PartItem = Backbone.View.extend({
     },
 
     connectSignalsSlots: function(){
-                             console.log(this.handler);
-                             console.log('connecting signals slots in partitem');
+        console.log(this.handler);
+        console.log('connecting signals slots in partitem');
         this.listenTo(this.part,
             cadnanoEvents.partVirtualHelixAddedSignal,
             this.partVirtualHelixAddedSlot
@@ -47,12 +47,15 @@ var SlicePartItem = PartItem.extend({
             param:  this.options.params,
             who:    this.options.who,
         });
+        //Create the empty helix set layer.
         this.emptyItemSet = new EmptyHelixSetItem({
             el: $('#sliceView'),
             part: this.options.part,
             handler: this.handler,
         });
+        this.setLattice(this.part.generatorFullLattice());
 
+        //Create the virtual helix item layer.
         this.vhItemSet = new VirtualHelixSetItem({
             el: $('#sliceView'),
             part: this.options.part,
@@ -60,9 +63,10 @@ var SlicePartItem = PartItem.extend({
             collection: this.options.part.getVHSet(),
         });
 
+        //Create the text item layer.
+        
         //console.log(this.el);
         //this.handler.addToDom(this.el);
-        this.setLattice(this.part.generatorFullLattice());
     },
     
     render: function(){
@@ -108,6 +112,7 @@ var SlicePartItem = PartItem.extend({
 
 var PathPartItem = PartItem.extend({
     initialize: function(){
+        this.part = this.options.part;
         this._super({
             part:   this.options.part,
             param:  this.options.params,

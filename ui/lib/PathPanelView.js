@@ -6,7 +6,7 @@ function PathPanelItem(elem,w,h) {
 }
 
 //This class keeps track of all VHI (virtual helix item) and maintains an uniform standard for VHIs.
-function VirtualHelixSet(panel,gridMode,sqlen) {
+function SamVirtualHelixSet(panel,gridMode,sqlen) {
     this.pathpanel = panel;
     //copying input params so attached items can use them
     this.canvas = panel.canvas;
@@ -38,11 +38,11 @@ function VirtualHelixSet(panel,gridMode,sqlen) {
     this.canvas.add(this.slayer);
 }
 //resizes panel such that everything just fits in; this function shouldn't really be in this class but w/e...
-VirtualHelixSet.prototype.resize = function() {
+SamVirtualHelixSet.prototype.resize = function() {
     this.canvas.setSize(2*this.startX+this.sqLength*this.grLength+2*Math.floor(this.grLength/this.divLength),2*this.startY+4*this.vhiArray.length*this.sqLength);
 };
 //add & remove VHI to vhiArray, as well as slidebar update
-VirtualHelixSet.prototype.addVHI = function() {
+SamVirtualHelixSet.prototype.addVHI = function() {
     this.vhiArray.push(new VirtualHelixItem(this));
     if(this.vhiArray.length === 1) {
 	this.slidebar = new PathSlidebarItem(this);
@@ -51,7 +51,7 @@ VirtualHelixSet.prototype.addVHI = function() {
     this.slidebar.update();
     this.resize();
 };
-VirtualHelixSet.prototype.removeVHI = function() {
+SamVirtualHelixSet.prototype.removeVHI = function() {
     if(this.vhiArray.length != 0) {
 	this.vhiArray[this.vhiArray.length-1].layer.remove();
 	this.vhiArray.pop();
@@ -68,7 +68,7 @@ VirtualHelixSet.prototype.removeVHI = function() {
     }
 };
 //updates existing VHIs to correct length and changes grLength for future VHIs
-VirtualHelixSet.prototype.updateLen = function(nl) {
+SamVirtualHelixSet.prototype.updateLen = function(nl) {
     if(nl === null) {return;}
     var newLen = parseInt(nl,10); //nl (used to be newLen) and this.grLength was interpreted as strings, causing errors
     for(var k=0; k<this.vhiArray.length; k++) {
@@ -115,7 +115,7 @@ VirtualHelixSet.prototype.updateLen = function(nl) {
 //VHI is the collection of bases as well as the corresponding HelixCounterItem
 function VirtualHelixItem(vhiSet) {
     this.helixset = vhiSet;
-    //taking params from VirtualHelixSet
+    //taking params from SamVirtualHelixSet
     this.num = vhiSet.vhiArray.length;
     this.sqLength = vhiSet.sqLength;
     this.startX = vhiSet.startX;

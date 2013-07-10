@@ -1,4 +1,5 @@
 function initGrid(xg, yg, mode, p) { //avoids multiple instantiation of panels
+    console.log('in initgrid');
     if(gridMode === undefined) {
 	SliceGrid(xg, yg, mode, p);
 	gridMode = mode;
@@ -52,7 +53,7 @@ function SliceGrid(xg, yg, mode, p) {
 	throw "stop execution";
     }
     //link a VirtualHelixSet to path panel
-    vhis = new VirtualHelixSet(pp,mode,20);
+    vhis = new SamVirtualHelixSet(pp,mode,20);
     //setup
     var panel = document.getElementById(p); //dynamic canvas location. screws up inCircle function though so it's pretty useless.
     var canvasSettings = {container: p, width: windowWidth, height: windowHeight};

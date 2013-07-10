@@ -32,8 +32,9 @@ var EmptyHelixSetItem = Backbone.View.extend({
     onMouseClick: function(e){
         console.log("clicked the vhsetitem.");
         //Figure out which helix was clicked.
-        //var coord = this.helixClicked(e);
-        coord = {row:5, col:5};
+        var coord = this.part.latticePositionXYToCoord(e.pageX, e.pageY, 1.0);
+        if(coord.row === -1 || coord.col === -1) return;
+
         var id = this.part.getStorageID(coord.row,coord.col);
         console.log(id);
         var helixModel = this.part.getModelHelix(id);
