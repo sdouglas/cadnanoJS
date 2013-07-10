@@ -41,6 +41,7 @@ function UI_EndpointItem(vhi, baseX, baseY, type) { //type can only be 3 or 5
 		}
 	    }
 	});
+    this.group.add(this.shape);
     this.shape.epi = this; //javascript y u no have pointers?!
     //more copy pasta from slidebar
     this.shape.on("dragmove", function(pos) {
