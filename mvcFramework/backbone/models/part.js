@@ -29,6 +29,10 @@ var Part = Backbone.Model.extend({
         this.currDoc = doc;
     },
 
+    undoStack: function(){
+        return this.currDoc.undostack;
+    },
+
     addVirtualHelix: function(helix){
         if(!this.chosenHelixHash[helix.getRow()]){
             this.chosenHelixHash[helix.getRow()] = new Array();
@@ -62,31 +66,57 @@ var Part = Backbone.Model.extend({
     },
 
     createVirtualHelix: function(hrow,hcol){
+
+var CreateVirtualHelixCommand = new Undo.Command.extend({
+    constructor: function(helix,part){
+        console.log('CreateVirtualHelixCommand Constructor');
+        this.modelPart = part;
+        this.modelHelix = helix;
+        this.redo();
+    },
+    undo: function(){
+        console.log('CreateVirtualHelixCommand undo');
+        //this.modelPart.recycleHelixNumber(this.modelHelix.idNum);
+        //this.modelPart.removeVirtualHelix(this.modelHelix);
+        //this.modelPart.trigger(cadnanoEvents.partVirtualHelixRemovedSignal,
+        //  helix);
+        //this.trigger(cadnanoEvents.partActiveSliceResizeSignal, 
+        //        helix
+        //);
+        
+    },
+    redo: function(){
         //Get row/column of helix that was clicked.
-        var parityEven = this.isEvenParity(hrow,hcol);
-        var idNum = this.reserveHelixIDNumber(parityEven);
+        console.log('CreateVirtualHelixCommand redo');
+        var parityEven = this.modelPart.isEvenParity(hrow,hcol);
+        var idNum = this.modelPart.reserveHelixIDNumber(parityEven);
         console.log('the helix number received is:' + idNum);
         var helix = new VirtualHelix({
             row:    hrow,
             col:    hcol,
             hID:    idNum,
-            id:     this.getStorageID(hrow,hcol),
-            part:   this,
+            id:     this.modelPart.getStorageID(hrow,hcol),
+            part:   this.modelPart,
         });
         console.log(hrow + ',' + hcol + ',' + helix.hID + ',' + helix.row);
 
         //Add the VirtualHelix to a hash map in order
         //to retrieve it later.
-        this.addVirtualHelix(helix);
+        this.modelPart.addVirtualHelix(helix);
 
         //Send out the signals to PartItem in order to
         //update their views.
-        this.trigger(cadnanoEvents.partVirtualHelixAddedSignal, 
+        this.modelPart.trigger(cadnanoEvents.partVirtualHelixAddedSignal, 
                 helix
         );
         //this.trigger(cadnanoEvents.partActiveSliceResizeSignal, 
         //        helix
         //);
+    },
+    execute: function(){},
+});
+    this.undoStack().execute(new CreateVirtualHelixCommand(this));
+
     },
 
     generatorFullLattice: function(){

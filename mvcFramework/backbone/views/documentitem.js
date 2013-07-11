@@ -86,6 +86,8 @@ var DocumentItem = Backbone.View.extend({
         //its just a hack - multiple views get called each
         //time an undo redo takes place.
         //this.sliceView.remove();
+        this.sliceView.close();
+        delete this.sliceView;
     },
 
     reset: function(){

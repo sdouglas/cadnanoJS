@@ -95,13 +95,15 @@ var SlicePartItem = PartItem.extend({
     },
     partRemovedSlot: function(){
         console.log(this.part);
+        this.emptyItemSet.close();
         this.emptyItemSet.remove();
+        this.vhItemSet.close();
         this.vhItemSet.remove();
         //TODO: remove the if condition - a hack.
         if(this.handler){
-        this.handler.remove();
-        this.handler.render();
-        delete this.handler;
+            this.handler.remove();
+            this.handler.render();
+            delete this.handler;
         }
     },
     //TODO
