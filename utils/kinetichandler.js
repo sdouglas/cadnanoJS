@@ -88,6 +88,7 @@ function viewHandlerKinetic(){
         this.hoverLayer.destroy();
         this.textLayer.destroy();
         this.handler.clear();
+        delete this;
     }
 
     this.addHover = function(centerX,centerY,r,params){

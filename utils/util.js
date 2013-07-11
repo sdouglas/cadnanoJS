@@ -13,6 +13,14 @@ if(typeof Object.create !== 'function'){
  * init
  * addToDom
  */
+Backbone.View.prototype.close = function () {
+    //TODO: This is a hack.
+    var empty = $("<div></div>");
+    this.setElement(empty);
+
+    this.unbind();
+    this.remove();
+};
 
 function viewHandler(type){
     console.log(type);
