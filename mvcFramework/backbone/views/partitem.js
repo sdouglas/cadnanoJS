@@ -104,6 +104,7 @@ var SlicePartItem = PartItem.extend({
         delete this.handler;
         }
     },
+
     //TODO
     //addScafifStapIsMissing
     //addStapifScafIsMissing
@@ -119,6 +120,12 @@ var PathPartItem = PartItem.extend({
             who:    this.options.who,
         });
         this.connectPathSignalsSlots();
+        this.pathItemSet = new PathHelixSetItem({
+            el: $('#pathView'),
+            part: this.options.part,
+            handler: this.handler,
+            collection: this.options.part.getVHSet(),
+        });
         //this.render();
     },
     connectPathSignalsSlots: function(){
@@ -127,12 +134,23 @@ var PathPartItem = PartItem.extend({
             cadnanoEvents.partActiveSliceResizedSignal,
             this.partActiveSliceResizedSlot
         );
+	this.listenTo(this.part,
+		      cadnanoEvents.partStepSizeChangedSignal,
+		      this.partStepSizeChangedSlot
+		      );
     },
 
     partVirtualHelixAddedSlot: function(virtualHelix){
+	    this.pathItemSet.render();
         //TODO
         //Add in a new path in the path view panel.
     },
+
     partActiveSliceResizedSlot: function(){
     },
+
+    partStepSizeChangedSlot: function(){
+	this.pathItemSet.render();
+    },
+
 });

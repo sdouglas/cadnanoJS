@@ -1,5 +1,5 @@
 var Part = Backbone.Model.extend({
-    step: 21,
+    step: 1,
     radius: 20,
     turnsPerStep:2,
     helicalPitch: this.step/this.turnsPerStep,
@@ -115,6 +115,16 @@ var Part = Backbone.Model.extend({
         if(this.chosenHelixHash[row][col])
             return true;
         return false;
+    },
+
+    setStep: function(n){
+	if(n>0){
+	    this.step = n;
+	    this.trigger(cadnanoEvents.partStepSizeChangedSignal);
+	}
+    },
+    getStep: function(){
+	return this.step;
     },
 });
 
