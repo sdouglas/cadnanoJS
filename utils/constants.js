@@ -7,6 +7,12 @@ var Constants = {
     RendererTwo: 'two',
     RendererThree: 'three',
     RendererKinetic: 'kinetic',
+    helixLayer: 'helixLayer',
+    defaultLayer: 'defaultLayer',
+    zlow: 0,
+    zmid: 1,
+    zhigh: 2,
+    zhighest: 3,
 };
 
 var cadnanoEvents = {
@@ -16,6 +22,7 @@ var cadnanoEvents = {
     partHelicesInitializedSignal: 'partHelicesInitializedSignal',
     partRemovedSignal: 'partRemovedSignal',
     documentClearSelectionsSignal: 'documentClearSelectionsSignal',
+    partVirtualHelixRemovedSignal: 'partVirtualHelixRemovedSignal',
 };
 
 

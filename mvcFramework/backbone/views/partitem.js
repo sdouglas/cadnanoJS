@@ -6,15 +6,16 @@ var PartItem = Backbone.View.extend({
         this.handler.setParams(this.params);
         this.chosenHelixHash = new Array();
         this.connectSignalsSlots();
-        console.log(this.handler);
     },
 
     connectSignalsSlots: function(){
-        console.log(this.handler);
-        console.log('connecting signals slots in partitem');
         this.listenTo(this.part,
             cadnanoEvents.partVirtualHelixAddedSignal,
             this.partVirtualHelixAddedSlot
+            );
+        this.listenTo(this.part,
+            cadnanoEvents.partVirtualHelixRemovedSignal,
+            this.partVirtualHelixRemovedSlot
             );
         this.listenTo(this.part,
             cadnanoEvents.partHelicesInitializedSignal,
@@ -24,11 +25,6 @@ var PartItem = Backbone.View.extend({
             cadnanoEvents.partRemovedSignal,
             this.partRemovedSlot
             );
-    },
-
-    createVirtualHelixItem: function(vh){
-        //update the rendering of the item.
-        this.vhItemSet.render();
     },
 
     isHelixSelected: function(row,col){
@@ -41,7 +37,6 @@ var PartItem = Backbone.View.extend({
 var SlicePartItem = PartItem.extend({
     initialize: function(){
         this.part = this.options.part;
-        console.log(this.part);
         this._super({
             part:   this.options.part,
             param:  this.options.params,
@@ -71,8 +66,6 @@ var SlicePartItem = PartItem.extend({
     
     render: function(){
         this.handler.render();
-        console.log('just called render');
-        console.log($('#sliceView'));
     },
 
     setLattice: function(newCoords){
@@ -82,17 +75,20 @@ var SlicePartItem = PartItem.extend({
         this.part.initializedHelices(true);
     },
     partHelicesInitializedSlot: function(){
-        console.log('received empty helices initialized signal');
         this.emptyItemSet.render();
     },
     partVirtualHelixAddedSlot: function(virtualHelix){
         //Add the virtual helix item to a hash.
         //Change the color of the virtual helix item
         //to show selection.
-        console.log("currently in partVirtualHelixAddedSlot");
+        this.vhItemSet.render();
 
-        this.createVirtualHelixItem(virtualHelix);
     },
+
+    partVirtualHelixRemovedSlot: function(virtualHelix){
+        this.vhItemSet.render();
+    },
+    
     partRemovedSlot: function(){
         console.log(this.part);
         this.emptyItemSet.close();
@@ -124,7 +120,6 @@ var PathPartItem = PartItem.extend({
         //this.render();
     },
     connectPathSignalsSlots: function(){
-        console.log(this.part);
         this.listenTo(this.part,
             cadnanoEvents.partActiveSliceResizedSignal,
             this.partActiveSliceResizedSlot

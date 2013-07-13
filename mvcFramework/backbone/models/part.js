@@ -19,6 +19,9 @@ var Part = Backbone.Model.extend({
         this.chosenHelixHash = new Array();
         this.virtualHelixSet = new VirtualHelixSet();
         this.virtualHelixSet.reset();
+
+        this.oddRecycleBin = new minHeap();
+        this.evenRecycleBin = new minHeap();
     },
 
     getVHSet: function(){
@@ -41,6 +44,18 @@ var Part = Backbone.Model.extend({
         //Add to the backbone collection.
         this.virtualHelixSet.add(helix);
     },
+
+    removeVirtualHelix: 
+    function(helix){
+       delete this.chosenHelixHash[helix.getRow()][helix.getCol()];
+       this.virtualHelixSet.remove(helix); 
+
+       //Remove the views.
+       this.trigger(cadnanoEvents.partVirtualHelixRemovedSignal,
+         helix);
+       //this.trigger(cadnanoEvents.partActiveSliceResizeSignal, 
+       //  helix);
+    },
     
     initializedHelices: function(){
         this.trigger(cadnanoEvents.partHelicesInitializedSignal);
@@ -52,36 +67,39 @@ var Part = Backbone.Model.extend({
     },
 
     getCoordFromStorageID: function(id){
-        var rw = id/this.maxRowsEver;
+        var rw = Math.floor(id/this.maxRowsEver);
         var cl = id%this.maxRowsEver;
         return {row:rw,col:cl};
     },
 
     getModelHelix: function(id){
         var coord = this.getCoordFromStorageID(id);
-        console.log(this.chosenHelixHash);
-        if(this.chosenHelixHash[coord.row])
+        if(typeof this.chosenHelixHash[coord.row] !== 'undefined') {
             return this.chosenHelixHash[coord.row][coord.col];
+        }
         return null;
+    },
+
+    recycleHelixNumber: function(num){
+        console.log('Trying to recycle number: ' + num);
+        if(num % 2 === 0)
+            this.evenRecycleBin.push(num);
+        else
+            this.oddRecycleBin.push(num);
     },
 
     createVirtualHelix: function(hrow,hcol){
 
 var CreateVirtualHelixCommand = new Undo.Command.extend({
-    constructor: function(helix,part){
+    constructor: function(part){
         console.log('CreateVirtualHelixCommand Constructor');
         this.modelPart = part;
-        this.modelHelix = helix;
         this.redo();
     },
     undo: function(){
         console.log('CreateVirtualHelixCommand undo');
-        //this.modelPart.recycleHelixNumber(this.modelHelix.idNum);
-        //this.modelPart.removeVirtualHelix(this.modelHelix);
-        //this.modelPart.trigger(cadnanoEvents.partVirtualHelixRemovedSignal,
-        //  helix);
-        //this.trigger(cadnanoEvents.partActiveSliceResizeSignal, 
-        //        helix
+        this.modelPart.recycleHelixNumber(this.modelHelix.hID);
+        this.modelPart.removeVirtualHelix(this.modelHelix);
         //);
         
     },
@@ -98,11 +116,15 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
             id:     this.modelPart.getStorageID(hrow,hcol),
             part:   this.modelPart,
         });
-        console.log(hrow + ',' + hcol + ',' + helix.hID + ',' + helix.row);
+        //console.log(hrow + ',' + hcol + ',' + helix.hID + ',' + helix.row);
 
         //Add the VirtualHelix to a hash map in order
         //to retrieve it later.
         this.modelPart.addVirtualHelix(helix);
+
+        //Also store a reference to the helix, in
+        //order to undo if required.
+        this.modelHelix = helix;
 
         //Send out the signals to PartItem in order to
         //update their views.
@@ -132,12 +154,22 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
     reserveHelixIDNumber: function(parityEven){
         //TODO: Have to implement a heap like in cadnano2.
         if(parityEven){
-            this.largestUnusedEvenNumber+=2;
-            return this.largestUnusedEvenNumber;
+            if(this.evenRecycleBin.empty()){
+                this.largestUnusedEvenNumber+=2;
+                return this.largestUnusedEvenNumber;
+            }
+            else{
+                return this.evenRecycleBin.pop();
+            }
         }
         else{
-            this.largestUnusedOddNumber+=2;
-            return this.largestUnusedOddNumber;
+            if(this.oddRecycleBin.empty()){
+                this.largestUnusedOddNumber+=2;
+                return this.largestUnusedOddNumber;
+            }
+            else{
+                return this.oddRecycleBin.pop();
+            }
         }
     },
 
@@ -174,12 +206,6 @@ var HoneyCombPart = Part.extend({
     },
 
     dist: function(x1,y1,x2,y2) {
-              console.log(
-                      'x1 = ' + x1+':'+ 
-                      'y1 = ' + y1+':'+ 
-                      'x2 = ' + x2+':'+ 
-                      'y2 = ' + y2+':'
-                      );
         return Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
     },
 
@@ -251,7 +277,6 @@ var HoneyCombPart = Part.extend({
             coord.col = -1;
             coord.row = -1;
 	    }
-        console.log(coord);
     /*
 	else { //square mode - this part of search function is rather straightforward
 	    var x = Math.floor((xPos-45-r*zoomfactor+panel.scrollLeft)/(2*r*zoomfactor));

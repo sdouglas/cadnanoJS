@@ -1,4 +1,9 @@
 function viewHandlerKinetic(){
+    this.clearLayers = function(){
+        this.helixLayer.removeChildren();
+        this.textLayer.removeChildren();
+    }
+
     this.createCircle = function(centerX,centerY,r, params, helixNum){
         this.x = centerX;
         this.y = centerY;
@@ -6,6 +11,7 @@ function viewHandlerKinetic(){
         var fill = params.fill?params.fill:colours.grayfill;
         var stroke=params.stroke?params.stroke:colours.graystroke;
         var strokewidth=params.strokewidth?params.strokewidth:colours.strokewidth;
+        var whichlayer = params.layer?params.layer:Constants.defaultLayer;
 
 	    var circle = new Kinetic.Circle({
 		    radius:     r,
@@ -15,31 +21,42 @@ function viewHandlerKinetic(){
             stroke:     stroke,
             strokeWidth:strokewidth,
 	    });
-        this.shapeLayer.add(circle);
+        if(whichlayer === Constants.defaultLayer){
+            this.shapeLayer.add(circle);
+            //circle.setZIndex(Constants.zlow);
+        }
+        else if (whichlayer === Constants.helixLayer){
+            //circle.setZIndex(Constants.zmid);
+            this.helixLayer.add(circle);
+        }
         if(typeof helixNum !== 'undefined'){
-            console.log(helixNum);
             this.addTextToCircle(helixNum);
         }
         this.shapeLayer.draw();
+        this.helixLayer.draw();
         this.textLayer.draw();
         return circle;
     }
 
     this.init = function(){
-        console.log('in function init of handler');
         this.textLayer = new Kinetic.Layer();
         this.shapeLayer = new Kinetic.Layer();
+        this.helixLayer = new Kinetic.Layer();
         this.hoverLayer = new Kinetic.Layer();
     }
 
     this.setParams = function(params){
-        console.log('setting up the stage');
-        console.log(params);
-        console.log(this);
         this.handler = new Kinetic.Stage(params);
         this.handler.add(this.shapeLayer);
         this.handler.add(this.hoverLayer);
         this.handler.add(this.textLayer);
+        this.handler.add(this.helixLayer);
+
+        this.shapeLayer.setZIndex(Constants.zlow);
+        this.helixLayer.setZIndex(Constants.zmid);
+        this.hoverLayer.setZIndex(Constants.zhigh);
+        this.textLayer.setZIndex(Constants.zhighest);
+
     };
 
     this.addToDom = function(el){
@@ -47,7 +64,7 @@ function viewHandlerKinetic(){
     };
 
     this.render = function(){
-        console.log("calling kinetic update");
+        console.log("kinetichandler render");
     };
 
     this.getX = function(){
@@ -69,7 +86,6 @@ function viewHandlerKinetic(){
         else if(helixNum < 100) {textX = this.getX()-this.getR()/2;}
         else {textX = this.getX()-this.getR()*3/4;}
         var textY = this.getY()-this.getR()/2;
-        console.log(textX + '.' + textY + '.' + helixNum);
         var helixNumText = new Kinetic.Text({
             x: textX,
             y: textY,
@@ -80,10 +96,12 @@ function viewHandlerKinetic(){
             align: "CENTER"
         });
         //end: number on the circle
+        //helixNumText.setZIndex(Constants.zhigh);
         this.textLayer.add(helixNumText);
     };
 
     this.remove = function(){
+        this.helixLayer.destroy();
         this.shapeLayer.destroy();
         this.hoverLayer.destroy();
         this.textLayer.destroy();
@@ -104,6 +122,7 @@ function viewHandlerKinetic(){
             stroke:     stroke,
             strokeWidth:strokewidth,
 	    });
+        //circle.setZIndex(Constants.zhighest);
         this.hoverLayer.removeChildren();
         this.hoverLayer.add(circle);
         this.hoverLayer.draw();

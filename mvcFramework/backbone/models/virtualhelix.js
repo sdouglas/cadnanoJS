@@ -11,7 +11,6 @@ var VirtualHelix = Backbone.Model.extend({
         this.col = this.get('col');
         this.part = this.get('part');
         this.hID = this.get('hID');
-        console.log(this);
     },
     getRow: function(){
         return this.row;

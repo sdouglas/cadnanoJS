@@ -44,7 +44,6 @@ var DocumentItem = Backbone.View.extend({
             width:  parseInt(svWidth,10), 
             height: parseInt(svHeight,10),
         };
-        console.log(svParams);
         
         //Note: Its important to pass in the "el" element in the constructor
         //since the jquery selectors only function after the DOM is loaded.
@@ -98,7 +97,6 @@ var DocumentItem = Backbone.View.extend({
         //undo - press u
         if(e.charCode === 117){
             console.log('Undo last step');
-            console.log(this.currDoc);
             this.currDoc.undo();
         }
         //redo - press r
@@ -110,7 +108,6 @@ var DocumentItem = Backbone.View.extend({
         else if (e.charCode === 113){
             this.currDoc.stackStatus();
         }
-        console.log(e);
     },
 
 });

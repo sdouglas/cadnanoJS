@@ -23,7 +23,6 @@ Backbone.View.prototype.close = function () {
 };
 
 function viewHandler(type){
-    console.log(type);
     if(type === Constants.RendererTwo){
         return new viewHandlerTwo();
     }

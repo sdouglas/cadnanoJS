@@ -4,7 +4,6 @@ var EmptyHelixSetItem = Backbone.View.extend({
         this.part = this.options.part;
 
         this.emptyHelixHash = new Array();
-        console.log(this.handler);
     },
     
     createEmptyHelix: function(coord){
@@ -36,9 +35,7 @@ var EmptyHelixSetItem = Backbone.View.extend({
         if(coord.row === -1 || coord.col === -1) return;
 
         var id = this.part.getStorageID(coord.row,coord.col);
-        console.log(id);
         var helixModel = this.part.getModelHelix(id);
-        console.log(helixModel);
         //Do whatever you need to to the helix.
         //if selected, then add staple/scaffold.
         //if unselected, then create a helix model.
