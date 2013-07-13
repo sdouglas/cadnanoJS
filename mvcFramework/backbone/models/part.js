@@ -1,5 +1,5 @@
 var Part = Backbone.Model.extend({
-    step: 1,
+    step: 2,
     radius: 20,
     turnsPerStep:2,
     helicalPitch: this.step/this.turnsPerStep,

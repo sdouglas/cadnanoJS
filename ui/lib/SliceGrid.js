@@ -304,15 +304,15 @@ function SliceGrid(xg, yg, mode, p) {
     /* 
        Note: undo function will no longer be updated as it will be replaced in near future.
        Only works for undoing active helices.
-
-     //Kinetic.js does not support keyboard event; this event triggers only when mouse is inside panel when a key is pressed
-    panel.onmouseover = function() {
-	document.onkeypress = function(e) {
-	    if(e.keyCode === 90 || e.keyCode === 122) { //button: Z/z
-		undo();
-	    }
-	};
-    };
+       
+       //Kinetic.js does not support keyboard event; this event triggers only when mouse is inside panel when a key is pressed
+       panel.onmouseover = function() {
+           document.onkeypress = function(e) {
+               if(e.keyCode === 90 || e.keyCode === 122) { //button: Z/z
+                   undo();
+	       }
+           };
+       };
 
     function undo() {
 	if(activeHelices.stack.length !== 0) {

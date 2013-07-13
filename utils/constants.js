@@ -16,6 +16,7 @@ var cadnanoEvents = {
     partHelicesInitializedSignal: 'partHelicesInitializedSignal',
     partRemovedSignal: 'partRemovedSignal',
     documentClearSelectionsSignal: 'documentClearSelectionsSignal',
+    partStepSizeChangedSignal: 'partStepSizeChangedSignal',
 };
 
 

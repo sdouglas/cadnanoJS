@@ -141,7 +141,8 @@ var PathPartItem = PartItem.extend({
     },
 
     partVirtualHelixAddedSlot: function(virtualHelix){
-	    this.pathItemSet.render();
+	this.pathItemSet.renderBack();
+	this.pathItemSet.activesliceItem.updateHeight();
         //TODO
         //Add in a new path in the path view panel.
     },
@@ -150,7 +151,7 @@ var PathPartItem = PartItem.extend({
     },
 
     partStepSizeChangedSlot: function(){
-	this.pathItemSet.render();
+	this.pathItemSet.renderBack();
     },
 
 });
