@@ -124,6 +124,9 @@ var PathPartItem = PartItem.extend({
             cadnanoEvents.partActiveSliceResizedSignal,
             this.partActiveSliceResizedSlot
         );
+        this.listenTo(this.part,
+            cadnanoEvents.partStrandChangedSignal,
+            this.partStrandChangedSlot);
     },
 
     partVirtualHelixAddedSlot: function(virtualHelix){
@@ -131,5 +134,9 @@ var PathPartItem = PartItem.extend({
         //Add in a new path in the path view panel.
     },
     partActiveSliceResizedSlot: function(){
+    },
+
+    partStrandChangedSlot:
+    function(){
     },
 });

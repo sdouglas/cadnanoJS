@@ -1,17 +1,70 @@
 var StrandSet = Backbone.Model.Extend({
     initialize: 
-    function(){
+    function(type){
         this.strandList = [];
         this.part = this.options.part;
         this.helix = this.options.helix;
         this.undoStack = this.options.undoStack;
+        this.scaffold = false;
+        if(type === Constants.ScaffoldStrand){
+            this.scaffold = true;
+        }
     },
 
     createStrand:
+    function(startIdx, endIdx){
+        //TODO
+        //1. Staple/Scaffold strand - this is based on 
+        //which strand set it belongs to./
+        //Figure the parity of the strand and make the 3' 5' ends
+        //based on the same.
+        this.undoStack.execute(new CreateStrandCommand(this,startIdx,
+                endIdx));
+    },
+
+    insert:
+        //TODO: insert it in the right position, sorting becomes
+        //easier later on.
+    function(strand){
+        this.strandSet.push(strand);
+    },
+
+    isStaple:
     function(){
-        this.undoStack.execute(new CreateStrandCommand());
+        return !this.scaffold;
+    },
+
+    isScaffold:
+    function(){
+        return this.scaffold;
     },
     
+});
+
+var CreateStrandCommand = Undo.Command.extend({
+    constructor:
+    function(strandSet, startIdx, endIdx){
+        this.strandSet = strandset;
+        this.redo(startIdx, endIdx);
+    },
+    undo: 
+    function(){
+        //destroy the strand object.
+        this.strand.destroy();
+        //this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal);
+    },
+    redo:
+    function(startIdx, endIdx){
+        //Create a strand object.
+        //And add it to the strand list.
+        var strand = new Strand(startIdx, endIdx);
+        this.strandSet.insert(strand);
+        this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal);
+        this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        this.strand = strand;
+    },
+    execute:
+    function(){},
 });
 
 /*
