@@ -24,6 +24,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	    divLength: 7,
 	    blkLength: 3
 	};
+	//slidebar
 	this.activesliceItem = new ActiveSliceItem({
 	    handler: this.handler,
 	    parent: this,
@@ -38,17 +39,23 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.backlayer.removeChildren();
 	this.phItemArray = new Array();
         console.log('in render function vhitemset');
+	//button to press after resize
+	this.resizerItem = new ResizerItem({
+	    handler: this.handler,
+	    parent: this
+	});
+	//buttons that change base length
+	this.pbcItem = new PathBaseChangeItem({
+	    handler: this.handler,
+	    parent: this,
+	    graphics: this.graphicsSettings
+	});
 	//variables that the items created in foreach loop can access
         var h = this.handler;
 	var dims = this.graphicsSettings;
 	dims.grLength = dims.blkLength*dims.divLength*this.part.getStep(); //grLength is only used here because background is immutable
 	var helixset = this;
 	var pharray = this.phItemArray;
-	//buttons that change base length
-	this.pbcItem = new PathBaseChangeItem({
-	    handler: this.handler,
-	    parent: this
-	});
 	//for each VirtualHelixItem, we create a path helix and a path helix handler
         this.collection.each(function(vh){
             var phItem = new PathHelixItem({
@@ -65,17 +72,16 @@ var PathHelixSetItem = Backbone.View.extend({
 	    });
 	    pharray.push(phItem);
         });
-	if(innerLayout.state.center.innerWidth !== this.handler.handler.getWidth() || innerLayout.state.center.innerHeight !== this.handler.handler.getHeight()) {
-	    this.handler.handler.setSize(innerLayout.state.center.innerWidth, innerLayout.state.center.innerHeight);
-	}
 
 	//calculating the new scale factor
 	this.ratioX = Math.min(1,innerLayout.state.center.innerWidth/(8*dims.sqLength+dims.sqLength*dims.grLength+2*dims.grLength/dims.divLength));
 	this.ratioY = Math.min(1,innerLayout.state.center.innerHeight/(7*dims.sqLength+4*pharray.length*dims.sqLength));
-	if(this.ratioX === this.pratioX && this.ratioY === this.pratioY) { //no scale factor changes, just redraw backlayer
+	//no scale factor changes, just redraw backlayer
+	if(this.ratioX === this.pratioX && this.ratioY === this.pratioY) {
 	    this.backlayer.draw();
 	}
-	else { //scale factor changed, have to rescale and redraw EVERY layer and update pratio
+	//scale factor changed, have to rescale and redraw EVERY layer and update pratio
+	else {
 	    this.scaleFactor = Math.min(this.ratioX,this.ratioY);
 	    this.backlayer.setScale(this.scaleFactor); //ensures everything can be seen while maintaining aspect ratio
 	    this.backlayer.draw();
@@ -153,7 +159,6 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	    fontSize: this.sqLength,
 	    fontFamily: "Calibri",
 	    fill: "#000000",
-	    align: "CENTER"
 	});
 	helixNumText.setOffset({
 	    x: helixNumText.getWidth()/2
@@ -165,11 +170,47 @@ var PathHelixHandlerItem = Backbone.View.extend({
     },
 });
 
+var ResizerItem = Backbone.View.extend({
+    initialize: function() {
+	var self = this;
+	var canvas = this.options.handler.handler;
+	var layer = this.options.parent.buttonlayer;
+	var group = new Kinetic.Group();
+	var rect = new Kinetic.Rect({
+	    x: 70,
+	    y: 0,
+	    width: 75,
+	    height: 30,
+	    fill: "#88FF88",
+	    stroke: "#000000",
+	    strokeWidth: 1
+	});
+	var text = new Kinetic.Text({
+	    x: 70,
+	    y: 7,
+	    text: "Auto-resize",
+	    fontSize: 16,
+	    fontFamily: "Calibri",
+	    fill: "#000000",
+	});
+	group.add(rect);
+	group.add(text);
+	group.on("click", function() {
+	    if(innerLayout.state.center.innerWidth !== canvas.getWidth() || innerLayout.state.center.innerHeight !== canvas.getHeight()) {
+		canvas.setSize(innerLayout.state.center.innerWidth, innerLayout.state.center.innerHeight);
+		self.options.parent.renderBack();
+	    }
+	});
+	layer.add(group);
+    },
+});
+
 var PathBaseChangeItem = Backbone.View.extend({
     initialize: function() {
 	var part = this.options.parent.part;
 	var canvas = this.options.handler.handler;
 	var layer = this.options.parent.buttonlayer;
+	var baseperblk = this.options.graphics.blkLength*this.options.graphics.divLength;
 
 	var removeBaseImg = new Image();
 	removeBaseImg.onload = function() {
@@ -199,11 +240,11 @@ var PathBaseChangeItem = Backbone.View.extend({
 		    height: 30,
 		});
 	    addBase.on("click",function() {
-		    var baseIncrease = prompt("Number of bases to add to the existing "+(21*part.getStep())+" bases (must be a multiple of 21)","21");
+		    var baseIncrease = prompt("Number of bases to add to the existing "+(baseperblk*part.getStep())+" bases (must be a multiple of "+baseperblk+")",baseperblk);
 		    if(baseIncrease !== null) {
 			var baseInc = parseInt(baseIncrease,10);
-			if(baseInc > 0 && baseInc%21 === 0) {
-			    part.setStep(part.getStep()+baseInc/21);
+			if(baseInc > 0 && baseInc%baseperblk === 0) {
+			    part.setStep(part.getStep()+baseInc/baseperblk);
 			}
 		    }
 		});

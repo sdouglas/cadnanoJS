@@ -58,6 +58,7 @@ var ActiveSliceItem = Backbone.View.extend({
 	this.group.add(this.rect);
 	this.group.add(this.counterText);
 	this.layer.add(this.group);
+	console.log(this.options.parent.part.el);
     },
 
     updateHeight: function() {
