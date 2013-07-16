@@ -25,6 +25,7 @@ var cadnanoEvents = {
     documentClearSelectionsSignal: 'documentClearSelectionsSignal',
     partVirtualHelixRemovedSignal: 'partVirtualHelixRemovedSignal',
     strandSetStrandAddedSignal: 'strandSetStrandAddedSignal',
+    partStepSizeChangedSignal: 'partStepSizeChangedSignal',
 };
 
 

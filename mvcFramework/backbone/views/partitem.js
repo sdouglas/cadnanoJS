@@ -102,6 +102,7 @@ var SlicePartItem = PartItem.extend({
             delete this.handler;
         }
     },
+
     //TODO
     //addScafifStapIsMissing
     //addStapifScafIsMissing
@@ -117,6 +118,12 @@ var PathPartItem = PartItem.extend({
             who:    this.options.who,
         });
         this.connectPathSignalsSlots();
+        this.pathItemSet = new PathHelixSetItem({
+            el: $('#pathView'),
+            part: this.options.part,
+            handler: this.handler,
+            collection: this.options.part.getVHSet(),
+        });
         //this.render();
     },
     connectPathSignalsSlots: function(){
@@ -127,16 +134,36 @@ var PathPartItem = PartItem.extend({
         this.listenTo(this.part,
             cadnanoEvents.partStrandChangedSignal,
             this.partStrandChangedSlot);
+	this.listenTo(this.part,
+		      cadnanoEvents.partStepSizeChangedSignal,
+		      this.partStepSizeChangedSlot
+		      );
     },
 
     partVirtualHelixAddedSlot: function(virtualHelix){
+	this.pathItemSet.renderBack();
+	this.pathItemSet.activesliceItem.updateHeight();
         //TODO
         //Add in a new path in the path view panel.
     },
+
     partActiveSliceResizedSlot: function(){
     },
 
     partStrandChangedSlot:
     function(){
     },
+
+    partStepSizeChangedSlot: function(){
+	var slicebar = this.pathItemSet.activesliceItem;
+	var pCounter = slicebar.counter;
+	slicebar.adjustCounter(slicebar.counter);
+	if(slicebar.counter !== pCounter) {
+	    slicebar.group.setX(slicebar.counter*slicebar.sqLength+2*Math.floor(slicebar.counter/slicebar.divLength));
+            slicebar.counterText.setText(slicebar.counter);
+            slicebar.counterText.setOffset({x: slicebar.counterText.getWidth()/2});
+	}
+	this.pathItemSet.renderBack();
+    },
+
 });
