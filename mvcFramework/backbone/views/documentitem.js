@@ -3,12 +3,15 @@ var DocumentItem = Backbone.View.extend({
 
     events: {
         "keydown" : "undohere",
+	"click" : "onWindowChange",
     },
 
     initialize: function(){
         //These keys are to bind a keypress to a function.
         _.bindAll(this);
         $(document).bind('keypress',this.undohere);
+        $("#sliceView-resizer").bind('click',this.onWindowChange);
+	console.log($("#sliceView"));
 
         //Rest of init.
         this.currDoc = this.options.currDoc;
@@ -23,6 +26,9 @@ var DocumentItem = Backbone.View.extend({
         console.log("called init");
     },
 
+    onWindowChange: function(e){
+	    alert("test");
+	},
     documentPartAddedSlot: function(){
         console.log("called documentPartAddedSlot");
 

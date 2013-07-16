@@ -8,21 +8,26 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.handler.handler.add(this.backlayer);
 	this.activeslicelayer = new Kinetic.Layer(); //slidebar layer: ActiveSliceItem
 	this.handler.handler.add(this.activeslicelayer);
+	this.buttonlayer = new Kinetic.Layer(); //button layer: PathBaseChangeItem
+	this.handler.handler.add(this.buttonlayer);
+
 	//scale factor
 	this.ratioX = 1;
 	this.ratioY = 1;
 	this.pratioX = 1;
 	this.pratioY = 1;
+	this.scaleFactor = 1;
 	//objects
 	this.phItemArray = new Array(); //stores PathHelixItem
+	this.graphicsSettings = {
+	    sqLength: 20,
+	    divLength: 7,
+	    blkLength: 3
+	};
 	this.activesliceItem = new ActiveSliceItem({
 	    handler: this.handler,
 	    parent: this,
-	    graphics: {
-		sqLength: 20,
-		divLength: 7,
-		grLength: 21*this.part.getStep()
-            }
+	    graphics: this.graphicsSettings
 	});
     },
     events: {
@@ -35,17 +40,14 @@ var PathHelixSetItem = Backbone.View.extend({
         console.log('in render function vhitemset');
 	//variables that the items created in foreach loop can access
         var h = this.handler;
-	var dims = {
-	    sqLength: 20,
-	    divLength: 7,
-	    grLength: 21*this.part.getStep()
-	};
+	var dims = this.graphicsSettings;
+	dims.grLength = dims.blkLength*dims.divLength*this.part.getStep(); //grLength is only used here because background is immutable
 	var helixset = this;
 	var pharray = this.phItemArray;
-	//we only need 1 base changer button
-	var pbcItem = new PathBaseChangeItem({
-	    handler: h,
-	    parent: helixset
+	//buttons that change base length
+	this.pbcItem = new PathBaseChangeItem({
+	    handler: this.handler,
+	    parent: this
 	});
 	//for each VirtualHelixItem, we create a path helix and a path helix handler
         this.collection.each(function(vh){
@@ -63,7 +65,10 @@ var PathHelixSetItem = Backbone.View.extend({
 	    });
 	    pharray.push(phItem);
         });
-	
+	if(innerLayout.state.center.innerWidth !== this.handler.handler.getWidth() || innerLayout.state.center.innerHeight !== this.handler.handler.getHeight()) {
+	    this.handler.handler.setSize(innerLayout.state.center.innerWidth, innerLayout.state.center.innerHeight);
+	}
+
 	//calculating the new scale factor
 	this.ratioX = Math.min(1,innerLayout.state.center.innerWidth/(8*dims.sqLength+dims.sqLength*dims.grLength+2*dims.grLength/dims.divLength));
 	this.ratioY = Math.min(1,innerLayout.state.center.innerHeight/(7*dims.sqLength+4*pharray.length*dims.sqLength));
@@ -71,10 +76,13 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.backlayer.draw();
 	}
 	else { //scale factor changed, have to rescale and redraw EVERY layer and update pratio
-	    this.backlayer.setScale(Math.min(this.ratioX,this.ratioY)); //ensures everything can be seen while maintaining aspect ratio
+	    this.scaleFactor = Math.min(this.ratioX,this.ratioY);
+	    this.backlayer.setScale(this.scaleFactor); //ensures everything can be seen while maintaining aspect ratio
 	    this.backlayer.draw();
-	    this.activeslicelayer.setScale(Math.min(this.ratioX,this.ratioY));
+	    this.activeslicelayer.setScale(this.scaleFactor);
 	    this.activeslicelayer.draw();
+	    this.buttonlayer.setScale(this.scaleFactor);
+	    this.buttonlayer.draw();
 	    //reset previous ratio
 	    this.pratioX = this.ratioX;
 	    this.pratioY = this.ratioY;
@@ -96,6 +104,7 @@ var PathHelixSetItem = Backbone.View.extend({
 var PathHelixItem = Backbone.View.extend ({
     initialize: function(){
 	this.layer = this.options.parent.backlayer;
+	this.group = new Kinetic.Group();
 	this.grLength = this.options.graphics.grLength;
 	this.divLength = this.options.graphics.divLength;
 	this.sqLength = this.options.graphics.sqLength;
@@ -113,9 +122,10 @@ var PathHelixItem = Backbone.View.extend ({
 		    stroke: "#DDDDDD",
 		    strokeWidth: 2,
 		});
-		this.layer.add(rect);
+		this.group.add(rect);
 	    }
 	}
+	this.layer.add(this.group);
     },
 });
 
@@ -159,7 +169,7 @@ var PathBaseChangeItem = Backbone.View.extend({
     initialize: function() {
 	var part = this.options.parent.part;
 	var canvas = this.options.handler.handler;
-	var layer = this.options.parent.backlayer;
+	var layer = this.options.parent.buttonlayer;
 
 	var removeBaseImg = new Image();
 	removeBaseImg.onload = function() {
