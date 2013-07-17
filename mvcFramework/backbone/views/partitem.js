@@ -159,9 +159,7 @@ var PathPartItem = PartItem.extend({
 	var pCounter = slicebar.counter;
 	slicebar.adjustCounter(slicebar.counter);
 	if(slicebar.counter !== pCounter) {
-	    slicebar.group.setX(slicebar.counter*slicebar.sqLength+2*Math.floor(slicebar.counter/slicebar.divLength));
-            slicebar.counterText.setText(slicebar.counter);
-            slicebar.counterText.setOffset({x: slicebar.counterText.getWidth()/2});
+	    slicebar.update();
 	}
 	this.pathItemSet.renderBack();
     },

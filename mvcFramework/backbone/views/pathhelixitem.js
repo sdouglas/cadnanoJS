@@ -10,6 +10,10 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.handler.handler.add(this.activeslicelayer);
 	this.buttonlayer = new Kinetic.Layer(); //button layer: PathBaseChangeItem
 	this.handler.handler.add(this.buttonlayer);
+	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
+	this.handler.handler.add(this.strandlayer);
+	//some things should be on the top
+	this.activeslicelayer.moveToTop();
 
 	//scale factor
 	this.ratioX = 1;
@@ -64,6 +68,9 @@ var PathHelixSetItem = Backbone.View.extend({
 		parent: helixset,
 		graphics: dims 
             });
+	    var epItem1 = new EndPointItem(phItem,10,0,3);
+	    var epItem2 = new EndPointItem(phItem,20,0,5);
+	    var strandItem = new StrandItem(epItem1, epItem2);
 	    var phHandlerItem = new PathHelixHandlerItem({
 		model: vh,
 		handler: h,
@@ -89,15 +96,14 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.activeslicelayer.draw();
 	    this.buttonlayer.setScale(this.scaleFactor);
 	    this.buttonlayer.draw();
+	    this.strandlayer.setScale(this.scaleFactor);
+	    this.strandlayer.draw();
 	    //reset previous ratio
 	    this.pratioX = this.ratioX;
 	    this.pratioY = this.ratioY;
 	}
     },
 
-    renderActiveslice: function() {
-	    this.activeslicelayer.draw();
-    },
 
     onMouseMove: function(e){
     },
@@ -129,6 +135,15 @@ var PathHelixItem = Backbone.View.extend ({
 		    strokeWidth: 2,
 		});
 		this.group.add(rect);
+	    }
+	    if(i%7 == 0) { //divider lines have thicker color; because of this there is no need for the +2*Math.floor
+		var divLineXStart = this.startX+i*this.sqLength+2*Math.floor(i/this.divLength)-1;
+		var divLine = new Kinetic.Line({
+		    points: [divLineXStart,this.startY,divLineXStart,this.startY+2*this.sqLength],
+		    stroke: "#BBBBBB",
+		    strokeWidth: 2
+		});
+		this.group.add(divLine);
 	    }
 	}
 	this.layer.add(this.group);

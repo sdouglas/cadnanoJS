@@ -5,8 +5,9 @@ var ActiveSliceItem = Backbone.View.extend({
 	this.blkLength = this.options.graphics.blkLength;
 	this.sqLength = this.options.graphics.sqLength;
 
-	this.initcounter = 0;
+	this.initcounter = this.divLength*this.blkLength*this.options.parent.part.getStep()/2;
 	this.counter = this.initcounter;
+	this.pCounter = this.counter;
 	this.top = 3*this.sqLength;
 	this.bot = 0;
 
@@ -18,7 +19,7 @@ var ActiveSliceItem = Backbone.View.extend({
 	    fill: colours.orangefill,
 	    stroke: "#000000",
 	    strokeWidth: 1,
-	    opacity: 0.7
+	    opacity: 0.6
 	});
 	this.counterText = new Kinetic.Text({
 	    x: 5*this.sqLength+(this.counter+0.5)*this.sqLength+2*Math.floor(this.counter/this.divLength),
@@ -37,15 +38,12 @@ var ActiveSliceItem = Backbone.View.extend({
 	});
 	this.group.superobj = this;
 	this.group.setDragBoundFunc(function(pos) {
-	    var counter = this.superobj.counter;
-	    //changing text settings; these lines are here so it can be in sync with the bar
-	    this.superobj.counterText.setText(counter);
-	    this.superobj.counterText.setOffset({x: this.superobj.counterText.getWidth()/2});
-	    //limit slidebar to be right on top of bases
+	    /*
+	    The group is not intended to be draggable; when we want to move its location we change its X in update()
+	    But if we don't set draggable to true, we can't call dragmove. This method makes it easier to efficiently send signals.
+	    */
 	    return {
-		x: ((this.superobj.counter-this.superobj.initcounter)*this.superobj.sqLength
-		    +2*Math.floor(this.superobj.counter/this.superobj.divLength)
-		    -2*Math.floor(this.superobj.initcounter/this.superobj.divLength))*this.superobj.options.parent.scaleFactor,
+		x: this.getAbsolutePosition().x,
 		y: this.getAbsolutePosition().y
 	    }
 	});
@@ -53,12 +51,24 @@ var ActiveSliceItem = Backbone.View.extend({
 	    var correctedSqLength = this.superobj.sqLength+2/this.superobj.divLength;
 	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.options.parent.scaleFactor-5*this.superobj.sqLength)/correctedSqLength);
 	    this.superobj.adjustCounter(tempCounter);
+	    if(this.superobj.counter !== this.superobj.pCounter) {
+		this.superobj.pCounter = this.superobj.counter;
+		this.superobj.update();
+		//throw out signals here
+	    }
 	});
 
 	this.group.add(this.rect);
 	this.group.add(this.counterText);
 	this.layer.add(this.group);
-	console.log(this.options.parent.part.el);
+	//console.log(this.options.parent.el.scrollTop); //if one day we need to account for scrolling
+    },
+
+    update: function() {
+        this.counterText.setText(this.counter);
+	this.counterText.setOffset({x: this.counterText.getWidth()/2});
+	this.group.setX((this.counter-this.initcounter)*this.sqLength+2*Math.floor(this.counter/this.divLength)-2*Math.floor(this.initcounter/this.divLength));
+	this.layer.draw();
     },
 
     updateHeight: function() {
