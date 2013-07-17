@@ -22,6 +22,8 @@ var Part = Backbone.Model.extend({
 
         this.oddRecycleBin = new minHeap();
         this.evenRecycleBin = new minHeap();
+
+        this.activeIdx = (this.step-1)*21;
     },
 
     getVHSet: function(){
@@ -115,6 +117,7 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
             hID:    idNum,
             id:     this.modelPart.getStorageID(hrow,hcol),
             part:   this.modelPart,
+            undoStack: this.modelPart.undoStack(),
         });
         //console.log(hrow + ',' + hcol + ',' + helix.hID + ',' + helix.row);
 
@@ -187,6 +190,15 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
     },
     getStep: function(){
 	return this.step;
+    },
+
+    activeBaseIndex: function(){
+        return this.activeIdx;
+    },
+
+    setActiveBaseIndex: function(idx){
+        this.activeIdx = idx;
+        this.trigger(cadnanoEvents.partActiveSliceResizedSignal);
     },
 });
 
@@ -330,4 +342,5 @@ var SquarePart = Part.extend({
     positionToCoord: function(row,column,scaleFactor){
         return null;
     },
+
 });

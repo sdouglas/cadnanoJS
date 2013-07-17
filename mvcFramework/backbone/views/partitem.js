@@ -15,7 +15,7 @@ var PartItem = Backbone.View.extend({
             );
         this.listenTo(this.part,
             cadnanoEvents.partVirtualHelixRemovedSignal,
-            this.partVirtualHelixRemovedSlot
+            this.partVirtualHelixAddedSlot
             );
         this.listenTo(this.part,
             cadnanoEvents.partHelicesInitializedSignal,
@@ -25,6 +25,10 @@ var PartItem = Backbone.View.extend({
             cadnanoEvents.partRemovedSignal,
             this.partRemovedSlot
             );
+        this.listenTo(this.part,
+            cadnanoEvents.partActiveSliceResizedSignal,
+            this.partActiveSliceResizedSlot
+        );
     },
 
     isHelixSelected: function(row,col){
@@ -85,10 +89,6 @@ var SlicePartItem = PartItem.extend({
 
     },
 
-    partVirtualHelixRemovedSlot: function(virtualHelix){
-        this.vhItemSet.render();
-    },
-    
     partRemovedSlot: function(){
         console.log(this.part);
         this.emptyItemSet.close();
@@ -101,6 +101,13 @@ var SlicePartItem = PartItem.extend({
             this.handler.render();
             delete this.handler;
         }
+    },
+
+    partActiveSliceResizedSlot: function(){
+        //Check each helix, and see which
+        //ones fall under the scaffold, and which ones
+        //do not.
+        this.vhItemSet.render();
     },
 
     //TODO
@@ -128,10 +135,6 @@ var PathPartItem = PartItem.extend({
     },
     connectPathSignalsSlots: function(){
         this.listenTo(this.part,
-            cadnanoEvents.partActiveSliceResizedSignal,
-            this.partActiveSliceResizedSlot
-        );
-        this.listenTo(this.part,
             cadnanoEvents.partStrandChangedSignal,
             this.partStrandChangedSlot);
 	this.listenTo(this.part,
@@ -145,9 +148,6 @@ var PathPartItem = PartItem.extend({
 	this.pathItemSet.activesliceItem.updateHeight();
         //TODO
         //Add in a new path in the path view panel.
-    },
-
-    partActiveSliceResizedSlot: function(){
     },
 
     partStrandChangedSlot:

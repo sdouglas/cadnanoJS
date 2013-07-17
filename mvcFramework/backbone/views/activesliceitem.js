@@ -53,6 +53,9 @@ var ActiveSliceItem = Backbone.View.extend({
 	    var correctedSqLength = this.superobj.sqLength+2/this.superobj.divLength;
 	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.options.parent.scaleFactor-5*this.superobj.sqLength)/correctedSqLength);
 	    this.superobj.adjustCounter(tempCounter);
+
+        //change the model object.
+        this.superobj.options.parent.part.setActiveBaseIndex(this.superobj.counter);
 	});
 
 	this.group.add(this.rect);

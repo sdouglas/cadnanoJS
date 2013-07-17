@@ -1,32 +1,43 @@
-var StrandSet = Backbone.Model.Extend({
+var StrandSet = Backbone.Model.extend({
     initialize: 
-    function(type){
+    function(){
         this.strandList = [];
-        this.part = this.options.part;
-        this.helix = this.options.helix;
-        this.undoStack = this.options.undoStack;
+        this.part = this.get('part');
+        this.undoStack = this.get('undoStack');
         this.scaffold = false;
-        if(type === Constants.ScaffoldStrand){
+        if(this.get('type') === Constants.ScaffoldStrand){
             this.scaffold = true;
         }
     },
 
+    /**
+     * Creates a new strand and pushes the action
+     * onto the undostack.
+     * Triggers a signal that updates the path view.
+     * @param {startIdx} This is the strand starting position.
+     * @param {endIdx} This is the strand ending position.  
+     * TODO 
+     * 1. Staple/Scaffold strand - this is based on 
+     * which strand set it belongs to.
+     * Figure the parity of the helix and make the 3' 5' ends
+     * based on the same.
+     */
+
     createStrand:
     function(startIdx, endIdx){
-        //TODO
-        //1. Staple/Scaffold strand - this is based on 
-        //which strand set it belongs to./
-        //Figure the parity of the strand and make the 3' 5' ends
-        //based on the same.
         this.undoStack.execute(new CreateStrandCommand(this,startIdx,
                 endIdx));
     },
 
-    insert:
-        //TODO: insert it in the right position, sorting becomes
-        //easier later on.
-    function(strand){
-        this.strandSet.push(strand);
+    /**
+     * Insert a new strand into the strand set.
+     * @param {strand} strand model object.
+     * TODO: insert it in the right position, sorting becomes
+     * easier later on.
+     */
+    insert: function(strand){
+        var obj = {st: strand.start, end: strand.end};
+        this.strandList.push(obj);
     },
 
     isStaple:
@@ -38,13 +49,55 @@ var StrandSet = Backbone.Model.Extend({
     function(){
         return this.scaffold;
     },
-    
+
+    /**
+     * Check if there exists a strand in an interval.
+     * @param {low} The lower base position from which
+     * the strand needs to be checked.
+     * @param {high} The higher base position upto which
+     * the strand needs to be checked.
+     *
+     * @returns {boolean} true if occupied at idx.
+     * TODO:
+     * Have to see whether the scaffold strand is present at this
+     * location or not.
+     */
+
+    hasStrandAt: function(low,high){
+        //TODO: hack
+        var idx = (low+high)/2;
+        console.log(idx);
+        var len = this.strandList.length;
+        for(var i=0;i<len;i++){
+            var obj = this.strandList[i];
+            if(idx < obj.st) break;
+            if(idx >= obj.st && idx < obj.end) return true;
+        }
+        return false;
+    },
+
+    populateRandom: function(){
+        for(var i=0;i<10;i++){
+            //var start = Math.round(Math.random()*100)%42;
+            //var end = Math.round(Math.random()*100)%42;
+            var start = i*7;
+            var end = start+3;
+            
+            if(start>end){
+                var tmp = start;
+                start = end;
+                end = tmp;
+            }
+            var obj = {st: start, end: end};
+            this.strandList.push(obj);
+        }
+    },
 });
 
 var CreateStrandCommand = Undo.Command.extend({
     constructor:
     function(strandSet, startIdx, endIdx){
-        this.strandSet = strandset;
+        this.strandSet = strandSet;
         this.redo(startIdx, endIdx);
     },
     undo: 
@@ -57,7 +110,10 @@ var CreateStrandCommand = Undo.Command.extend({
     function(startIdx, endIdx){
         //Create a strand object.
         //And add it to the strand list.
-        var strand = new Strand(startIdx, endIdx);
+        var strand = new Strand({
+            startId: startIdx, 
+            endId: endIdx,
+        });
         this.strandSet.insert(strand);
         this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal);
         this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);

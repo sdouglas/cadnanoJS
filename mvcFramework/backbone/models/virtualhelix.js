@@ -5,12 +5,25 @@ var VirtualHelixSet = Backbone.Collection.extend({
 
 var VirtualHelix = Backbone.Model.extend({
     initialize: function(){
-        this.scafStrandSet = new Array();
-        this.stapStrandSet = new Array();
         this.row = this.get('row');
         this.col = this.get('col');
         this.part = this.get('part');
         this.hID = this.get('hID');
+        this.undoStack = this.get('undoStack');
+
+        this.scafStrandSet = new StrandSet({
+            type: Constants.ScaffoldStrand,
+            part: this.part,
+            undoStack: this.undoStack,
+        });
+        this.stapStrandSet = new StrandSet({
+            type: '',
+            part: this.part,
+            undoStack: this.undoStack,
+        });
+
+        this.scafStrandSet.populateRandom();
+        this.stapStrandSet.populateRandom();
     },
     getRow: function(){
         return this.row;
@@ -21,4 +34,9 @@ var VirtualHelix = Backbone.Model.extend({
     getPart: function(){
         return this.part;
     },
+    
+    hasStrandAt: function(idx){
+        return this.scafStrandSet.hasStrandAt(idx-1,idx+1);
+    },
+
 });

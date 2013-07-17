@@ -47,9 +47,12 @@ var EmptyHelixSetItem = Backbone.View.extend({
                     coord.col
                     );
         }
-        //else if (!helixModel.stapSet.hasStrandAt(idx-1,idx+1)){
-            //helix.scafStrandSet.createStrand(startIdx,endIdx);
-        //}
+        else {
+            var idx = this.part.activeBaseIndex();
+            if (!helixModel.scafStrandSet.hasStrandAt(idx-1,idx+1)){
+                helixModel.scafStrandSet.createStrand(idx-1,idx+1);
+            }
+        }
     },
 
     remove: function(){

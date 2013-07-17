@@ -63,12 +63,24 @@ var VirtualHelixItem = Backbone.View.extend ({
         this.handler = this.options.handler;
         var helixNum = this.options.model.hID;
 
-        var params = {
-            fill: colours.orangefill,
-            stroke: colours.orangestroke,
-            strokewidth: colours.strokewidth,
-            layer: Constants.helixLayer,
-        };
+        var idx = this.part.activeBaseIndex();
+        var params;
+        if(this.model.hasStrandAt(idx)){
+            params = {
+                fill: colours.orangefill,
+                stroke: colours.orangestroke,
+                strokewidth: colours.strokewidth,
+                layer: Constants.helixLayer,
+            };
+        }
+        else{
+            params = {
+                fill: colours.lightorangefill,
+                stroke: colours.lightorangestroke,
+                strokewidth: colours.strokewidth,
+                layer: Constants.helixLayer,
+            };
+        }
         this.polygon = this.handler.createCircle(pos.x, 
             pos.y, this.part.radius, params,
             helixNum
