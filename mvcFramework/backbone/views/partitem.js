@@ -131,12 +131,14 @@ var PathPartItem = PartItem.extend({
             handler: this.handler,
             collection: this.options.part.getVHSet(),
         });
-        //this.render();
+
+        //PreXoverItems are stored here.
+        this.preXoverItems = [];
     },
     connectPathSignalsSlots: function(){
         this.listenTo(this.part,
-            cadnanoEvents.partStrandChangedSignal,
-            this.partStrandChangedSlot);
+            cadnanoEvents.updatePreXoverItemsSignal,
+            this.updatePreXoverItemsSlot);
 	this.listenTo(this.part,
 		      cadnanoEvents.partStepSizeChangedSignal,
 		      this.partStepSizeChangedSlot
@@ -150,8 +152,19 @@ var PathPartItem = PartItem.extend({
         //Add in a new path in the path view panel.
     },
 
-    partStrandChangedSlot:
-    function(){
+    updatePreXoverItemsSlot:
+    function(virtualHelix){
+        console.log('in updatePreXoverItemsSlot');
+        this.part.potentialCrossoverList(virtualHelix);
+        //3. Remove all current prexoveritems.
+        //empty the layer containing the prexoveritems.
+        //this.preXoverItemsLayer.removeChildren();
+        //
+        //1. Get the vhitem.
+        //2. Get the potential crossovers locations.
+        //4. Create new prexover items at these locations.
+        //Get active virtual helix item.
+        //Re-render the xover items.
     },
 
     partStepSizeChangedSlot: function(){

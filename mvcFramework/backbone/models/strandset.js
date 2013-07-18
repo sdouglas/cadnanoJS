@@ -4,6 +4,7 @@ var StrandSet = Backbone.Model.extend({
         this.strandList = [];
         this.part = this.get('part');
         this.undoStack = this.get('undoStack');
+        this.helix = this.get('helix');
         this.scaffold = false;
         if(this.get('type') === Constants.ScaffoldStrand){
             this.scaffold = true;
@@ -92,6 +93,17 @@ var StrandSet = Backbone.Model.extend({
             this.strandList.push(obj);
         }
     },
+
+    isDrawn5to3:
+    function(){
+        return this.helix.isDrawn5to3(this);
+    },
+
+    hasNoStrandAtOrNoXover:
+    function(index){
+        return true;
+    },
+
 });
 
 var CreateStrandCommand = Undo.Command.extend({
@@ -111,12 +123,15 @@ var CreateStrandCommand = Undo.Command.extend({
         //Create a strand object.
         //And add it to the strand list.
         var strand = new Strand({
-            startId: startIdx, 
-            endId: endIdx,
+            baseLowIdx: startIdx, 
+            baseHighIdx: endIdx,
+            strandSet: this.strandSet,
+            helix: this.strandSet.helix,
         });
         this.strandSet.insert(strand);
         this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal);
-        this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        this.strandSet.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
+                    this.strandSet.helix);
         this.strand = strand;
     },
     execute:

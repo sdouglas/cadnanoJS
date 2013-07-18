@@ -1,5 +1,17 @@
+var Crossovers = {
+    honeycombScafLow: [[1, 11], [8, 18], [4, 15]],
+    honeycombScafHigh: [[2, 12], [9, 19], [5, 16]],
+    honeycombStapLow: [[6], [13], [20]],
+    honeycombStapHigh: [[7], [14], [0]],
+    squareScafLow : [[4, 26, 15], [18, 28, 7], [10, 20, 31], [2, 12, 23]],
+    squareScafHigh : [[5, 27, 16], [19, 29, 8], [11, 21, 0], [3, 13, 24]],
+    squareStapLow : [[31], [23], [15], [7]],
+    squareStapHigh : [[0], [24], [16], [8]],
+};
+          
 var Part = Backbone.Model.extend({
     step: 2,
+    stepSize: 21,
     radius: 20,
     turnsPerStep:2,
     helicalPitch: this.step/this.turnsPerStep,
@@ -24,6 +36,7 @@ var Part = Backbone.Model.extend({
         this.evenRecycleBin = new minHeap();
 
         this.activeIdx = (this.step-1)*21;
+        this.init();
     },
 
     getVHSet: function(){
@@ -183,13 +196,18 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
     },
 
     setStep: function(n){
-	if(n>0){
-	    this.step = n;
-	    this.trigger(cadnanoEvents.partStepSizeChangedSignal);
-	}
+	    if(n>0){
+	        this.step = n;
+	        this.trigger(cadnanoEvents.partStepSizeChangedSignal);
+	    }
     },
+
     getStep: function(){
-	return this.step;
+	    return this.step;
+    },
+
+    getStepSize: function(){
+        return this.stepSize;
     },
 
     activeBaseIndex: function(){
@@ -200,15 +218,107 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
         this.activeIdx = idx;
         this.trigger(cadnanoEvents.partActiveSliceResizedSignal);
     },
+
+    setActiveVirtualHelix:
+    function(modelHelix){
+        this.activeHelix = modelHelix;
+        this.trigger(cadnanoEvents.updatePreXoverItemsSignal,
+                modelHelix);
+    },
+
+    /**
+     * @param {neighborVirtualHelix} is a virtualHelix 
+     * neighbor of the arg virtualHelix
+     * @param {index} is the index where a potential Xover might occur
+     * @param {strandType} is from the enum 
+     * (StrandType.Scaffold, StrandType.Staple)
+     * @param {isLowIdx} is whether or not it's 
+     * the at the low index (left in the Pathview) of a potential Xover site
+     * @return (neighborVirtualHelix, index, strandType, isLowIdx)
+     */
+    potentialCrossoverList:
+    function(vh,idx){
+        console.log(vh);
+        var lutsNeighbour = _.zip(this.scafL,this.scafH,this.stapL,this.stapH);
+        var sts = new Array(Constants.Scaffold, Constants.Staple);
+
+        var numBases = this.maxBaseIdx();
+        var baseRange = _.range(0,numBases,this.stepSize);
+        
+        if (idx){
+            baseRange = _.filter(baseRange, function(x){ if ((x >= idx - 3 * this.stepSize) && (x <= idx + 2 * this.stepSize)) return true;
+                return false;
+            });
+        }
+        var fromStrandSets = vh.getStrandSets();
+        var neighbours = this.getVirtualHelixNeighbours(vh);
+
+        var neighbourLutPair = _.zip(neighbours,lutsNeighbour);
+        var ret = new Array();
+        for(var i = 0; i < neighbourLutPair.length; i++){
+            var neighbour = neighbourLutPair[i][0];
+            if(typeof neighbour === 'undefined') 
+                continue;
+
+            var lutScaf = new Array(neighbourLutPair[i][1][0],neighbourLutPair[i][1][1]);
+            var lutStap = new Array(neighbourLutPair[i][1][2],neighbourLutPair[i][1][3]);
+            var lut = new Array(lutScaf, lutStap);
+
+            var toSS = neighbour.getStrandSets();
+            var fromSS = fromStrandSets;
+            var quadruplet = _.zip(fromSS, toSS, lut, sts);
+            console.log(quadruplet);
+            for(var k=0; k < quadruplet.length; k++){
+                var pts = _.zip(quadruplet[k][2],new Array(true, false));
+                for(var j=0; j<pts.length;j++){
+                    //Compute product of baseRange and pts.
+                    for(var a=0;a<pts[j][0].length;a++){
+                    for(var b=0;b<baseRange.length;b++){
+                        var p = pts[j][0][a];
+                        var q = baseRange[b];
+                        var index = p+q;
+
+                        var fromSet = quadruplet[k][0];
+                        var toSet   = quadruplet[k][1];
+                        var strandType = quadruplet[k][3];
+                        var isLowIdx = pts[j][1];
+                        
+                        if(index < numBases){
+                            if(fromSet.hasNoStrandAtOrNoXover(index) &&
+                               toSet.hasNoStrandAtOrNoXover(index)){
+                                ret.push(new Array(neighbour, index, strandType, isLowIdx)); 
+                            }
+                        }
+                        console.log(index);
+                    }}
+                }
+            }
+            console.log(ret);
+        }
+        return ret;
+    },
+
+    maxBaseIdx:
+    function(){
+        return this.step * this.stepSize;
+    },
 });
 
 var HoneyCombPart = Part.extend({
     subStepSize: this.step/3,
+
+    init: function(){
+        this.scafL = Crossovers.honeycombScafLow;
+        this.scafH = Crossovers.honeycombScafHigh;
+        this.stapL = Crossovers.honeycombStapLow;
+        this.stapH = Crossovers.honeycombStapHigh;
+    },
+
     crossSectionType: function(){
         return Constants.HONEYCOMB;
     },
 
-    getVirtualHelixNeighbours: function(){
+    getVirtualHelixNeighbors: function(){
         return null;
     },
 
@@ -323,10 +433,38 @@ var HoneyCombPart = Part.extend({
     isEvenParity: function(row,col){
         return !((row+col)%2);
     },
+
+    getVirtualHelixNeighbours: function(vh){
+        var ret = [];
+        var helix;
+        if(vh.row % 2){
+            //row-1, col
+            helix = (this.getModelHelix(this.getStorageID(vh.row-1,vh.col)));
+            if(helix) ret.push(helix);
+        }
+        else{
+            //row+1, col
+            helix = (this.getModelHelix(this.getStorageID(vh.row+1,vh.col)));
+            if(helix) ret.push(helix);
+        }
+        helix = (this.getModelHelix(this.getStorageID(vh.row,vh.col-1)));
+        if(helix) ret.push(helix);
+        helix = (this.getModelHelix(this.getStorageID(vh.row,vh.col+1)));
+        if(helix) ret.push(helix);
+        return ret;
+    },
 });
 
 var SquarePart = Part.extend({
     subStepSize: this.step/4,
+
+    init: function(){
+        this.scafL = Crossovers.squareScafLow;
+        this.scafH = Crossovers.squareScafHigh;
+        this.stapL = Crossovers.squareStapLow;
+        this.stapH = Crossovers.squareStapHigh;
+    },
+
     crossSectionType: function(){
         return Constants.SQUARE;
     },

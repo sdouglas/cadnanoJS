@@ -14,6 +14,8 @@ var Constants = {
     zhigh: 2,
     zhighest: 3,
     ScaffoldStrand: 'Scaffold',
+    Scaffold: 0,
+    Staple: 1,
 };
 
 var cadnanoEvents = {
@@ -26,6 +28,7 @@ var cadnanoEvents = {
     partVirtualHelixRemovedSignal: 'partVirtualHelixRemovedSignal',
     strandSetStrandAddedSignal: 'strandSetStrandAddedSignal',
     partStepSizeChangedSignal: 'partStepSizeChangedSignal',
+    updatePreXoverItemsSignal: 'updatePreXoverItemsSignal',
 };
 
 
