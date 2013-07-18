@@ -1,44 +1,49 @@
 var EndPointItem = Backbone.View.extend({
-    initialize: function(phi, baseX, baseY, type) {
+    initialize: function(strand, dir, type) {
 	//accessing other objects
-	this.strand = undefined;
-	this.phItem = phi;
-	this.layer = this.phItem.options.parent.strandlayer;
+	this.parent = strand;
+	this.phItem = this.parent.parent;
+	this.layer = this.parent.layer;
+	//temporary layer that will be used for fast rendering
+	this.tempLayer = new Kinetic.Layer();
+	this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
+	this.phItem.options.handler.handler.add(this.tempLayer);
 	//graphics
-	this.divLength = this.phItem.options.graphics.divLength;
-	this.blkLength = this.phItem.options.graphics.blkLength;
-	this.sqLength = this.phItem.options.graphics.sqLength;
-	this.centerX = this.phItem.startX+(baseX+0.5)*this.phItem.sqLength+2*Math.floor(baseX/this.phItem.divLength);
-	this.centerY = this.phItem.startY+(baseY+0.5)*this.phItem.sqLength;
+	this.divLength = this.parent.divLength;
+	this.blkLength = this.parent.blkLength;
+	this.sqLength = this.parent.sqLength;
 	//counters
-	this.initcounter = baseX;
+	if(dir === "L") {
+	    this.initcounter = this.parent.xStart;
+	}
+	else if(dir === "R") {
+	    this.initcounter = this.parent.xEnd;
+	}
 	this.counter = this.initcounter;
 	this.pCounter = this.counter;
+	//starting position
+	this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;
+	this.centerY = this.parent.yCoord;
 	//misc. properties
-	this.endtype = type;
+	this.prime = type;
 	this.parity = (this.phItem.options.model.hID)%2;
 	//vertices of the shape
 	var polypts;
-	if(type === 3) { //3' end: triangle
+	if(this.prime === 3) { //3' end: triangle
 	    polypts = [this.centerX-(2*this.parity-1)*this.sqLength*0.3,this.centerY,
 		       this.centerX+(2*this.parity-1)*this.sqLength*0.5,this.centerY-this.sqLength*0.5,
 		       this.centerX+(2*this.parity-1)*this.sqLength*0.5,this.centerY+this.sqLength*0.5];
 	}
-	else if(type === 5) { //5' end: square
+	else if(this.prime === 5) { //5' end: square
 	    //reason I didn't use Kinetic.Rect: its getX() works differently and shows the shape at wrong position
 	    polypts = [this.centerX-this.sqLength*0.2-this.sqLength*this.parity*0.3,this.centerY-this.sqLength*0.35,
 		       this.centerX-this.sqLength*0.2-this.sqLength*this.parity*0.3,this.centerY+this.sqLength*0.35,
 		       this.centerX+this.sqLength*0.5-this.sqLength*this.parity*0.3,this.centerY+this.sqLength*0.35,
 		       this.centerX+this.sqLength*0.5-this.sqLength*this.parity*0.3,this.centerY-this.sqLength*0.35];
 	}
-	else { //typo
-	    alert(type+"\' end does not exist!");
-	    throw "stop execution";
-	}
-
 	this.shape = new Kinetic.Polygon({
 	    points: polypts,
-	    fill: "#4444FF",
+	    fill: this.parent.strandColor,
 	    stroke: "#000000",
 	    strokeWidth: 1,
 	    draggable: true,
@@ -50,23 +55,76 @@ var EndPointItem = Backbone.View.extend({
 	    }
 	});
 	this.shape.superobj = this; //javascript y u no have pointers?!
+	this.shape.on("mousedown", function(pos) {
+	    /*
+	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
+	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
+	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
+	      further.
+	    */
+	    this.redBox = new Kinetic.Rect({
+		x: this.superobj.centerX-this.superobj.sqLength/2,
+		y: this.superobj.centerY-this.superobj.sqLength/2,
+		width: this.superobj.sqLength,
+		height: this.superobj.sqLength,
+		fill: "transparent",
+		stroke: "#FF0000",
+		strokeWidth: 2,
+	    });
+	    this.redBox.superobj = this;
+	    this.redBox.on("mouseup", function(pos) {
+		    this.remove();
+		    this.superobj.superobj.tempLayer.draw();
+		});
+	    this.superobj.tempLayer.add(this.redBox);
+	    this.superobj.tempLayer.draw();
+	});
 	this.shape.on("dragmove", function(pos) {
-	    var correctedSqLength = this.superobj.sqLength+2/this.superobj.divLength;
-	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.phItem.options.parent.scaleFactor-5*this.superobj.sqLength)/correctedSqLength);
+	    //we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
+	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.phItem.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    this.superobj.adjustCounter(tempCounter);
 	    if(this.superobj.counter !== this.superobj.pCounter) {
 		this.superobj.pCounter = this.superobj.counter;
-		this.superobj.update();
+		//redrawing red box
+		this.superobj.updateCenterX();
+		this.redBox.setX(this.superobj.centerX-this.superobj.sqLength/2);
+		this.superobj.tempLayer.draw();
 		//throw out signals here
 	    }
 	});
+	this.shape.on("dragend", function(pos) {
+	    this.superobj.update(); //wait for all elements to be adjusted to correct location before rendering
+	    //red box has finished its duty, to be deleted
+	    this.superobj.updateCenterX();
+	    this.redBox.remove();
+	    this.superobj.tempLayer.draw();
+	    //update counter and value in StrandItem
+	    if(dir === "L") {
+		this.superobj.parent.xStart = this.superobj.counter;
+		this.superobj.parent.updateXStartCoord();
+	    }
+	    else {
+		this.superobj.parent.xEnd = this.superobj.counter;
+		this.superobj.parent.updateXEndCoord();
+	    }
+	    //redrawing the line between two enditems
+	    this.superobj.parent.connection.setX(this.superobj.parent.xStartCoord);
+	    this.superobj.parent.connection.setWidth(this.superobj.parent.xEndCoord-this.superobj.parent.xStartCoord);
+	    this.superobj.parent.invisConnection.setX(this.superobj.parent.xStartCoord);
+	    this.superobj.parent.invisConnection.setWidth(this.superobj.parent.xEndCoord-this.superobj.parent.xStartCoord);
+	    this.superobj.layer.draw();
+	});
 	this.layer.add(this.shape);
-	this.layer.draw();
+	this.parent.addEndItem(this,dir); //finally linking this item back to strand
     },
 
-    update: function() {
-	this.shape.setX((this.counter-this.initcounter)*this.sqLength+2*Math.floor(this.counter/this.divLength)-2*Math.floor(this.initcounter/this.divLength));
-	this.layer.draw();
+    updateCenterX: function() {this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;},
+
+    update: function(boo) { //only redraws when boo is true
+	this.shape.setX((this.counter-this.initcounter)*this.sqLength);
+	if(boo) {
+	    this.layer.draw();
+	}
     },
 
     adjustCounter: function(n) {

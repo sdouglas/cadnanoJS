@@ -68,9 +68,6 @@ var PathHelixSetItem = Backbone.View.extend({
 		parent: helixset,
 		graphics: dims 
             });
-	    var epItem1 = new EndPointItem(phItem,10,0,3);
-	    var epItem2 = new EndPointItem(phItem,20,0,5);
-	    var strandItem = new StrandItem(epItem1, epItem2);
 	    var phHandlerItem = new PathHelixHandlerItem({
 		model: vh,
 		handler: h,
@@ -81,7 +78,7 @@ var PathHelixSetItem = Backbone.View.extend({
         });
 
 	//calculating the new scale factor
-	this.ratioX = Math.min(1,innerLayout.state.center.innerWidth/(8*dims.sqLength+dims.sqLength*dims.grLength+2*dims.grLength/dims.divLength));
+	this.ratioX = Math.min(1,innerLayout.state.center.innerWidth/(8*dims.sqLength+dims.sqLength*dims.grLength));
 	this.ratioY = Math.min(1,innerLayout.state.center.innerHeight/(7*dims.sqLength+4*pharray.length*dims.sqLength));
 	//no scale factor changes, just redraw backlayer
 	if(this.ratioX === this.pratioX && this.ratioY === this.pratioY) {
@@ -102,6 +99,10 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.pratioX = this.ratioX;
 	    this.pratioY = this.ratioY;
 	}
+
+	var strandItem = new StrandItem(pharray[pharray.length-1],1,5,15);
+	var end1 = new EndPointItem(strandItem, "L", 3);
+	var end2 = new EndPointItem(strandItem, "R", 5);
     },
 
 
@@ -113,6 +114,7 @@ var PathHelixSetItem = Backbone.View.extend({
 
 });
 
+//the long rectangular base grid
 var PathHelixItem = Backbone.View.extend ({
     initialize: function(){
 	this.layer = this.options.parent.backlayer;
@@ -122,11 +124,11 @@ var PathHelixItem = Backbone.View.extend ({
 	this.sqLength = this.options.graphics.sqLength;
 
 	this.startX = 5*this.sqLength;
-	this.startY = 5*this.sqLength + 4*(this.options.parent.phItemArray.length)*this.sqLength;
+	this.startY = 5*this.sqLength+4*(this.options.parent.phItemArray.length)*this.sqLength;
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
 		var rect = new Kinetic.Rect({
-		    x: this.startX+i*this.sqLength+2*Math.floor(i/this.divLength),
+		    x: this.startX+i*this.sqLength,
 		    y: this.startY+j*this.sqLength,
 		    width: this.sqLength,
 		    height: this.sqLength,
@@ -136,11 +138,11 @@ var PathHelixItem = Backbone.View.extend ({
 		});
 		this.group.add(rect);
 	    }
-	    if(i%7 == 0) { //divider lines have thicker color; because of this there is no need for the +2*Math.floor
-		var divLineXStart = this.startX+i*this.sqLength+2*Math.floor(i/this.divLength)-1;
+	    if(i%7 == 0) { //divider lines are blacker
+		var divLineXStart = this.startX+i*this.sqLength;
 		var divLine = new Kinetic.Line({
 		    points: [divLineXStart,this.startY,divLineXStart,this.startY+2*this.sqLength],
-		    stroke: "#BBBBBB",
+		    stroke: "#666666",
 		    strokeWidth: 2
 		});
 		this.group.add(divLine);
@@ -150,6 +152,7 @@ var PathHelixItem = Backbone.View.extend ({
     },
 });
 
+//the circle next to PathHelixItem
 var PathHelixHandlerItem = Backbone.View.extend({
     initialize: function() {
 	this.sqLength = this.options.graphics.sqLength;
@@ -185,6 +188,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
     },
 });
 
+//the green button that says "auto-resize". should be used after the panel resizer is moved
 var ResizerItem = Backbone.View.extend({
     initialize: function() {
 	var self = this;
@@ -220,6 +224,7 @@ var ResizerItem = Backbone.View.extend({
     },
 });
 
+//the two arrows on the top left corner that can change the length of PathHelixItem
 var PathBaseChangeItem = Backbone.View.extend({
     initialize: function() {
 	var part = this.options.parent.part;
