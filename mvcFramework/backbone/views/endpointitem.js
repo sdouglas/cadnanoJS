@@ -107,7 +107,7 @@ var EndPointItem = Backbone.View.extend({
 		this.superobj.parent.xEnd = this.superobj.counter;
 		this.superobj.parent.updateXEndCoord();
 	    }
-	    //redrawing the line between two enditems
+	    //redrawing the line between two enditems aka strand
 	    this.superobj.parent.connection.setX(this.superobj.parent.xStartCoord);
 	    this.superobj.parent.connection.setWidth(this.superobj.parent.xEndCoord-this.superobj.parent.xStartCoord);
 	    this.superobj.parent.invisConnection.setX(this.superobj.parent.xStartCoord);

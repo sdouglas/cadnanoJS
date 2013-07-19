@@ -1,6 +1,6 @@
 var StrandItem = Backbone.View.extend({
     initialize: function(phItem, y, xL, xR) {
-	//i hope you're used to the massive number of property values by now
+	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
 	this.layer = this.parent.options.parent.strandlayer;
 	this.divLength = this.parent.options.graphics.divLength;
@@ -33,9 +33,9 @@ var StrandItem = Backbone.View.extend({
 	//the visible thin line connecting the two enditems
 	this.connection = new Kinetic.Rect({
 	    x: this.xStartCoord,
-	    y: this.yCoord-2,
+	    y: this.yCoord-1.5,
 	    width: this.xEndCoord-this.xStartCoord,
-	    height: 4,
+	    height: 3,
 	    fill: this.strandColor,
 	    stroke: this.strandColor,
 	    strokeWidth: 1
@@ -56,7 +56,7 @@ var StrandItem = Backbone.View.extend({
 
 	//for more explanation, visit EndPointItem.js
 	this.group.on("mousedown", function(pos) {
-	    //counter has to be set up seperately because unlike EndPointItem, a StrandItem corresponds to many bases. init is used for relative comparison later on.
+	    //counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
 	    this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    this.dragCounter = this.dragCounterInit;
 	    this.pDragCounter = this.dragCounter;
@@ -116,7 +116,60 @@ var StrandItem = Backbone.View.extend({
 	    this.superobj.updateXEndCoord();
 	    this.superobj.endItemR.counter += diff;
 	    this.superobj.endItemR.updateCenterX();
-	    this.superobj.endItemR.update(true);
+	    this.superobj.endItemR.update();
+	    //redraw xoveritems
+	    if(this.superobj.endItemL instanceof XoverNode) {
+		this.superobj.endItemL.updateLinkageX();
+		var xoverL = this.superobj.endItemL.xoveritem;
+		xoverL.connection.remove();
+		xoverL.connection = new Kinetic.Shape({
+		    stroke: this.superobj.strandColor,
+		    strokeWidth: 3
+		});
+		xoverL.connection.superobj = xoverL;
+		xoverL.connection.setDrawFunc(function(canvas) {
+			var context = canvas.getContext();
+			var x1 = xoverL.node3.linkageX;
+			var y1 = xoverL.node3.linkageY;
+			var x2 = xoverL.node5.linkageX;
+			var y2 = xoverL.node5.linkageY;
+			var ctrlpt = xoverL.quadCtrlPt(x1,y1,x2,y2,xoverL.node3.dir);
+			context.beginPath();
+			context.moveTo(x1,y1);
+			context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
+			canvas.stroke(this);
+		    });
+		xoverL.group.add(xoverL.connection);
+		xoverL.invisConnection.setX(Math.min(xoverL.node3.centerX,xoverL.node5.centerX)-xoverL.sqLength/2);
+		xoverL.invisConnection.setWidth(Math.abs(xoverL.node3.centerX-xoverL.node5.centerX)+xoverL.sqLength);
+	    }
+	    if(this.superobj.endItemR instanceof XoverNode) {
+		this.superobj.endItemR.updateLinkageX();
+		var xoverR = this.superobj.endItemR.xoveritem;
+		xoverR.connection.remove();
+		xoverR.connection = new Kinetic.Shape({
+		    stroke: this.superobj.strandColor,
+		    strokeWidth: 3
+		});
+		xoverR.connection.superobj = xoverR;
+		xoverR.connection.setDrawFunc(function(canvas) {
+			var context = canvas.getContext();
+			var x1 = xoverR.node3.linkageX;
+			var y1 = xoverR.node3.linkageY;
+			var x2 = xoverR.node5.linkageX;
+			var y2 = xoverR.node5.linkageY;
+			var ctrlpt = xoverR.quadCtrlPt(x1,y1,x2,y2,xoverR.node3.dir);
+			context.beginPath();
+			context.moveTo(x1,y1);
+			context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
+			canvas.stroke(this);
+		    });
+		xoverR.group.add(xoverR.connection);
+		xoverR.invisConnection.setX(Math.min(xoverR.node3.centerX,xoverR.node5.centerX)-xoverR.sqLength/2);
+		xoverR.invisConnection.setWidth(Math.abs(xoverR.node3.centerX-xoverR.node5.centerX)+xoverR.sqLength);
+	    }
+	    //finally we can redraw the layer...
+	    this.superobj.layer.draw();
 	});
 
 	this.layer.add(this.group);
@@ -133,8 +186,8 @@ var StrandItem = Backbone.View.extend({
 	}
 	else {
 	    this.endItemR = ei;
-	    this.layer.draw();
 	}
+	this.layer.draw();
     },
 
     events:
