@@ -10,6 +10,10 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.handler.handler.add(this.activeslicelayer);
 	this.buttonlayer = new Kinetic.Layer(); //button layer: PathBaseChangeItem
 	this.handler.handler.add(this.buttonlayer);
+	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
+	this.handler.handler.add(this.strandlayer);
+	//some things should be on the top
+	this.activeslicelayer.moveToTop();
 
 	//scale factor
 	this.ratioX = 1;
@@ -74,7 +78,7 @@ var PathHelixSetItem = Backbone.View.extend({
         });
 
 	//calculating the new scale factor
-	this.ratioX = Math.min(1,innerLayout.state.center.innerWidth/(8*dims.sqLength+dims.sqLength*dims.grLength+2*dims.grLength/dims.divLength));
+	this.ratioX = Math.min(1,innerLayout.state.center.innerWidth/(8*dims.sqLength+dims.sqLength*dims.grLength));
 	this.ratioY = Math.min(1,innerLayout.state.center.innerHeight/(7*dims.sqLength+4*pharray.length*dims.sqLength));
 	//no scale factor changes, just redraw backlayer
 	if(this.ratioX === this.pratioX && this.ratioY === this.pratioY) {
@@ -89,15 +93,25 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.activeslicelayer.draw();
 	    this.buttonlayer.setScale(this.scaleFactor);
 	    this.buttonlayer.draw();
+	    this.strandlayer.setScale(this.scaleFactor);
+	    this.strandlayer.draw();
 	    //reset previous ratio
 	    this.pratioX = this.ratioX;
 	    this.pratioY = this.ratioY;
 	}
+
+	if(pharray.length === 2) {
+	    var strandItem0 = new StrandItem(pharray[0],0,0,15);
+	    var end0L = new XoverNode(strandItem0, "L", 5);
+	    var end0R = new XoverNode(strandItem0, "R", 3);
+	    var strandItem1 = new StrandItem(pharray[1],1,0,15);
+	    var end1L = new XoverNode(strandItem1, "L", 3);
+	    var end1R = new XoverNode(strandItem1, "R", 5);
+	    var xoverL = new XoverItem(end0L,end1L);
+	    var xoverR = new XoverItem(end0R,end1R);
+	}
     },
 
-    renderActiveslice: function() {
-	    this.activeslicelayer.draw();
-    },
 
     onMouseMove: function(e){
     },
@@ -107,6 +121,7 @@ var PathHelixSetItem = Backbone.View.extend({
 
 });
 
+//the long rectangular base grid
 var PathHelixItem = Backbone.View.extend ({
     initialize: function(){
 	this.layer = this.options.parent.backlayer;
@@ -116,11 +131,11 @@ var PathHelixItem = Backbone.View.extend ({
 	this.sqLength = this.options.graphics.sqLength;
 
 	this.startX = 5*this.sqLength;
-	this.startY = 5*this.sqLength + 4*(this.options.parent.phItemArray.length)*this.sqLength;
+	this.startY = 5*this.sqLength+4*(this.options.parent.phItemArray.length)*this.sqLength;
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
 		var rect = new Kinetic.Rect({
-		    x: this.startX+i*this.sqLength+2*Math.floor(i/this.divLength),
+		    x: this.startX+i*this.sqLength,
 		    y: this.startY+j*this.sqLength,
 		    width: this.sqLength,
 		    height: this.sqLength,
@@ -130,11 +145,21 @@ var PathHelixItem = Backbone.View.extend ({
 		});
 		this.group.add(rect);
 	    }
+	    if(i%7 == 0) { //divider lines are blacker
+		var divLineXStart = this.startX+i*this.sqLength;
+		var divLine = new Kinetic.Line({
+		    points: [divLineXStart,this.startY,divLineXStart,this.startY+2*this.sqLength],
+		    stroke: "#666666",
+		    strokeWidth: 2
+		});
+		this.group.add(divLine);
+	    }
 	}
 	this.layer.add(this.group);
     },
 });
 
+//the circle next to PathHelixItem
 var PathHelixHandlerItem = Backbone.View.extend({
     initialize: function() {
 	this.sqLength = this.options.graphics.sqLength;
@@ -170,6 +195,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
     },
 });
 
+//the green button that says "auto-resize". should be used after the panel resizer is moved
 var ResizerItem = Backbone.View.extend({
     initialize: function() {
 	var self = this;
@@ -205,6 +231,7 @@ var ResizerItem = Backbone.View.extend({
     },
 });
 
+//the two arrows on the top left corner that can change the length of PathHelixItem
 var PathBaseChangeItem = Backbone.View.extend({
     initialize: function() {
 	var part = this.options.parent.part;

@@ -5,23 +5,24 @@ var ActiveSliceItem = Backbone.View.extend({
 	this.blkLength = this.options.graphics.blkLength;
 	this.sqLength = this.options.graphics.sqLength;
 
-	this.initcounter = 0;
+	this.initcounter = this.divLength*this.blkLength*this.options.parent.part.getStep()/2;
 	this.counter = this.initcounter;
+	this.pCounter = this.counter;
 	this.top = 3*this.sqLength;
 	this.bot = 0;
 
 	this.rect = new Kinetic.Rect({
-	    x: 5*this.sqLength+this.counter*this.sqLength+2*Math.floor(this.counter/this.divLength),
+	    x: 5*this.sqLength+this.counter*this.sqLength,
 	    y: this.top,
 	    width: this.sqLength,
 	    height: 0,
 	    fill: colours.orangefill,
 	    stroke: "#000000",
 	    strokeWidth: 1,
-	    opacity: 0.7
+	    opacity: 0.6
 	});
 	this.counterText = new Kinetic.Text({
-	    x: 5*this.sqLength+(this.counter+0.5)*this.sqLength+2*Math.floor(this.counter/this.divLength),
+	    x: 5*this.sqLength+(this.counter+0.5)*this.sqLength,
 	    y: this.top-18,
 	    text: this.counter,
 	    fontSize: 16,
@@ -34,37 +35,44 @@ var ActiveSliceItem = Backbone.View.extend({
 
 	this.group = new Kinetic.Group({
 	    draggable: true,
-	});
-	this.group.superobj = this;
-	this.group.setDragBoundFunc(function(pos) {
-	    var counter = this.superobj.counter;
-	    //changing text settings; these lines are here so it can be in sync with the bar
-	    this.superobj.counterText.setText(counter);
-	    this.superobj.counterText.setOffset({x: this.superobj.counterText.getWidth()/2});
-	    //limit slidebar to be right on top of bases
-	    return {
-		x: ((this.superobj.counter-this.superobj.initcounter)*this.superobj.sqLength
-		    +2*Math.floor(this.superobj.counter/this.superobj.divLength)
-		    -2*Math.floor(this.superobj.initcounter/this.superobj.divLength))*this.superobj.options.parent.scaleFactor,
-		y: this.getAbsolutePosition().y
+	    dragBoundFunc: function(pos) {
+		/*
+		  The group is not intended to be draggable; when we want to move its location we change its X in update()
+		  But if we don't set draggable to true, we can't call dragmove. This method makes it easier to efficiently send signals.
+		*/
+		return {
+		    x: this.getAbsolutePosition().x,
+		    y: this.getAbsolutePosition().y
+		}
 	    }
 	});
+	this.group.superobj = this;
 	this.group.on("dragmove", function(pos) {
-	    var correctedSqLength = this.superobj.sqLength+2/this.superobj.divLength;
-	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.options.parent.scaleFactor-5*this.superobj.sqLength)/correctedSqLength);
-	    this.superobj.adjustCounter(tempCounter);
-
+	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
+	    this.superobj.adjustCounter(tempCounter); //counter should always be between 0 and grid length
+	    if(this.superobj.counter !== this.superobj.pCounter) { //only draws when counter is changed; more efficient
+		this.superobj.pCounter = this.superobj.counter;
+		this.superobj.update();
+		//throw out signals here
         //change the model object.
         this.superobj.options.parent.part.setActiveBaseIndex(this.superobj.counter);
+	    }
 	});
 
 	this.group.add(this.rect);
 	this.group.add(this.counterText);
 	this.layer.add(this.group);
-	console.log(this.options.parent.part.el);
+	//console.log(this.options.parent.el.scrollTop); //if one day we need to account for scrolling
     },
 
-    updateHeight: function() {
+    update: function() { //puts group in correct location
+        this.counterText.setText(this.counter);
+	this.counterText.setOffset({x: this.counterText.getWidth()/2});
+	this.group.setX((this.counter-this.initcounter)*this.sqLength);
+	this.layer.draw();
+    },
+
+    updateHeight: function() { //makes the bar span through all PathHelixItem
 	this.bot = 5*this.sqLength+4*this.sqLength*this.options.parent.phItemArray.length;
 	this.rect.setHeight(this.bot-this.top);
 	this.layer.draw();
