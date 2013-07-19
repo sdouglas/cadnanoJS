@@ -101,10 +101,10 @@ var PathHelixSetItem = Backbone.View.extend({
 	}
 
 	if(pharray.length === 2) {
-	    var strandItem0 = new StrandItem(pharray[0],0,5,15);
+	    var strandItem0 = new StrandItem(pharray[0],0,0,15);
 	    var end0L = new XoverNode(strandItem0, "L", 5);
 	    var end0R = new XoverNode(strandItem0, "R", 3);
-	    var strandItem1 = new StrandItem(pharray[1],1,5,15);
+	    var strandItem1 = new StrandItem(pharray[1],1,0,15);
 	    var end1L = new XoverNode(strandItem1, "L", 3);
 	    var end1R = new XoverNode(strandItem1, "R", 5);
 	    var xoverL = new XoverItem(end0L,end1L);

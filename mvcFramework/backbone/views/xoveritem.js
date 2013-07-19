@@ -196,14 +196,15 @@ var XoverItem = Backbone.View.extend({
 	    var diff = this.dragCounter - this.dragCounterInit;
 	    this.redBox.remove();
 	    this.superobj.tempLayer.draw();
-	    this.superobj.connection.setX(this.superobj.connection.getX()+diff*this.superobj.sqLength);
 	    this.superobj.invisConnection.setX(this.superobj.invisConnection.getX()+diff*this.superobj.sqLength);
 
             this.superobj.node3.counter += diff;
             this.superobj.node3.updateCenterX();
+	    this.superobj.node3.updateLinkageX();	    
             this.superobj.node3.update();
             this.superobj.node5.counter += diff;
             this.superobj.node5.updateCenterX();
+	    this.superobj.node5.updateLinkageX();
             this.superobj.node5.update();
 
 	    var strand3 = this.superobj.node3.parent;
@@ -219,7 +220,6 @@ var XoverItem = Backbone.View.extend({
             strand3.connection.setWidth(strand3.xEndCoord-strand3.xStartCoord);
             strand3.invisConnection.setX(strand3.xStartCoord);
             strand3.invisConnection.setWidth(strand3.xEndCoord-strand3.xStartCoord);
-	    //strand5 needs bug fix
 	    var strand5 = this.superobj.node5.parent;
 	    if(this.superobj.node5.dir === "L") {
 		strand5.xStart += diff;
