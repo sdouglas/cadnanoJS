@@ -274,9 +274,19 @@ var XoverItem = Backbone.View.extend({
 	    x3 = x2;
 	    y3 = y1;
 	}
-	else {
-	    //missing horizontal case, will work on it later
-	    alert("Need to complete XoverItem.quadCtrlPt (horizontal case)");
+	else { //horizontal case
+	    if(dir === "L") {
+		return {
+		    x: (x1+x2)/2,
+		    y: y1-this.sqLength
+		}
+	    }
+	    else {
+		return {
+		    x: (x1+x2)/2,
+		    y: y1+this.sqLength
+		}
+	    }
 	}
 	var d1 = Math.abs(x1-x2);
 	var d2 = Math.abs(y1-y2);
