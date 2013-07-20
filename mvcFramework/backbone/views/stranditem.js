@@ -56,12 +56,14 @@ var StrandItem = Backbone.View.extend({
 
 	//for more explanation, visit EndPointItem.js
 	this.group.on("mousedown", function(pos) {
-	    //counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
-	    this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-	    this.dragCounter = this.dragCounterInit;
-	    this.pDragCounter = this.dragCounter;
-	    //red box again
-            this.redBox = new Kinetic.Rect({
+	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select") {
+		//counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
+		this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
+		this.dragCounter = this.dragCounterInit;
+		this.pDragCounter = this.dragCounter;
+		//red box again
+		this.redBox = new Kinetic.Rect({
 		    x: this.superobj.endItemL.centerX-this.superobj.sqLength/2,
 		    y: this.superobj.endItemL.centerY-this.superobj.sqLength/2,
 		    width: this.superobj.sqLength*(this.superobj.xEnd-this.superobj.xStart+1),
@@ -70,64 +72,109 @@ var StrandItem = Backbone.View.extend({
 		    stroke: "#FF0000",
 		    strokeWidth: 2,
 		});
-            this.redBox.superobj = this;
-            this.redBox.on("mouseup", function(pos) {
+		this.redBox.superobj = this;
+		this.redBox.on("mouseup", function(pos) {
                     this.remove();
                     this.superobj.superobj.tempLayer.draw();
                 });
-            this.superobj.tempLayer.add(this.redBox);
-            this.superobj.tempLayer.draw();
-	});
-	this.group.on("dragmove", function(pos) {
-	    this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-	    //have to watch out for both left and right end in counter adjustment here
-	    var diff = this.dragCounter-this.dragCounterInit;
-	    if(this.superobj.xStart+diff < 0) {
-		this.dragCounter = this.dragCounterInit-this.superobj.xStart;
+		this.superobj.tempLayer.add(this.redBox);
+		this.superobj.tempLayer.draw();
 	    }
-	    else {
-		var grLength = this.superobj.blkLength*this.superobj.divLength*this.superobj.parent.options.parent.part.getStep();
-		if(this.superobj.xEnd+diff >= grLength) {
-		    this.dragCounter = this.dragCounterInit+grLength-1-this.superobj.xEnd;
+	});
+	this.group.on("click", function(pos) {
+	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+	    if(pathTool === "break") {
+		if(this.superobj.endItemL.prime === 5) {
+		    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
+		    if(this.superobj.xEnd-counter > 1) {
+			var strand1 = new StrandItem(this.superobj.parent,this.superobj.yLevel,this.superobj.xStart,counter);
+			this.superobj.endItemL.parent = strand1;
+			strand1.addEndItem(this.superobj.endItemL,"L");
+			var end1R = new EndPointItem(strand1,"R",3);
+			var strand2 = new StrandItem(this.superobj.parent,this.superobj.yLevel,counter+1,this.superobj.xEnd);
+			var end2L = new EndPointItem(strand2,"L",5);
+			this.superobj.endItemR.parent = strand2;
+			strand2.addEndItem(this.superobj.endItemR,"R");
+			this.superobj.close();
+			this.superobj.group.destroy();
+			this.superobj.layer.draw();
+			return;
+		    }
+		}
+		else {
+		    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
+		    if(counter-this.superobj.xStart > 1) {
+			var strand1 = new StrandItem(this.superobj.parent,this.superobj.yLevel,this.superobj.xStart,counter-1);
+			this.superobj.endItemL.parent = strand1;
+			strand1.addEndItem(this.superobj.endItemL,"L");
+			var end1R = new EndPointItem(strand1,"R",5);
+			var strand2 = new StrandItem(this.superobj.parent,this.superobj.yLevel,counter,this.superobj.xEnd);
+			var end2L = new EndPointItem(strand2,"L",3);
+			this.superobj.endItemR.parent = strand2;
+			strand2.addEndItem(this.superobj.endItemR,"R");
+			this.superobj.close();
+			this.superobj.group.destroy();
+			this.superobj.layer.draw();
+			return;
+		    }
 		}
 	    }
-	    //same as EndPointItem
-	    if(this.dragCounter !== this.pDragCounter) {
-		this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.superobj.sqLength);
-		this.superobj.tempLayer.draw();
-		this.pDragCounter = this.dragCounter;
+	});
+	this.group.on("dragmove", function(pos) {
+	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select") {
+		this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
+		//have to watch out for both left and right end in counter adjustment here
+		var diff = this.dragCounter-this.dragCounterInit;
+		if(this.superobj.xStart+diff < 0) {
+		    this.dragCounter = this.dragCounterInit-this.superobj.xStart;
+		}
+		else {
+		    var grLength = this.superobj.blkLength*this.superobj.divLength*this.superobj.parent.options.parent.part.getStep();
+		    if(this.superobj.xEnd+diff >= grLength) {
+			this.dragCounter = this.dragCounterInit+grLength-1-this.superobj.xEnd;
+		    }
+		}
+		//same as EndPointItem
+		if(this.dragCounter !== this.pDragCounter) {
+		    this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.superobj.sqLength);
+		    this.superobj.tempLayer.draw();
+		    this.pDragCounter = this.dragCounter;
+		}
 	    }
 	});
 	this.group.on("dragend", function(pos) {
-	    var diff = this.dragCounter - this.dragCounterInit;
-	    //deleting red box
-            this.redBox.remove();
-            this.superobj.tempLayer.draw();
-	    //redrawing the line
-	    this.superobj.connection.setX(this.superobj.connection.getX()+diff*this.superobj.sqLength);
-	    this.superobj.invisConnection.setX(this.superobj.invisConnection.getX()+diff*this.superobj.sqLength);
-	    //redraw enditems as well as updating their values
-	    this.superobj.xStart += diff;
-	    this.superobj.updateXStartCoord();
-	    this.superobj.endItemL.counter += diff;
-	    this.superobj.endItemL.updateCenterX();
-	    this.superobj.endItemL.update();
-	    this.superobj.xEnd += diff;
-	    this.superobj.updateXEndCoord();
-	    this.superobj.endItemR.counter += diff;
-	    this.superobj.endItemR.updateCenterX();
-	    this.superobj.endItemR.update();
-	    //redraw xoveritems
-	    if(this.superobj.endItemL instanceof XoverNode) {
-		this.superobj.endItemL.updateLinkageX();
-		var xoverL = this.superobj.endItemL.xoveritem;
-		xoverL.connection.remove();
-		xoverL.connection = new Kinetic.Shape({
-		    stroke: this.superobj.strandColor,
-		    strokeWidth: 3
-		});
-		xoverL.connection.superobj = xoverL;
-		xoverL.connection.setDrawFunc(function(canvas) {
+	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select") {
+		var diff = this.dragCounter - this.dragCounterInit;
+		//deleting red box
+		this.redBox.remove();
+		this.superobj.tempLayer.draw();
+		//redrawing the line
+		this.superobj.connection.setX(this.superobj.connection.getX()+diff*this.superobj.sqLength);
+		this.superobj.invisConnection.setX(this.superobj.invisConnection.getX()+diff*this.superobj.sqLength);
+		//redraw enditems as well as updating their values
+		this.superobj.xStart += diff;
+		this.superobj.updateXStartCoord();
+		this.superobj.endItemL.counter += diff;
+		this.superobj.endItemL.updateCenterX();
+		this.superobj.endItemL.update();
+		this.superobj.xEnd += diff;
+		this.superobj.updateXEndCoord();
+		this.superobj.endItemR.counter += diff;
+		this.superobj.endItemR.updateCenterX();
+		this.superobj.endItemR.update();
+		//redraw xoveritems
+		if(this.superobj.endItemL instanceof XoverNode) {
+		    this.superobj.endItemL.updateLinkageX();
+		    var xoverL = this.superobj.endItemL.xoveritem;
+		    xoverL.connection.remove();
+		    xoverL.connection = new Kinetic.Shape({
+			stroke: this.superobj.strandColor,
+			strokeWidth: 3
+		    });
+		    xoverL.connection.superobj = xoverL;
+		    xoverL.connection.setDrawFunc(function(canvas) {
 			var context = canvas.getContext();
 			var x1 = xoverL.node3.linkageX;
 			var y1 = xoverL.node3.linkageY;
@@ -139,20 +186,20 @@ var StrandItem = Backbone.View.extend({
 			context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
 			canvas.stroke(this);
 		    });
-		xoverL.group.add(xoverL.connection);
-		xoverL.invisConnection.setX(Math.min(xoverL.node3.centerX,xoverL.node5.centerX)-xoverL.sqLength/2);
-		xoverL.invisConnection.setWidth(Math.abs(xoverL.node3.centerX-xoverL.node5.centerX)+xoverL.sqLength);
-	    }
-	    if(this.superobj.endItemR instanceof XoverNode) {
-		this.superobj.endItemR.updateLinkageX();
-		var xoverR = this.superobj.endItemR.xoveritem;
-		xoverR.connection.remove();
-		xoverR.connection = new Kinetic.Shape({
-		    stroke: this.superobj.strandColor,
-		    strokeWidth: 3
-		});
-		xoverR.connection.superobj = xoverR;
-		xoverR.connection.setDrawFunc(function(canvas) {
+		    xoverL.group.add(xoverL.connection);
+		    xoverL.invisConnection.setX(Math.min(xoverL.node3.centerX,xoverL.node5.centerX)-xoverL.sqLength/2);
+		    xoverL.invisConnection.setWidth(Math.abs(xoverL.node3.centerX-xoverL.node5.centerX)+xoverL.sqLength);
+		}
+		if(this.superobj.endItemR instanceof XoverNode) {
+		    this.superobj.endItemR.updateLinkageX();
+		    var xoverR = this.superobj.endItemR.xoveritem;
+		    xoverR.connection.remove();
+		    xoverR.connection = new Kinetic.Shape({
+			stroke: this.superobj.strandColor,
+			strokeWidth: 3
+		    });
+		    xoverR.connection.superobj = xoverR;
+		    xoverR.connection.setDrawFunc(function(canvas) {
 			var context = canvas.getContext();
 			var x1 = xoverR.node3.linkageX;
 			var y1 = xoverR.node3.linkageY;
@@ -164,12 +211,13 @@ var StrandItem = Backbone.View.extend({
 			context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
 			canvas.stroke(this);
 		    });
-		xoverR.group.add(xoverR.connection);
-		xoverR.invisConnection.setX(Math.min(xoverR.node3.centerX,xoverR.node5.centerX)-xoverR.sqLength/2);
-		xoverR.invisConnection.setWidth(Math.abs(xoverR.node3.centerX-xoverR.node5.centerX)+xoverR.sqLength);
+		    xoverR.group.add(xoverR.connection);
+		    xoverR.invisConnection.setX(Math.min(xoverR.node3.centerX,xoverR.node5.centerX)-xoverR.sqLength/2);
+		    xoverR.invisConnection.setWidth(Math.abs(xoverR.node3.centerX-xoverR.node5.centerX)+xoverR.sqLength);
+		}
+		//finally we can redraw the layer...
+		this.superobj.layer.draw();
 	    }
-	    //finally we can redraw the layer...
-	    this.superobj.layer.draw();
 	});
 
 	this.layer.add(this.group);

@@ -17,12 +17,6 @@
 <script type="text/javascript" src="includes/backbone.localStorage.js"></script>
 
 <!-- INTERNAL JAVASCRIPT LIBRARIES -->
-<script type="text/javascript" src="ui/lib/tbSelectable.js"> </script>
-<script type="text/javascript" src="ui/lib/StrandItem.js"> </script>
-<script type="text/javascript" src="ui/lib/PathPanelView.js"> </script>
-<script type="text/javascript" src="ui/lib/SliceStack.js"> </script>
-<script type="text/javascript" src="ui/lib/SliceGrid.js"> </script>
-
 <script src="utils/minheap.js"></script>
 <script src="utils/constants.js"></script>
 <script src="utils/twohandler.js"></script>
@@ -34,8 +28,8 @@
 <script src="current/views/endpointitem.js"></script>
 <script src="current/views/stranditem.js"></script>
 <script src="current/views/activesliceitem.js"></script>
-<script src="current/models/virtualhelix.js"></script>
 <script src="current/views/pathhelixitem.js"></script>
+<script src="current/models/virtualhelix.js"></script>
 <script src="current/views/virtualhelixitem.js"></script>
 <script src="current/views/emptyhelixitem.js"></script>
 <script src="current/models/part.js"></script>
@@ -43,6 +37,7 @@
 <script src="current/models/document.js"></script>
 <script src="current/views/documentitem.js"></script>
 <script src="current/views/documentcontroller.js"></script>
+<script src="ui/lib/tbSelectable.js"></script>
 
 <!-- CSS STYLING -->
 <link type="text/css" rel="stylesheet" href="ui/css/layout-default.css">
@@ -191,24 +186,18 @@ $(document).ready(function($) {
     <p><button type="button" onclick="" class="vbutton"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
   </div>
   <div id="pathButtons">
-       <input type='radio' name='pathButtons' value='0' id="pb0"/><label for="pb0"><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></label>
-    <p><input type='radio' name='pathButtons' value='1' id="pb1"/><label for="pb1"><img src="ui/images/path-force-xover.png" width="32" height="32"><br>Pencil</br></label></p>
-    <p><input type='radio' name='pathButtons' value='2' id="pb2"/><label for="pb2"><img src="ui/images/path-break_48.png" width="32" height="32"><br>Break</br></label></p>
-    <p><input type='radio' name='pathButtons' value='3' id="pb3"/><label for="pb3"><img src="ui/images/path-insert_48x48.png" width="32" height="32"><br>Insert</br></label></p>
-    <p><input type='radio' name='pathButtons' value='4' id="pb4"/><label for="pb4"><img src="ui/images/path-skip_48x48.png" width="32" height="32"><br>Skip</br></label></p>
-    <p><input type='radio' name='pathButtons' value='5' id="pb5"/><label for="pb5"><img src="ui/images/path-paint_48.png" width="32" height="32"><br>Paint</br></label></p>
-    <p><input type='radio' name='pathButtons' value='6' id="pb6"/><label for="pb6"><img src="ui/images/path-addseq.png" width="32" height="32"><br>Seq</br></label></p>
+       <input type='radio' name='pathButtons' onclick="DocControl.setPathTool('select')" id="pb0" checked="true"/><label for="pb0"><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></label>
+    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('pencil')" id="pb1"               /><label for="pb1"><img src="ui/images/path-force-xover.png" width="32" height="32"><br>Pencil</br></label></p>
+    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('break')"  id="pb2"               /><label for="pb2"><img src="ui/images/path-break_48.png" width="32" height="32"><br>Break</br></label></p>
+    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('insert')" id="pb3"               /><label for="pb3"><img src="ui/images/path-insert_48x48.png" width="32" height="32"><br>Insert</br></label></p>
+    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('skip')"   id="pb4"               /><label for="pb4"><img src="ui/images/path-skip_48x48.png" width="32" height="32"><br>Skip</br></label></p>
+    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('paint')"  id="pb5"               /><label for="pb5"><img src="ui/images/path-paint_48.png" width="32" height="32"><br>Paint</br></label></p>
+    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('seq')"    id="pb6"               /><label for="pb6"><img src="ui/images/path-addseq.png" width="32" height="32"><br>Seq</br></label></p>
   </div>
   <div id="drawnPanels">
     <div id="sliceView"> </div>
     <div id="pathView"> </div>
   </div>
 </div>
-
-<script>
-var gridMode = undefined;
-var pp = new UI_PathPanelItem("pathView",300,300);
-var vhis;
-</script>
 </body>
 </html>

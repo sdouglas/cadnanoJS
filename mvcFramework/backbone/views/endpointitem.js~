@@ -93,7 +93,6 @@ var EndPointItem = Backbone.View.extend({
 		    pencilNotifier.setFill("#FF0000");
 		    this.superobj.tempLayer.add(pencilNotifier);
 		    this.superobj.tempLayer.draw();
-		    pencilNotifier.destroy();
 		}
 		else {
 		    var nodeAInfo = {
@@ -107,13 +106,14 @@ var EndPointItem = Backbone.View.extend({
 			type: this.superobj.prime
 		    };
 		    if(nodeAInfo.type + nodeBInfo.type === 8) {
-			helixset.pencilendpoint.tempLayer.draw();
 			helixset.pencilendpoint.close();
 			helixset.pencilendpoint.shape.destroy();
 			helixset.pencilendpoint = undefined;
 			this.superobj.close();
 			this.superobj.shape.destroy();
 			this.superobj.shape = undefined; //check if this line is actually needed
+			this.superobj.tempLayer.removeChildren();
+			this.superobj.tempLayer.draw();
 			var nodeA = new XoverNode(nodeAInfo.strand, nodeAInfo.dir, nodeAInfo.type);
 			var nodeB = new XoverNode(nodeBInfo.strand, nodeBInfo.dir, nodeBInfo.type);
 			var xover = new XoverItem(nodeA,nodeB); //initialization comes with a redrawn strandlayer
@@ -172,8 +172,11 @@ var EndPointItem = Backbone.View.extend({
 
     updateCenterX: function() {this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;},
 
-    update: function() { //only redraws when boo is true
+    update: function(boo) { //only redraws when boo is true
 	this.shape.setX((this.counter-this.initcounter)*this.sqLength);
+	if(boo) {
+	    this.layer.draw();
+	}
     },
 
     adjustCounter: function(n) {

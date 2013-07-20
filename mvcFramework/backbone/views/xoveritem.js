@@ -75,11 +75,8 @@ var XoverNode = Backbone.View.extend({
     updateCenterX: function() {this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;},
     updateLinkageX: function() {this.linkageX = this.centerX;},
 
-    update: function(boo) { //only redraws when boo is true
+    update: function() { //only redraws when boo is true
 	this.group.setX((this.counter-this.initcounter)*this.sqLength);
-	if(boo) {
-	    this.layer.draw();
-	}
     },
 });
 
@@ -152,89 +149,98 @@ var XoverItem = Backbone.View.extend({
 
 	//Warning: pasta and speghetti ahead
         this.group.on("mousedown", function(pos) {
-	    this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.helixset.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-	    this.dragCounter = this.dragCounterInit;
-	    this.pDragCounter = this.dragCounter;
-	    this.redBox = new Kinetic.Rect({
-		x: this.superobj.invisConnection.getX(),
-		y: this.superobj.invisConnection.getY(),
-		width: this.superobj.invisConnection.getWidth(),
-		height: this.superobj.invisConnection.getHeight(),
-		fill: "transparent",
-		stroke: "#FF0000",
-		strokeWidth: 2,
-	    });
-	    this.redBox.superobj = this;
-	    this.redBox.on("mouseup", function(pos) {
-		this.remove();
-		this.superobj.superobj.tempLayer.draw();
-	    });
-	    this.superobj.tempLayer.add(this.redBox);
-	    this.superobj.tempLayer.draw();
+	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select") {
+		this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.helixset.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
+		this.dragCounter = this.dragCounterInit;
+		this.pDragCounter = this.dragCounter;
+		this.redBox = new Kinetic.Rect({
+		    x: this.superobj.invisConnection.getX(),
+		    y: this.superobj.invisConnection.getY(),
+		    width: this.superobj.invisConnection.getWidth(),
+		    height: this.superobj.invisConnection.getHeight(),
+		    fill: "transparent",
+		    stroke: "#FF0000",
+		    strokeWidth: 2,
+		});
+		this.redBox.superobj = this;
+		this.redBox.on("mouseup", function(pos) {
+		    this.remove();
+		    this.superobj.superobj.tempLayer.draw();
+		});
+		this.superobj.tempLayer.add(this.redBox);
+		this.superobj.tempLayer.draw();
+	    }
 	});
         this.group.on("dragmove", function(pos) {
-	    this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.helixset.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-	    var diff = this.dragCounter-this.dragCounterInit;
-	    var minCounterX = Math.min(this.superobj.node3.counter,this.superobj.node5.counter);
-	    if(minCounterX+diff < 0) {
-		this.dragCounter = this.dragCounterInit-minCounterX;
-	    }
-	    else {
-		var maxCounterX = Math.max(this.superobj.node3.counter,this.superobj.node5.counter);
-		var grLength = this.superobj.blkLength*this.superobj.divLength*this.superobj.helixset.part.getStep();
-		if(maxCounterX+diff >= grLength) {
-		    this.dragCounter = this.dragCounterInit+grLength-1-maxCounterX;
+	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select") {
+		this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.helixset.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
+		var diff = this.dragCounter-this.dragCounterInit;
+		var minCounterX = Math.min(this.superobj.node3.counter,this.superobj.node5.counter);
+		if(minCounterX+diff < 0) {
+		    this.dragCounter = this.dragCounterInit-minCounterX;
 		}
-	    }
-	    if(this.dragCounter !== this.pDragCounter) {
-		this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.superobj.sqLength);
-		this.superobj.tempLayer.draw();
-		this.pDragCounter = this.dragCounter;
+		else {
+		    var maxCounterX = Math.max(this.superobj.node3.counter,this.superobj.node5.counter);
+		    var grLength = this.superobj.blkLength*this.superobj.divLength*this.superobj.helixset.part.getStep();
+		    if(maxCounterX+diff >= grLength) {
+			this.dragCounter = this.dragCounterInit+grLength-1-maxCounterX;
+		    }
+		}
+		if(this.dragCounter !== this.pDragCounter) {
+		    this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.superobj.sqLength);
+		    this.superobj.tempLayer.draw();
+		    this.pDragCounter = this.dragCounter;
+		}
 	    }
 	});
         this.group.on("dragend", function(pos) {
-	    var diff = this.dragCounter - this.dragCounterInit;
-	    this.redBox.remove();
-	    this.superobj.tempLayer.draw();
-	    this.superobj.invisConnection.setX(this.superobj.invisConnection.getX()+diff*this.superobj.sqLength);
-
-            this.superobj.node3.counter += diff;
-            this.superobj.node3.updateCenterX();
-	    this.superobj.node3.updateLinkageX();	    
-            this.superobj.node3.update();
-            this.superobj.node5.counter += diff;
-            this.superobj.node5.updateCenterX();
-	    this.superobj.node5.updateLinkageX();
-            this.superobj.node5.update();
-
-	    var strand3 = this.superobj.node3.parent;
-	    if(this.superobj.node3.dir === "L") {
-		strand3.xStart += diff;
-		strand3.updateXStartCoord();
+	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select") {
+		var diff = this.dragCounter - this.dragCounterInit;
+		this.redBox.remove();
+		this.superobj.tempLayer.draw();
+		this.superobj.invisConnection.setX(this.superobj.invisConnection.getX()+diff*this.superobj.sqLength);
+		
+		this.superobj.node3.counter += diff;
+		this.superobj.node3.updateCenterX();
+		this.superobj.node3.updateLinkageX();	    
+		this.superobj.node3.update();
+		this.superobj.node5.counter += diff;
+		this.superobj.node5.updateCenterX();
+		this.superobj.node5.updateLinkageX();
+		this.superobj.node5.update();
+		
+		var strand3 = this.superobj.node3.parent;
+		if(this.superobj.node3.dir === "L") {
+		    strand3.xStart += diff;
+		    strand3.updateXStartCoord();
+		}
+		else {
+		    strand3.xEnd += diff;
+		    strand3.updateXEndCoord();
+		}
+		strand3.connection.setX(strand3.xStartCoord);
+		strand3.connection.setWidth(strand3.xEndCoord-strand3.xStartCoord);
+		strand3.invisConnection.setX(strand3.xStartCoord);
+		strand3.invisConnection.setWidth(strand3.xEndCoord-strand3.xStartCoord);
+		var strand5 = this.superobj.node5.parent;
+		if(this.superobj.node5.dir === "L") {
+		    strand5.xStart += diff;
+		    strand5.updateXStartCoord();
+		}
+		else {
+		    strand5.xEnd += diff;
+		    strand5.updateXEndCoord();
+		}
+		strand5.connection.setX(strand5.xStartCoord);
+		strand5.connection.setWidth(strand5.xEndCoord-strand5.xStartCoord);
+		strand5.invisConnection.setX(strand5.xStartCoord);
+		strand5.invisConnection.setWidth(strand5.xEndCoord-strand5.xStartCoord);
+		
+		this.superobj.layer.draw();
 	    }
-	    else {
-		strand3.xEnd += diff;
-		strand3.updateXEndCoord();
-	    }
-            strand3.connection.setX(strand3.xStartCoord);
-            strand3.connection.setWidth(strand3.xEndCoord-strand3.xStartCoord);
-            strand3.invisConnection.setX(strand3.xStartCoord);
-            strand3.invisConnection.setWidth(strand3.xEndCoord-strand3.xStartCoord);
-	    var strand5 = this.superobj.node5.parent;
-	    if(this.superobj.node5.dir === "L") {
-		strand5.xStart += diff;
-		strand5.updateXStartCoord();
-	    }
-	    else {
-		strand5.xEnd += diff;
-		strand5.updateXEndCoord();
-	    }
-            strand5.connection.setX(strand5.xStartCoord);
-            strand5.connection.setWidth(strand5.xEndCoord-strand5.xStartCoord);
-            strand5.invisConnection.setX(strand5.xStartCoord);
-            strand5.invisConnection.setWidth(strand5.xEndCoord-strand5.xStartCoord);
-
-	    this.superobj.layer.draw();
 	});
 
 	//finally moving on...

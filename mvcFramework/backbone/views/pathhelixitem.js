@@ -1,5 +1,6 @@
 var PathHelixSetItem = Backbone.View.extend({
     initialize: function(){
+	this.pencilendpoint = undefined;
 	//PathHelixSetItem should contains variables that multiple sub-classes need
         this.handler = this.options.handler;
         this.part = this.options.part;
@@ -99,17 +100,11 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.pratioX = this.ratioX;
 	    this.pratioY = this.ratioY;
 	}
-
-	if(pharray.length === 2) {
-	    var strandItem0 = new StrandItem(pharray[0],0,0,15);
-	    var end0L = new XoverNode(strandItem0, "L", 5);
-	    var end0R = new XoverNode(strandItem0, "R", 3);
-	    var strandItem1 = new StrandItem(pharray[1],1,0,15);
-	    var end1L = new XoverNode(strandItem1, "L", 3);
-	    var end1R = new XoverNode(strandItem1, "R", 5);
-	    var xoverL = new XoverItem(end0L,end1L);
-	    var xoverR = new XoverItem(end0R,end1R);
-	}
+	//for UI testing purpose only, delete in final version
+	var strandItem0 = new StrandItem(pharray[pharray.length-1],(pharray.length-1)%2,0,15);
+	var end0L = new EndPointItem(strandItem0, "L", 4+(2*(pharray.length%2)-1));
+	var end0R = new EndPointItem(strandItem0, "R", 4-(2*(pharray.length%2)-1));
+	//end of testing block
     },
 
 

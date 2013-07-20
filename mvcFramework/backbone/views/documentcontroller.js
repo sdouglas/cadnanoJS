@@ -30,6 +30,10 @@ var DocumentController = Backbone.View.extend({
     createSquareLattice: function(){
         this.currDoc.createSquarePart();
     },
+
+    setPathTool: function(tool) {
+	this.currDoc.pathTool = tool;
+    },
 });
 
 function main(){
