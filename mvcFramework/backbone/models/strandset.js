@@ -37,8 +37,29 @@ var StrandSet = Backbone.Model.extend({
      * easier later on.
      */
     insert: function(strand){
-        var obj = {st: strand.start, end: strand.end};
-        this.strandList.push(obj);
+        var len = this.strandList.length;
+        for(var i=0; i<len;i++){
+            if(strand.high() < this.strandList[i].low())
+                break;
+        }
+        this.strandList.splice(i,0,strand);
+        console.log(this.strandList);
+    },
+
+    /**
+     * @param {strand} Strand model object.
+     * returns true if found the model strand and deleted it. Else false.
+     */
+    removeStrand: function(strand){
+        var len = strandList.length;
+        for(var i=0; i<len;i++){
+            if(strand.low() === this.strandList[i].low() &&
+               strand.high() === this.strandList[i].high()) {
+                this.strandList.splice(i,1);
+                return true;
+            }
+        }
+        return false;
     },
 
     isStaple:
@@ -65,14 +86,14 @@ var StrandSet = Backbone.Model.extend({
      */
 
     hasStrandAt: function(low,high){
-        //TODO: hack
-        var idx = (low+high)/2;
-        console.log(idx);
         var len = this.strandList.length;
         for(var i=0;i<len;i++){
             var obj = this.strandList[i];
-            if(idx < obj.st) break;
-            if(idx >= obj.st && idx < obj.end) return true;
+            if( (obj.low() >= low && obj.low() <= high) || 
+                (obj.high() >= low && obj.high() <= high) || 
+                (low >= obj.low() && low <= obj.high())){
+                return true;
+            }
         }
         return false;
     },
@@ -115,21 +136,26 @@ var CreateStrandCommand = Undo.Command.extend({
     undo: 
     function(){
         //destroy the strand object.
+        this.strandSet.removeStrand(this.strand);
+        this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
         this.strand.destroy();
-        //this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal);
     },
     redo:
     function(startIdx, endIdx){
+        console.log('calling redo for strandset');
         //Create a strand object.
         //And add it to the strand list.
         var strand = new Strand({
-            baseLowIdx: startIdx, 
-            baseHighIdx: endIdx,
+            baseIdxLow: startIdx, 
+            baseIdxHigh: endIdx,
             strandSet: this.strandSet,
             helix: this.strandSet.helix,
         });
+        console.log(startIdx + ',' + endIdx);
         this.strandSet.insert(strand);
-        this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal);
+        this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal,
+                strand, this.strandSet.helix.hID);
+        this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
         this.strandSet.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
                     this.strandSet.helix);
         this.strand = strand;

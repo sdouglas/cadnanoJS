@@ -289,11 +289,9 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
                                 ret.push(new Array(neighbour, index, strandType, isLowIdx)); 
                             }
                         }
-                        console.log(index);
                     }}
                 }
             }
-            console.log(ret);
         }
         return ret;
     },

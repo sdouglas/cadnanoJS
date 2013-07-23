@@ -3,6 +3,7 @@ var EndPointItem = Backbone.View.extend({
 	//accessing other objects
 	this.parent = strand;
 	this.phItem = this.parent.parent;
+    console.log(this.phItem);
 	this.layer = this.parent.layer;
 	//temporary layer that will be used for fast rendering
 	this.tempLayer = new Kinetic.Layer();
@@ -56,6 +57,7 @@ var EndPointItem = Backbone.View.extend({
 	});
 	this.shape.superobj = this; //javascript y u no have pointers?!
 	this.shape.on("mousedown", function(pos) {
+        console.log('endpointitem mousedown');
 	    /*
 	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
 	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
@@ -80,6 +82,7 @@ var EndPointItem = Backbone.View.extend({
 	    this.superobj.tempLayer.draw();
 	});
 	this.shape.on("dragmove", function(pos) {
+        console.log('dragmove endpointitem');
 	    //we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
 	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.phItem.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    this.superobj.adjustCounter(tempCounter);
@@ -93,6 +96,7 @@ var EndPointItem = Backbone.View.extend({
 	    }
 	});
 	this.shape.on("dragend", function(pos) {
+        console.log('dragend endpointitem');
 	    this.superobj.update(); //wait for all elements to be adjusted to correct location before rendering
 	    //red box has finished its duty, to be deleted
 	    this.superobj.updateCenterX();
@@ -107,6 +111,11 @@ var EndPointItem = Backbone.View.extend({
 		this.superobj.parent.xEnd = this.superobj.counter;
 		this.superobj.parent.updateXEndCoord();
 	    }
+        //resize the model strand.
+        //
+        this.superobj.parent.modelStrand.resize(this.superobj.parent.xStart,
+                this.superobj.parent.xEnd);
+
 	    //redrawing the line between two enditems aka strand
 	    this.superobj.parent.connection.setX(this.superobj.parent.xStartCoord);
 	    this.superobj.parent.connection.setWidth(this.superobj.parent.xEndCoord-this.superobj.parent.xStartCoord);

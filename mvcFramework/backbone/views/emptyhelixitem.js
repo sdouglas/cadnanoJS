@@ -50,6 +50,7 @@ var EmptyHelixSetItem = Backbone.View.extend({
         else {
             var idx = this.part.activeBaseIndex();
             if (!helixModel.scafStrandSet.hasStrandAt(idx-1,idx+1)){
+                console.log('creating strand at :' + idx);
                 helixModel.scafStrandSet.createStrand(idx-1,idx+1);
             }
         }

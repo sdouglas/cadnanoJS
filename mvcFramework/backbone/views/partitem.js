@@ -29,6 +29,10 @@ var PartItem = Backbone.View.extend({
             cadnanoEvents.partActiveSliceResizedSignal,
             this.partActiveSliceResizedSlot
         );
+        this.listenTo(this.part,
+            cadnanoEvents.partStrandChangedSignal,
+            this.partStrandChangedSlot
+        );
     },
 
     isHelixSelected: function(row,col){
@@ -87,6 +91,10 @@ var SlicePartItem = PartItem.extend({
         //to show selection.
         this.vhItemSet.render();
 
+    },
+
+    partStrandChangedSlot: function(){
+        this.vhItemSet.render();
     },
 
     partRemovedSlot: function(){
@@ -175,6 +183,11 @@ var PathPartItem = PartItem.extend({
 	    slicebar.update();
 	}
 	this.pathItemSet.renderBack();
+    },
+
+    partStrandChangedSlot:
+    function(){
+        console.log('received signal: partStrandChangedSlot');
     },
 
 });

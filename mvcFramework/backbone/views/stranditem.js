@@ -1,13 +1,17 @@
 var StrandItem = Backbone.View.extend({
-    initialize: function(phItem, y, xL, xR) {
+    initialize: function(modelStrand, phItem, xL, xR) {
 	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
+    this.modelStrand = modelStrand;
 	this.layer = this.parent.options.parent.strandlayer;
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;
 	this.strandColor = "#008800";
-	this.yLevel = y;
+    
+    //0 => drawn higher in the helix.
+    //1 => drawn lower in the helix.
+	this.yLevel = modelStrand.helix.isEvenParity();
 	this.xStart = xL;
 	this.xEnd = xR;
 
@@ -56,6 +60,7 @@ var StrandItem = Backbone.View.extend({
 
 	//for more explanation, visit EndPointItem.js
 	this.group.on("mousedown", function(pos) {
+        console.log('mousedown called');
 	    //counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
 	    this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    this.dragCounter = this.dragCounterInit;
@@ -79,6 +84,7 @@ var StrandItem = Backbone.View.extend({
             this.superobj.tempLayer.draw();
 	});
 	this.group.on("dragmove", function(pos) {
+        console.log('dragmove called');
 	    this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    //have to watch out for both left and right end in counter adjustment here
 	    var diff = this.dragCounter-this.dragCounterInit;
@@ -99,6 +105,7 @@ var StrandItem = Backbone.View.extend({
 	    }
 	});
 	this.group.on("dragend", function(pos) {
+        console.log('dragend called');
 	    var diff = this.dragCounter - this.dragCounterInit;
 	    //deleting red box
             this.redBox.remove();
@@ -117,6 +124,13 @@ var StrandItem = Backbone.View.extend({
 	    this.superobj.endItemR.counter += diff;
 	    this.superobj.endItemR.updateCenterX();
 	    this.superobj.endItemR.update();
+
+        //Update the model to reflect the change ins
+        //strand size.
+        console.log('reached here in stranditem');
+        this.superobj.modelStrand.resize(this.superobj.xStart,
+                this.superobj.xEnd);
+
 	    //redraw xoveritems
 	    if(this.superobj.endItemL instanceof XoverNode) {
 		this.superobj.endItemL.updateLinkageX();
@@ -172,9 +186,23 @@ var StrandItem = Backbone.View.extend({
 	    this.superobj.layer.draw();
 	});
 
-	this.layer.add(this.group);
-	//this.layer.draw(); (not needed as you should be making the endItems immediately afterwards)
-	//this.connectSignalsSlots();
+    this.layer.add(this.group);
+    //this.layer.draw(); (not needed as you should be making the endItems immediately afterwards)
+
+    //Create the endpointitems.
+    if(modelStrand.helix.isEvenParity()){
+        //L,5
+        var endP1 = new EndPointItem(this, "L", 5);
+        var endP2 = new EndPointItem(this, "R", 3);
+    }
+    else{
+        //L,3
+        var endP1 = new EndPointItem(this, "L", 3);
+        var endP2 = new EndPointItem(this, "R", 5);
+    }
+
+    //this.connectSignalsSlots();
+
     },
 
     updateXStartCoord: function() {this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;},

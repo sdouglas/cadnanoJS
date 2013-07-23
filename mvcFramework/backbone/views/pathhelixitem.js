@@ -1,81 +1,97 @@
 var PathHelixSetItem = Backbone.View.extend({
-    initialize: function(){
-	//PathHelixSetItem should contains variables that multiple sub-classes need
+    initialize: 
+    function(){
+        //PathHelixSetItem should contains variables that multiple sub-classes need
         this.handler = this.options.handler;
         this.part = this.options.part;
-	//path view layers
-	this.backlayer = new Kinetic.Layer(); //background layer: PathHelixItem, PathHelixHandlerItem, PathBaseChangeItem
-	this.handler.handler.add(this.backlayer);
-	this.activeslicelayer = new Kinetic.Layer(); //slidebar layer: ActiveSliceItem
-	this.handler.handler.add(this.activeslicelayer);
-	this.buttonlayer = new Kinetic.Layer(); //button layer: PathBaseChangeItem
-	this.handler.handler.add(this.buttonlayer);
-	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
-	this.handler.handler.add(this.strandlayer);
-	//some things should be on the top
-	this.activeslicelayer.moveToTop();
 
-	//scale factor
-	this.ratioX = 1;
-	this.ratioY = 1;
-	this.pratioX = 1;
-	this.pratioY = 1;
-	this.scaleFactor = 1;
-	//objects
-	this.phItemArray = new Array(); //stores PathHelixItem
-	this.graphicsSettings = {
-	    sqLength: 20,
-	    divLength: 7,
-	    blkLength: 3
-	};
-	//slidebar
-	this.activesliceItem = new ActiveSliceItem({
-	    handler: this.handler,
-	    parent: this,
-	    graphics: this.graphicsSettings
-	});
+        //path view layers
+        this.backlayer = new Kinetic.Layer(); //background layer: PathHelixItem, PathHelixHandlerItem, PathBaseChangeItem
+        this.handler.handler.add(this.backlayer);
+        this.activeslicelayer = new Kinetic.Layer(); //slidebar layer: ActiveSliceItem
+        
+        this.handler.handler.add(this.activeslicelayer);
+        this.buttonlayer = new Kinetic.Layer(); //button layer: PathBaseChangeItem
+        this.handler.handler.add(this.buttonlayer);
+        this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
+        this.handler.handler.add(this.strandlayer);
+        //some things should be on the top
+        this.activeslicelayer.moveToTop();
+
+        //scale factor
+        this.ratioX = 1;
+        this.ratioY = 1;
+        this.pratioX = 1;
+        this.pratioY = 1;
+        this.scaleFactor = 1;
+
+        //objects
+        this.phItemArray = new Array(); //stores PathHelixItem
+        this.phHandlerItemArray = new Array(); //stores PathHelixHandlerItem
+        this.graphicsSettings = {
+            sqLength: 20,
+            divLength: 7,
+            blkLength: 3
+        };
+
+        //slidebar
+        this.activesliceItem = new ActiveSliceItem({
+            handler: this.handler,
+            parent: this,
+            graphics: this.graphicsSettings
+        });
+
     },
+
     events: {
         "mousemove" : "onMouseMove",
     },
+
     renderBack: function(){
 	//removing all old shapes before drawing new ones
-	this.backlayer.removeChildren();
-	this.phItemArray = new Array();
-        console.log('in render function vhitemset');
-	//button to press after resize
-	this.resizerItem = new ResizerItem({
-	    handler: this.handler,
-	    parent: this
-	});
-	//buttons that change base length
-	this.pbcItem = new PathBaseChangeItem({
-	    handler: this.handler,
-	    parent: this,
-	    graphics: this.graphicsSettings
-	});
-	//variables that the items created in foreach loop can access
-        var h = this.handler;
+    this.clear();
+    console.log('in render function vhitemset');
+
+        //button to press after resize
+        this.resizerItem = new ResizerItem({
+            handler: this.handler,
+            parent: this
+        });
+
+        //buttons that change base length
+        this.pbcItem = new PathBaseChangeItem({
+            handler: this.handler,
+            parent: this,
+            graphics: this.graphicsSettings
+        });
+
+    //variables that the items created in foreach loop can access
+    var h = this.handler;
 	var dims = this.graphicsSettings;
 	dims.grLength = dims.blkLength*dims.divLength*this.part.getStep(); //grLength is only used here because background is immutable
+
 	var helixset = this;
 	var pharray = this.phItemArray;
-	//for each VirtualHelixItem, we create a path helix and a path helix handler
-        this.collection.each(function(vh){
-            var phItem = new PathHelixItem({
-                model: vh,
-                handler: h,
-		parent: helixset,
-		graphics: dims 
-            });
-	    var phHandlerItem = new PathHelixHandlerItem({
-		model: vh,
-		handler: h,
-		parent: helixset,
-		graphics: dims
-	    });
-	    pharray.push(phItem);
+    var phharray = this.phHandlerItemArray;
+	
+    //Remove all existing pathhelixitems.
+    //for each VirtualHelixItem, we create a path helix and a path helix handler
+    this.collection.each(function(vh){
+        var phItem = new PathHelixItem({
+            model: vh,
+            handler: h,
+            parent: helixset,
+            graphics: dims,
         });
+        var phHandlerItem = new PathHelixHandlerItem({
+            model: vh,
+            handler: h,
+            parent: helixset,
+            graphics: dims
+        });
+        pharray.push(phItem);
+        phharray.push(phHandlerItem);
+    });
 
 	//calculating the new scale factor
 	this.ratioX = Math.min(1,innerLayout.state.center.innerWidth/(8*dims.sqLength+dims.sqLength*dims.grLength));
@@ -100,15 +116,18 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.pratioY = this.ratioY;
 	}
 
+    console.log(pharray);
 	if(pharray.length === 2) {
+	    /*
 	    var strandItem0 = new StrandItem(pharray[0],0,0,15);
-	    var end0L = new XoverNode(strandItem0, "L", 5);
+        var end0L = new XoverNode(strandItem0, "L", 5);
 	    var end0R = new XoverNode(strandItem0, "R", 3);
 	    var strandItem1 = new StrandItem(pharray[1],1,0,15);
 	    var end1L = new XoverNode(strandItem1, "L", 3);
 	    var end1R = new XoverNode(strandItem1, "R", 5);
 	    var xoverL = new XoverItem(end0L,end1L);
 	    var xoverR = new XoverItem(end0R,end1R);
+        */
 	}
     },
 
@@ -119,16 +138,32 @@ var PathHelixSetItem = Backbone.View.extend({
     remove: function(){
     },
 
+    clear: function(){
+        this.backlayer.removeChildren();
+        var len = this.phItemArray.length;
+        for(var i=0;i<len;i++){
+            this.phItemArray[i].close();
+            this.phHandlerItemArray[i].close();
+        }
+        this.phItemArray.length = 0;
+        this.phHandlerItemArray.length = 0;
+        if(this.resizerItem) this.resizerItem.close();
+        if(this.pbcItem) this.pbcItem.close();
+        this.buttonlayer.removeChildren();
+    },
+
 });
 
 //the long rectangular base grid
 var PathHelixItem = Backbone.View.extend ({
     initialize: function(){
+    console.log('creating pathhelixitem');
 	this.layer = this.options.parent.backlayer;
 	this.group = new Kinetic.Group();
 	this.grLength = this.options.graphics.grLength;
 	this.divLength = this.options.graphics.divLength;
 	this.sqLength = this.options.graphics.sqLength;
+    this.ylevel = this.options.ylevel;
 
 	this.startX = 5*this.sqLength;
 	this.startY = 5*this.sqLength+4*(this.options.parent.phItemArray.length)*this.sqLength;
@@ -156,7 +191,28 @@ var PathHelixItem = Backbone.View.extend ({
 	    }
 	}
 	this.layer.add(this.group);
+    this.connectSignalsSlots();
     },
+
+    connectSignalsSlots:
+    function(){
+        this.listenTo(this.model.scafStrandSet,
+                cadnanoEvents.strandSetStrandAddedSignal,
+                this.strandAddedSlot
+                );
+    },
+
+    strandAddedSlot:
+    function(strand, id){
+        console.log('HERE in strandAddedSlot, by helix id:'+this.model.hID);
+        //Create a strand item object.
+        var stItem = new StrandItem(strand,
+             this, 
+             strand.baseIdxLow, 
+             strand.baseIdxHigh
+        );
+    },
+
 });
 
 //the circle next to PathHelixItem
