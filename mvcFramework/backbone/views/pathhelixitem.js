@@ -1,6 +1,8 @@
 var PathHelixSetItem = Backbone.View.extend({
     initialize: function(){
+	//pathTool variables
 	this.pencilendpoint = undefined;
+	this.paintcolor = "#008800";
 	//PathHelixSetItem should contains variables that multiple sub-classes need
         this.handler = this.options.handler;
         this.part = this.options.part;
@@ -9,7 +11,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.handler.handler.add(this.backlayer);
 	this.activeslicelayer = new Kinetic.Layer(); //slidebar layer: ActiveSliceItem
 	this.handler.handler.add(this.activeslicelayer);
-	this.buttonlayer = new Kinetic.Layer(); //button layer: PathBaseChangeItem
+	this.buttonlayer = new Kinetic.Layer(); //button layer: PathBaseChangeItem, ColorChangeItem
 	this.handler.handler.add(this.buttonlayer);
 	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
 	this.handler.handler.add(this.strandlayer);
@@ -42,14 +44,13 @@ var PathHelixSetItem = Backbone.View.extend({
     renderBack: function(){
 	//removing all old shapes before drawing new ones
 	this.backlayer.removeChildren();
+	this.buttonlayer.removeChildren();
 	this.phItemArray = new Array();
         console.log('in render function vhitemset');
-	//button to press after resize
-	this.resizerItem = new ResizerItem({
-	    handler: this.handler,
-	    parent: this
+	//buttons
+	this.c2Item = new ColorChangeItem({
+	    parent: this,
 	});
-	//buttons that change base length
 	this.pbcItem = new PathBaseChangeItem({
 	    handler: this.handler,
 	    parent: this,
@@ -79,8 +80,8 @@ var PathHelixSetItem = Backbone.View.extend({
         });
 
 	//calculating the new scale factor
-	this.ratioX = Math.min(1,innerLayout.state.center.innerWidth/(8*dims.sqLength+dims.sqLength*dims.grLength));
-	this.ratioY = Math.min(1,innerLayout.state.center.innerHeight/(7*dims.sqLength+4*pharray.length*dims.sqLength));
+	this.ratioX = Math.min(1,this.handler.handler.getWidth()/(8*dims.sqLength+dims.sqLength*dims.grLength));
+	this.ratioY = Math.min(1,this.handler.handler.getHeight()/(7*dims.sqLength+4*pharray.length*dims.sqLength));
 	//no scale factor changes, just redraw backlayer
 	if(this.ratioX === this.pratioX && this.ratioY === this.pratioY) {
 	    this.backlayer.draw();
@@ -101,9 +102,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.pratioY = this.ratioY;
 	}
 	//for UI testing purpose only, delete in final version
-	var strandItem0 = new StrandItem(pharray[pharray.length-1],(pharray.length-1)%2,0,15);
-	var end0L = new EndPointItem(strandItem0, "L", 4+(2*(pharray.length%2)-1));
-	var end0R = new EndPointItem(strandItem0, "R", 4-(2*(pharray.length%2)-1));
+	var strandItem0 = new StrandItem(pharray[pharray.length-1],(pharray.length-1)%2,0,41,"EndPointItem","EndPointItem");
 	//end of testing block
     },
 
@@ -190,42 +189,6 @@ var PathHelixHandlerItem = Backbone.View.extend({
     },
 });
 
-//the green button that says "auto-resize". should be used after the panel resizer is moved
-var ResizerItem = Backbone.View.extend({
-    initialize: function() {
-	var self = this;
-	var canvas = this.options.handler.handler;
-	var layer = this.options.parent.buttonlayer;
-	var group = new Kinetic.Group();
-	var rect = new Kinetic.Rect({
-	    x: 70,
-	    y: 0,
-	    width: 75,
-	    height: 30,
-	    fill: "#88FF88",
-	    stroke: "#000000",
-	    strokeWidth: 1
-	});
-	var text = new Kinetic.Text({
-	    x: 70,
-	    y: 7,
-	    text: "Auto-resize",
-	    fontSize: 16,
-	    fontFamily: "Calibri",
-	    fill: "#000000",
-	});
-	group.add(rect);
-	group.add(text);
-	group.on("click", function() {
-	    if(innerLayout.state.center.innerWidth !== canvas.getWidth() || innerLayout.state.center.innerHeight !== canvas.getHeight()) {
-		canvas.setSize(innerLayout.state.center.innerWidth, innerLayout.state.center.innerHeight);
-		self.options.parent.renderBack();
-	    }
-	});
-	layer.add(group);
-    },
-});
-
 //the two arrows on the top left corner that can change the length of PathHelixItem
 var PathBaseChangeItem = Backbone.View.extend({
     initialize: function() {
@@ -271,8 +234,35 @@ var PathBaseChangeItem = Backbone.View.extend({
 		    }
 		});
 	    layer.add(addBase);
-	    canvas.add(layer);
+	    layer.draw()
 	};
 	addBaseImg.src = "ui/images/add-bases.svg";
+    },
+});
+
+//the box next to arrows. once clicked, webpage will prompt for RGB and set it as the color for next strand.
+//if possible, try to make a pop up page with color picker and send value back to main webpage
+var ColorChangeItem = Backbone.View.extend({
+    initialize: function() {
+	var layer = this.options.parent.buttonlayer;
+	var rect = new Kinetic.Rect({
+	    x: 65,
+	    y: 5,
+	    width: 20,
+	    height: 20,
+	    stroke: "#000000",
+	    strokeWidth: 1,
+	    fill: this.options.parent.paintcolor
+	});
+	rect.superobj = this;
+	rect.on("click", function(pos) {
+	    var colourRaw = "#"+prompt("Input color in RGB (skip hash):","");
+	    if(colourRaw !== "#null") {
+		this.superobj.options.parent.paintcolor = colourRaw;
+		this.setFill(this.superobj.options.parent.paintcolor);
+		layer.draw();
+	    }
+	});
+	layer.add(rect);
     },
 });

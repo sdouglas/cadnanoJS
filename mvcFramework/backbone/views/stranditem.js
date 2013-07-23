@@ -1,19 +1,18 @@
 var StrandItem = Backbone.View.extend({
-    initialize: function(phItem, y, xL, xR) {
+	initialize: function(phItem, y, xL, xR, endtypeL, endtypeR) {
 	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
 	this.layer = this.parent.options.parent.strandlayer;
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;
-	this.strandColor = "#008800";
+	this.strandColor = this.parent.options.parent.paintcolor;
 	this.yLevel = y;
 	this.xStart = xL;
 	this.xEnd = xR;
 
 	//see explanation in EndPointItem.js; the implementation of these two classes share many similarities
         this.tempLayer = new Kinetic.Layer();
-        this.tempLayer.setScale(this.parent.options.parent.scaleFactor);
         this.parent.options.handler.handler.add(this.tempLayer);
 
 	this.group = new Kinetic.Group({
@@ -77,6 +76,7 @@ var StrandItem = Backbone.View.extend({
                     this.remove();
                     this.superobj.superobj.tempLayer.draw();
                 });
+		this.superobj.tempLayer.setScale(this.superobj.parent.options.parent.scaleFactor);
 		this.superobj.tempLayer.add(this.redBox);
 		this.superobj.tempLayer.draw();
 	    }
@@ -118,6 +118,14 @@ var StrandItem = Backbone.View.extend({
 			return;
 		    }
 		}
+	    }
+	    else if(pathTool === "paint") {
+		var colour = this.superobj.parent.options.parent.paintcolor;
+		this.superobj.strandColor = colour;
+		this.superobj.connection.setFill(colour);
+		this.superobj.connection.setStroke(colour);
+		//rest of recursion goes in here
+		this.superobj.layer.draw();
 	    }
 	});
 	this.group.on("dragmove", function(pos) {
@@ -221,21 +229,35 @@ var StrandItem = Backbone.View.extend({
 	});
 
 	this.layer.add(this.group);
-	//this.layer.draw(); (not needed as you should be making the endItems immediately afterwards)
+	if(endtypeL === "EndPointItem") {
+	    this.endItemL = new EndPointItem(this,"L",4-(2*(this.parent.options.model.hID%2)-1),true);
+	}
+	else if(endtypeL === "XoverNode") {
+	    this.endItemL = new XoverNode(this,"L",4-(2*(this.parent.options.model.hID%2)-1),true);
+	}
+	if(endtypeR === "EndPointItem") {
+	    this.endItemR = new EndPointItem(this,"R",4+(2*(this.parent.options.model.hID%2)-1),true);
+	}
+	else if(endtypeR === "XoverNode") {
+	    this.endItemR = new XoverNode(this,"R",4+(2*(this.parent.options.model.hID%2)-1),true);
+	}
+	this.layer.draw();
 	//this.connectSignalsSlots();
     },
 
     updateXStartCoord: function() {this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;},
     updateXEndCoord: function() {this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;},
 
-    addEndItem: function(ei, dir) {
+    addEndItem: function(ei, dir, skipRedraw) {
 	if(dir === "L") {
 	    this.endItemL = ei;
 	}
 	else {
 	    this.endItemR = ei;
 	}
-	this.layer.draw();
+	if(!skipRedraw) {
+	    this.layer.draw();
+	}
     },
 
     events:

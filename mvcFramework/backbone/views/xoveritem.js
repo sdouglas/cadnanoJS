@@ -1,7 +1,7 @@
 //expect a bowl of copy pasta from EndPointItem and StrandItem
 
 var XoverNode = Backbone.View.extend({
-    initialize: function(strand, dir, type) {
+	initialize: function(strand, dir, type, skipRedraw) {
 	//accessing other objects
 	this.xoveritem = undefined;
 	this.parent = strand;
@@ -69,7 +69,7 @@ var XoverNode = Backbone.View.extend({
 	this.group.add(this.hLine);
 	this.group.add(this.vLine);
 	this.layer.add(this.group);
-	this.parent.addEndItem(this,dir);
+	this.parent.addEndItem(this,dir,skipRedraw);
     },
 
     updateCenterX: function() {this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;},
@@ -103,7 +103,6 @@ var XoverItem = Backbone.View.extend({
 	this.blkLength = this.helixset.graphicsSettings.blkLength;
 	this.sqLength = this.helixset.graphicsSettings.sqLength;
         this.tempLayer = new Kinetic.Layer();
-        this.tempLayer.setScale(this.helixset.scaleFactor);
         this.helixset.handler.handler.add(this.tempLayer);
 
 	this.group = new Kinetic.Group({
@@ -168,6 +167,7 @@ var XoverItem = Backbone.View.extend({
 		    this.remove();
 		    this.superobj.superobj.tempLayer.draw();
 		});
+		this.superobj.tempLayer.setScale(this.superobj.helixset.scaleFactor);
 		this.superobj.tempLayer.add(this.redBox);
 		this.superobj.tempLayer.draw();
 	    }
@@ -258,13 +258,13 @@ var XoverItem = Backbone.View.extend({
 	if(x1 === x2) { //vertical case
 	    if(dir === "L") {
 		return {
-		    x: x1+this.sqLength/2,
+		    x: x1+this.sqLength/4,
 		    y: (y1+y2)/2
 		}
 	    }
 	    else {
 		return {
-		    x: x1-this.sqLength/2,
+		    x: x1-this.sqLength/4,
 		    y: (y1+y2)/2
 		}
 	    }

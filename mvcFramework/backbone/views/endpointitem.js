@@ -1,12 +1,11 @@
 var EndPointItem = Backbone.View.extend({
-    initialize: function(strand, dir, type) {
+	initialize: function(strand, dir, type, skipRedraw) {
 	//accessing other objects
 	this.parent = strand;
 	this.phItem = this.parent.parent;
 	this.layer = this.parent.layer;
 	//temporary layer that will be used for fast rendering
 	this.tempLayer = new Kinetic.Layer();
-	this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
 	this.phItem.options.handler.handler.add(this.tempLayer);
 	//graphics
 	this.divLength = this.parent.divLength;
@@ -79,6 +78,7 @@ var EndPointItem = Backbone.View.extend({
 		    this.remove();
 		    this.superobj.superobj.tempLayer.draw();
 		});
+		this.superobj.tempLayer.setScale(this.superobj.phItem.options.parent.scaleFactor);
 		this.superobj.tempLayer.add(this.redBox);
 		this.superobj.tempLayer.draw();
 	    }
@@ -91,6 +91,7 @@ var EndPointItem = Backbone.View.extend({
 		    helixset.pencilendpoint = this.superobj;
 		    var pencilNotifier = helixset.pencilendpoint.shape.clone();
 		    pencilNotifier.setFill("#FF0000");
+		    this.superobj.tempLayer.setScale(this.superobj.phItem.options.parent.scaleFactor);
 		    this.superobj.tempLayer.add(pencilNotifier);
 		    this.superobj.tempLayer.draw();
 		    pencilNotifier.destroy();
@@ -167,7 +168,7 @@ var EndPointItem = Backbone.View.extend({
 	    }
 	});
 	this.layer.add(this.shape);
-	this.parent.addEndItem(this,dir); //finally linking this item back to strand
+	this.parent.addEndItem(this,dir,skipRedraw); //finally linking this item back to strand
     },
 
     updateCenterX: function() {this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;},
