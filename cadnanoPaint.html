@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="includes/jquery-1.9.1.min.js"></script>
+    <script src="includes/spectrum.js"></script>
+    <link rel="stylesheet" href="ui/css/spectrum.css">
+    <style type="text/css">
+      body {
+        margin: 0;
+        background-color: #EEE
+      }
+    </style>
+  </head>
+  <body>
+    <input type="text" id="picker">
+    <script>
+      $("#picker").spectrum({
+        flat: true,
+        color: window.localStorage.getItem("cadnanoPaint"),
+        preferredFormat: "hex6",
+        cancelText: ".",
+        localStorageKey: "spectrum.homepage",
+        showInput: true,
+        showInitial: true,
+        change: function(color) {window.localStorage.setItem("cadnanoPaint",color.toHexString());},
+      });
+    </script>
+  </body>
+</html>

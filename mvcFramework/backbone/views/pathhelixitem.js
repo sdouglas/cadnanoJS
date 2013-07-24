@@ -256,13 +256,26 @@ var ColorChangeItem = Backbone.View.extend({
 	});
 	rect.superobj = this;
 	rect.on("click", function(pos) {
-	    var colourRaw = "#"+prompt("Input color in RGB (skip hash):","");
-	    if(colourRaw !== "#null") {
-		this.superobj.options.parent.paintcolor = colourRaw;
-		this.setFill(this.superobj.options.parent.paintcolor);
-		layer.draw();
-	    }
-	});
+	    window.localStorage.setItem("cadnanoPaint",rect.superobj.options.parent.paintcolor);
+	    var newDialog = $('<link rel="stylesheet" href="ui/css/jquery-ui/jquery.ui-1.9.2.min.css"><div><iframe src="cadnanoPaint.html" width="195" height="224"></div>');
+	    $(newDialog).dialog({
+		width: 226,
+		height: 284,
+		modal: true,
+	        title: "Color picker",
+		show: "clip",
+		hide: "clip",
+		close: function() {update();},
+		dragStart: function() {alert("this is the real one")},
+	    });
+	    var isOpen = $("newDialog").dialog("isOpen");
+	    console.log(isOpen);
+	})
+	function update() {
+	    rect.superobj.options.parent.paintcolor = window.localStorage.getItem("cadnanoPaint");
+	    rect.setFill(rect.superobj.options.parent.paintcolor);
+	    layer.draw();		
+	}
 	layer.add(rect);
     },
 });
