@@ -139,4 +139,10 @@ var EndPointItem = Backbone.View.extend({
     adjustCounter: function(n) {
 	this.counter = Math.min(Math.max(0,n),this.blkLength*this.divLength*this.phItem.options.parent.part.getStep()-1);
     },
+
+    getRidOf:
+    function(){
+        this.shape.destroy();
+        this.close();
+    },
 });

@@ -30,6 +30,7 @@ var cadnanoEvents = {
     partStepSizeChangedSignal: 'partStepSizeChangedSignal',
     updatePreXoverItemsSignal: 'updatePreXoverItemsSignal',
     partStrandChangedSignal: 'partStrandChangedSignal',
+    strandSetStrandRemovedSignal: 'strandSetStrandRemovedSignal',
 };
 
 

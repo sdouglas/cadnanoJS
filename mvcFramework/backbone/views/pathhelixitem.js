@@ -167,6 +167,10 @@ var PathHelixItem = Backbone.View.extend ({
 
 	this.startX = 5*this.sqLength;
 	this.startY = 5*this.sqLength+4*(this.options.parent.phItemArray.length)*this.sqLength;
+    
+    //Keeping track of all the strandItems
+    this.stItemArray = new Array();
+
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
 		var rect = new Kinetic.Rect({
@@ -200,6 +204,10 @@ var PathHelixItem = Backbone.View.extend ({
                 cadnanoEvents.strandSetStrandAddedSignal,
                 this.strandAddedSlot
                 );
+        this.listenTo(this.model.scafStrandSet,
+                cadnanoEvents.strandSetStrandRemovedSignal,
+                this.strandRemovedSlot
+                );
     },
 
     strandAddedSlot:
@@ -211,6 +219,29 @@ var PathHelixItem = Backbone.View.extend ({
              strand.baseIdxLow, 
              strand.baseIdxHigh
         );
+        this.stItemArray.push(stItem);
+        console.log(this.stItemArray.length);
+    },
+
+    strandRemovedSlot:
+    function(strand){
+        console.log('in strandRemovedSlot');
+        var len = this.stItemArray.length;
+        console.log(len);
+        for(var i=0; i<len; i++){
+           // if(this.stItemArray[i].baseIdxLow === strand.low() &&
+           //    this.stItemArray[i].baseIdxHigh === strand.high()){
+           console.log(this.stItemArray[i].modelStrand);
+           console.log(strand);
+            if(this.stItemArray[i].modelStrand === strand){
+                this.stItemArray[i].getRidOf();
+                this.stItemArray.splice(i,1);
+                console.log('true');
+                return true;
+            }
+        }
+        console.log('false');
+        return false;
     },
 
 });

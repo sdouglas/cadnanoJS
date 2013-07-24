@@ -200,6 +200,7 @@ var StrandItem = Backbone.View.extend({
         var endP1 = new EndPointItem(this, "L", 3);
         var endP2 = new EndPointItem(this, "R", 5);
     }
+    this.layer.draw();
 
     //this.connectSignalsSlots();
 
@@ -209,13 +210,12 @@ var StrandItem = Backbone.View.extend({
     updateXEndCoord: function() {this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;},
 
     addEndItem: function(ei, dir) {
-	if(dir === "L") {
-	    this.endItemL = ei;
-	}
-	else {
-	    this.endItemR = ei;
-	}
-	this.layer.draw();
+        if(dir === "L") {
+            this.endItemL = ei;
+        }
+        else {
+            this.endItemR = ei;
+        }
     },
 
     events:
@@ -228,6 +228,18 @@ var StrandItem = Backbone.View.extend({
 		      this.strandResizedSlot);
     },
 
-    strandResizedSlot: function() {
-    },
+    getRidOf:
+    function(){
+        //remove strand from layer.
+        //remove endpoints from layer.
+        this.endItemL.getRidOf();
+        this.endItemR.getRidOf();
+        this.group.removeChildren();
+        this.group.remove();
+        this.layer.draw();
+        this.close();
+        //Cannot remove layer or all children, since its 
+        //the layer of the parent helix item.
+    }
+
 });

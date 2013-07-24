@@ -51,7 +51,7 @@ var StrandSet = Backbone.Model.extend({
      * returns true if found the model strand and deleted it. Else false.
      */
     removeStrand: function(strand){
-        var len = strandList.length;
+        var len = this.strandList.length;
         for(var i=0; i<len;i++){
             if(strand.low() === this.strandList[i].low() &&
                strand.high() === this.strandList[i].high()) {
@@ -136,8 +136,10 @@ var CreateStrandCommand = Undo.Command.extend({
     undo: 
     function(){
         //destroy the strand object.
-        this.strandSet.removeStrand(this.strand);
         this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal, this.strand);
+        var ret = this.strandSet.removeStrand(this.strand);
+        console.log('received :' + ret + ', to remove strand');
         this.strand.destroy();
     },
     redo:
