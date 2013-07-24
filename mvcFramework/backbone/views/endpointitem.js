@@ -1,5 +1,5 @@
 var EndPointItem = Backbone.View.extend({
-	initialize: function(strand, dir, type, skipRedraw) {
+    initialize: function(strand, dir, type, skipRedraw) {
 	//accessing other objects
 	this.parent = strand;
 	this.phItem = this.parent.parent;
@@ -64,107 +64,25 @@ var EndPointItem = Backbone.View.extend({
 	      further.
 	    */
 	    if(pathTool === "select") {
-		this.redBox = new Kinetic.Rect({
-		    x: this.superobj.centerX-this.superobj.sqLength/2,
-		    y: this.superobj.centerY-this.superobj.sqLength/2,
-		    width: this.superobj.sqLength,
-		    height: this.superobj.sqLength,
-		    fill: "transparent",
-		    stroke: "#FF0000",
-		    strokeWidth: 2,
-		});
-		this.redBox.superobj = this;
-		this.redBox.on("mouseup", function(pos) {
-		    this.remove();
-		    this.superobj.superobj.tempLayer.draw();
-		});
-		this.superobj.tempLayer.setScale(this.superobj.phItem.options.parent.scaleFactor);
-		this.superobj.tempLayer.add(this.redBox);
-		this.superobj.tempLayer.draw();
+		this.superobj.selectStart(pos);
 	    }
 	});
 	this.shape.on("click", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
 	    if(pathTool === "pencil") {
-		var helixset = this.superobj.phItem.options.parent;
-		if(helixset.pencilendpoint === undefined) {
-		    helixset.pencilendpoint = this.superobj;
-		    var pencilNotifier = helixset.pencilendpoint.shape.clone();
-		    pencilNotifier.setFill("#FF0000");
-		    this.superobj.tempLayer.setScale(this.superobj.phItem.options.parent.scaleFactor);
-		    this.superobj.tempLayer.add(pencilNotifier);
-		    this.superobj.tempLayer.draw();
-		    pencilNotifier.destroy();
-		}
-		else {
-		    var nodeAInfo = {
-			strand: helixset.pencilendpoint.parent,
-			dir: helixset.pencilendpoint.dir,
-			type: helixset.pencilendpoint.prime
-		    };
-		    var nodeBInfo = {
-			strand: this.superobj.parent,
-			dir: this.superobj.dir,
-			type: this.superobj.prime
-		    };
-		    if(nodeAInfo.type + nodeBInfo.type === 8) {
-			helixset.pencilendpoint.tempLayer.draw();
-			helixset.pencilendpoint.close();
-			helixset.pencilendpoint.shape.destroy();
-			helixset.pencilendpoint = undefined;
-			this.superobj.close();
-			this.superobj.shape.destroy();
-			this.superobj.shape = undefined; //check if this line is actually needed
-			var nodeA = new XoverNode(nodeAInfo.strand, nodeAInfo.dir, nodeAInfo.type);
-			var nodeB = new XoverNode(nodeBInfo.strand, nodeBInfo.dir, nodeBInfo.type);
-			var xover = new XoverItem(nodeA,nodeB); //initialization comes with a redrawn strandlayer
-			return;
-		    }
-		    else {
-			alert("Crossover can only occur between a 3' and a 5'!");
-		    }
-		}
+		this.superobj.createXover();
 	    }
 	});
 	this.shape.on("dragmove", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
 	    if(pathTool === "select") {
-		//we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
-		var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.phItem.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-		this.superobj.adjustCounter(tempCounter);
-		if(this.superobj.counter !== this.superobj.pCounter) {
-		    this.superobj.pCounter = this.superobj.counter;
-		    //redrawing red box
-		    this.superobj.updateCenterX();
-		    this.redBox.setX(this.superobj.centerX-this.superobj.sqLength/2);
-		    this.superobj.tempLayer.draw();
-		    //throw out signals here
-		}
+		this.superobj.selectMove(pos);
 	    }
 	});
 	this.shape.on("dragend", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
 	    if(pathTool === "select") {
-		this.superobj.update(); //wait for all elements to be adjusted to correct location before rendering
-		//red box has finished its duty, to be deleted
-		this.superobj.updateCenterX();
-		this.redBox.remove();
-		this.superobj.tempLayer.draw();
-		//update counter and value in StrandItem
-		if(dir === "L") {
-		    this.superobj.parent.xStart = this.superobj.counter;
-		    this.superobj.parent.updateXStartCoord();
-		}
-		else {
-		    this.superobj.parent.xEnd = this.superobj.counter;
-		    this.superobj.parent.updateXEndCoord();
-		}
-		//redrawing the line between two enditems aka strand
-		this.superobj.parent.connection.setX(this.superobj.parent.xStartCoord);
-		this.superobj.parent.connection.setWidth(this.superobj.parent.xEndCoord-this.superobj.parent.xStartCoord);
-		this.superobj.parent.invisConnection.setX(this.superobj.parent.xStartCoord);
-		this.superobj.parent.invisConnection.setWidth(this.superobj.parent.xEndCoord-this.superobj.parent.xStartCoord);
-		this.superobj.layer.draw();
+		this.superobj.selectEnd(pos);
 	    }
 	});
 	this.layer.add(this.shape);
@@ -173,11 +91,104 @@ var EndPointItem = Backbone.View.extend({
 
     updateCenterX: function() {this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;},
 
-    update: function() { //only redraws when boo is true
+    update: function() {
+	this.updateCenterX();
 	this.shape.setX((this.counter-this.initcounter)*this.sqLength);
     },
 
     adjustCounter: function(n) {
 	this.counter = Math.min(Math.max(0,n),this.blkLength*this.divLength*this.phItem.options.parent.part.getStep()-1);
+    },
+
+    selectStart: function(pos) {
+       this.redBox = new Kinetic.Rect({
+	   x: this.centerX-this.sqLength/2,
+	   y: this.centerY-this.sqLength/2,
+	   width: this.sqLength,
+	   height: this.sqLength,
+	   fill: "transparent",
+	   stroke: "#FF0000",
+	   strokeWidth: 2,
+       });
+       this.redBox.superobj = this;
+       this.redBox.on("mouseup", function(pos) {
+	   this.remove();
+	   this.superobj.tempLayer.draw();
+       });
+       this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
+       this.tempLayer.add(this.redBox);
+       this.tempLayer.draw();
+    },
+
+    selectMove: function(pos) {
+	//we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
+	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.adjustCounter(tempCounter);
+	if(this.counter !== this.pCounter) {
+	    //redrawing red box
+	    this.redBox.setX(this.redBox.getX()+(this.counter-this.pCounter)*this.sqLength)
+	    this.tempLayer.draw();
+	    this.pCounter = this.counter;
+	    //throw out signals here
+	}
+    },
+
+    selectEnd: function(pos) {
+	//red box has finished its duty, to be deleted
+	this.redBox.remove();
+	this.tempLayer.draw();
+	//redraw shape; wait for all elements to be adjusted to correct location before rendering
+	this.update();
+	//update counter and value in StrandItem
+	if(this.dir === "L") {
+	    this.parent.xStart = this.counter;
+	}
+	else {
+	    this.parent.xEnd = this.counter;
+	}
+	//redrawing the line between two enditems aka strand
+	this.parent.update();
+	this.layer.draw();
+    },
+
+    createXover: function() {
+	var helixset = this.phItem.options.parent;
+	if(helixset.pencilendpoint === undefined) {
+	    helixset.pencilendpoint = this;
+	    var pencilNotifier = helixset.pencilendpoint.shape.clone();
+	    pencilNotifier.setFill("#FF0000");
+	    this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
+	    this.tempLayer.add(pencilNotifier);
+	    this.tempLayer.draw();
+	}
+	else {
+	    var nodeAInfo = {
+		strand: helixset.pencilendpoint.parent,
+		dir: helixset.pencilendpoint.dir,
+		type: helixset.pencilendpoint.prime
+	    };
+	    var nodeBInfo = {
+		strand: this.parent,
+		dir: this.dir,
+		type: this.prime
+	    };
+	    if(nodeAInfo.type + nodeBInfo.type === 8) {
+		helixset.pencilendpoint.tempLayer.destroyChildren();
+		helixset.pencilendpoint.tempLayer.draw();
+		helixset.pencilendpoint.close();
+		helixset.pencilendpoint.shape.destroy();
+		helixset.pencilendpoint = undefined;
+		this.close();
+		this.shape.destroy();
+		this.shape = undefined; //check if this line is actually needed
+		var nodeA = new XoverNode(nodeAInfo.strand, nodeAInfo.dir, nodeAInfo.type);
+		var nodeB = new XoverNode(nodeBInfo.strand, nodeBInfo.dir, nodeBInfo.type);
+		var xover = new XoverItem(nodeA,nodeB); //initialization comes with a redrawn strandlayer
+		return;
+	    }
+	    else {
+		alert("Crossover can only occur between a 3' and a 5'!");
+	    }
+	}
     },
 });

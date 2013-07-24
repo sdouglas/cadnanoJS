@@ -15,7 +15,10 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.handler.handler.add(this.buttonlayer);
 	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
 	this.handler.handler.add(this.strandlayer);
+	this.finallayer = new Kinetic.Layer(); //final layer: post-sequencing DNA bases (could be done on strand layer but takes more time)
+	this.handler.handler.add(this.finallayer);
 	//some things should be on the top
+	this.finallayer.moveToTop();
 	this.activeslicelayer.moveToTop();
 
 	//scale factor
@@ -97,6 +100,8 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.buttonlayer.draw();
 	    this.strandlayer.setScale(this.scaleFactor);
 	    this.strandlayer.draw();
+	    this.finallayer.setScale(this.scaleFactor);
+	    this.finallayer.draw();
 	    //reset previous ratio
 	    this.pratioX = this.ratioX;
 	    this.pratioY = this.ratioY;
@@ -260,16 +265,17 @@ var ColorChangeItem = Backbone.View.extend({
 	    var newDialog = $('<link rel="stylesheet" href="ui/css/jquery-ui/jquery.ui-1.9.2.min.css"><div><iframe src="cadnanoPaint.html" width="195" height="224"></div>');
 	    $(newDialog).dialog({
 		width: 226,
-		height: 284,
+		height: 344,
 		modal: true,
 	        title: "Color picker",
 		show: "clip",
 		hide: "clip",
-		close: function() {update();},
-		dragStart: function() {alert("this is the real one")},
+		buttons: {
+		    OK: function() {update(); $(this).dialog("close")},
+		    Cancel: function() {$(this).dialog("close");}
+		}
 	    });
-	    var isOpen = $("newDialog").dialog("isOpen");
-	    console.log(isOpen);
+	    $(".ui-dialog-titlebar-close", this.parentNode).hide();
 	})
 	function update() {
 	    rect.superobj.options.parent.paintcolor = window.localStorage.getItem("cadnanoPaint");

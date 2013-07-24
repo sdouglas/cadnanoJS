@@ -57,174 +57,47 @@ var StrandItem = Backbone.View.extend({
 	this.group.on("mousedown", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
 	    if(pathTool === "select") {
-		//counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
-		this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-		this.dragCounter = this.dragCounterInit;
-		this.pDragCounter = this.dragCounter;
-		//red box again
-		this.redBox = new Kinetic.Rect({
-		    x: this.superobj.endItemL.centerX-this.superobj.sqLength/2,
-		    y: this.superobj.endItemL.centerY-this.superobj.sqLength/2,
-		    width: this.superobj.sqLength*(this.superobj.xEnd-this.superobj.xStart+1),
-		    height: this.superobj.sqLength,
-		    fill: "transparent",
-		    stroke: "#FF0000",
-		    strokeWidth: 2,
-		});
-		this.redBox.superobj = this;
-		this.redBox.on("mouseup", function(pos) {
-                    this.remove();
-                    this.superobj.superobj.tempLayer.draw();
-                });
-		this.superobj.tempLayer.setScale(this.superobj.parent.options.parent.scaleFactor);
-		this.superobj.tempLayer.add(this.redBox);
-		this.superobj.tempLayer.draw();
+		this.superobj.selectStart(pos);
 	    }
 	});
 	this.group.on("click", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
 	    if(pathTool === "break") {
-		if(this.superobj.endItemL.prime === 5) {
-		    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-		    if(this.superobj.xEnd-counter > 1) {
-			var strand1 = new StrandItem(this.superobj.parent,this.superobj.yLevel,this.superobj.xStart,counter);
-			this.superobj.endItemL.parent = strand1;
-			strand1.addEndItem(this.superobj.endItemL,"L");
-			var end1R = new EndPointItem(strand1,"R",3);
-			var strand2 = new StrandItem(this.superobj.parent,this.superobj.yLevel,counter+1,this.superobj.xEnd);
-			var end2L = new EndPointItem(strand2,"L",5);
-			this.superobj.endItemR.parent = strand2;
-			strand2.addEndItem(this.superobj.endItemR,"R");
-			this.superobj.close();
-			this.superobj.group.destroy();
-			this.superobj.layer.draw();
-			return;
-		    }
-		}
-		else {
-		    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-		    if(counter-this.superobj.xStart > 1) {
-			var strand1 = new StrandItem(this.superobj.parent,this.superobj.yLevel,this.superobj.xStart,counter-1);
-			this.superobj.endItemL.parent = strand1;
-			strand1.addEndItem(this.superobj.endItemL,"L");
-			var end1R = new EndPointItem(strand1,"R",5);
-			var strand2 = new StrandItem(this.superobj.parent,this.superobj.yLevel,counter,this.superobj.xEnd);
-			var end2L = new EndPointItem(strand2,"L",3);
-			this.superobj.endItemR.parent = strand2;
-			strand2.addEndItem(this.superobj.endItemR,"R");
-			this.superobj.close();
-			this.superobj.group.destroy();
-			this.superobj.layer.draw();
-			return;
-		    }
-		}
+		this.superobj.breakStrand(pos);
 	    }
 	    else if(pathTool === "paint") {
-		var colour = this.superobj.parent.options.parent.paintcolor;
-		this.superobj.strandColor = colour;
-		this.superobj.connection.setFill(colour);
-		this.superobj.connection.setStroke(colour);
-		//rest of recursion goes in here
-		this.superobj.layer.draw();
+		this.superobj.paintStrand();
+	    }
+	    else if(pathTool === "seq") {
+		/*
+		var newDialog = $('<div><iframe src="cadnanoSeq.html" width="270" height="300"></div>');
+		$(newDialog).dialog({
+		    width: 301,
+		    height: 420,
+		    modal: true,
+		    title: "Choose Sequence",
+		    show: "clip",
+		    hide: "clip",
+		    buttons: {
+			OK: function() {$(this).dialog("close")},
+		        Cancel: function() {$(this).dialog("close");}
+		    }
+		});
+		$(".ui-dialog-titlebar-close", this.parentNode).hide();
+		*/
+		this.superobj.applySeq("AAATCG");
 	    }
 	});
 	this.group.on("dragmove", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
 	    if(pathTool === "select") {
-		this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-		//have to watch out for both left and right end in counter adjustment here
-		var diff = this.dragCounter-this.dragCounterInit;
-		if(this.superobj.xStart+diff < 0) {
-		    this.dragCounter = this.dragCounterInit-this.superobj.xStart;
-		}
-		else {
-		    var grLength = this.superobj.blkLength*this.superobj.divLength*this.superobj.parent.options.parent.part.getStep();
-		    if(this.superobj.xEnd+diff >= grLength) {
-			this.dragCounter = this.dragCounterInit+grLength-1-this.superobj.xEnd;
-		    }
-		}
-		//same as EndPointItem
-		if(this.dragCounter !== this.pDragCounter) {
-		    this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.superobj.sqLength);
-		    this.superobj.tempLayer.draw();
-		    this.pDragCounter = this.dragCounter;
-		}
+		this.superobj.selectMove(pos);
 	    }
 	});
 	this.group.on("dragend", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
 	    if(pathTool === "select") {
-		var diff = this.dragCounter - this.dragCounterInit;
-		//deleting red box
-		this.redBox.remove();
-		this.superobj.tempLayer.draw();
-		//redrawing the line
-		this.superobj.connection.setX(this.superobj.connection.getX()+diff*this.superobj.sqLength);
-		this.superobj.invisConnection.setX(this.superobj.invisConnection.getX()+diff*this.superobj.sqLength);
-		//redraw enditems as well as updating their values
-		this.superobj.xStart += diff;
-		this.superobj.updateXStartCoord();
-		this.superobj.endItemL.counter += diff;
-		this.superobj.endItemL.updateCenterX();
-		this.superobj.endItemL.update();
-		this.superobj.xEnd += diff;
-		this.superobj.updateXEndCoord();
-		this.superobj.endItemR.counter += diff;
-		this.superobj.endItemR.updateCenterX();
-		this.superobj.endItemR.update();
-		//redraw xoveritems
-		if(this.superobj.endItemL instanceof XoverNode) {
-		    this.superobj.endItemL.updateLinkageX();
-		    var xoverL = this.superobj.endItemL.xoveritem;
-		    xoverL.connection.remove();
-		    xoverL.connection = new Kinetic.Shape({
-			stroke: this.superobj.strandColor,
-			strokeWidth: 3
-		    });
-		    xoverL.connection.superobj = xoverL;
-		    xoverL.connection.setDrawFunc(function(canvas) {
-			var context = canvas.getContext();
-			var x1 = xoverL.node3.linkageX;
-			var y1 = xoverL.node3.linkageY;
-			var x2 = xoverL.node5.linkageX;
-			var y2 = xoverL.node5.linkageY;
-			var ctrlpt = xoverL.quadCtrlPt(x1,y1,x2,y2,xoverL.node3.dir);
-			context.beginPath();
-			context.moveTo(x1,y1);
-			context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
-			canvas.stroke(this);
-		    });
-		    xoverL.group.add(xoverL.connection);
-		    xoverL.invisConnection.setX(Math.min(xoverL.node3.centerX,xoverL.node5.centerX)-xoverL.sqLength/2);
-		    xoverL.invisConnection.setWidth(Math.abs(xoverL.node3.centerX-xoverL.node5.centerX)+xoverL.sqLength);
-		}
-		if(this.superobj.endItemR instanceof XoverNode) {
-		    this.superobj.endItemR.updateLinkageX();
-		    var xoverR = this.superobj.endItemR.xoveritem;
-		    xoverR.connection.remove();
-		    xoverR.connection = new Kinetic.Shape({
-			stroke: this.superobj.strandColor,
-			strokeWidth: 3
-		    });
-		    xoverR.connection.superobj = xoverR;
-		    xoverR.connection.setDrawFunc(function(canvas) {
-			var context = canvas.getContext();
-			var x1 = xoverR.node3.linkageX;
-			var y1 = xoverR.node3.linkageY;
-			var x2 = xoverR.node5.linkageX;
-			var y2 = xoverR.node5.linkageY;
-			var ctrlpt = xoverR.quadCtrlPt(x1,y1,x2,y2,xoverR.node3.dir);
-			context.beginPath();
-			context.moveTo(x1,y1);
-			context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
-			canvas.stroke(this);
-		    });
-		    xoverR.group.add(xoverR.connection);
-		    xoverR.invisConnection.setX(Math.min(xoverR.node3.centerX,xoverR.node5.centerX)-xoverR.sqLength/2);
-		    xoverR.invisConnection.setWidth(Math.abs(xoverR.node3.centerX-xoverR.node5.centerX)+xoverR.sqLength);
-		}
-		//finally we can redraw the layer...
-		this.superobj.layer.draw();
+		this.superobj.selectEnd(pos);
 	    }
 	});
 
@@ -245,8 +118,21 @@ var StrandItem = Backbone.View.extend({
 	//this.connectSignalsSlots();
     },
 
+    events:
+    {    
+    },
+
     updateXStartCoord: function() {this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;},
     updateXEndCoord: function() {this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;},
+
+    update: function() {
+	this.updateXStartCoord();
+	this.updateXEndCoord();
+	this.connection.setX(this.xStartCoord);
+	this.connection.setWidth(this.xEndCoord-this.xStartCoord);
+	this.invisConnection.setX(this.xStartCoord);
+	this.invisConnection.setWidth(this.xEndCoord-this.xStartCoord);
+    },
 
     addEndItem: function(ei, dir, skipRedraw) {
 	if(dir === "L") {
@@ -260,9 +146,139 @@ var StrandItem = Backbone.View.extend({
 	}
     },
 
-    events:
-    {
-    
+    selectStart: function(pos) {
+	//counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
+	this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.dragCounter = this.dragCounterInit;
+	this.pDragCounter = this.dragCounter;
+	//red box again
+	this.redBox = new Kinetic.Rect({
+	    x: this.endItemL.centerX-this.sqLength/2,
+	    y: this.endItemL.centerY-this.sqLength/2,
+	    width: this.sqLength*(this.xEnd-this.xStart+1),
+	    height: this.sqLength,
+	    fill: "transparent",
+	    stroke: "#FF0000",
+	    strokeWidth: 2,
+	});
+	this.redBox.superobj = this;
+	this.redBox.on("mouseup", function(pos) {
+	    this.remove();
+	    this.superobj.tempLayer.draw();
+	});
+	this.tempLayer.setScale(this.parent.options.parent.scaleFactor);
+	this.tempLayer.add(this.redBox);
+	this.tempLayer.draw();
+    },
+
+    selectMove: function(pos) {
+	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	//have to watch out for both left and right end in counter adjustment here
+	var diff = this.dragCounter-this.dragCounterInit;
+	if(this.xStart+diff < 0) {
+	    this.dragCounter = this.dragCounterInit-this.xStart;
+	}
+	else {
+	    var grLength = this.blkLength*this.divLength*this.parent.options.parent.part.getStep();
+	    if(this.xEnd+diff >= grLength) {
+		this.dragCounter = this.dragCounterInit+grLength-1-this.xEnd;
+	    }
+	}
+	//same as EndPointItem
+	if(this.dragCounter !== this.pDragCounter) {
+	    this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.sqLength);
+	    this.tempLayer.draw();
+	    this.pDragCounter = this.dragCounter;
+	}
+    },
+
+    selectEnd: function(pos) {
+	var diff = this.dragCounter-this.dragCounterInit;
+	//deleting red box
+	this.redBox.remove();
+	this.tempLayer.draw();
+	//redrawing the line
+	this.xStart += diff;
+	this.xEnd += diff;
+	this.update();
+	//redraw enditems as well as updating their values
+	this.endItemL.counter += diff;
+	this.endItemL.update();
+	this.endItemR.counter += diff;
+	this.endItemR.update();
+	//redraw xoveritems
+	if(this.endItemL instanceof XoverNode) {
+	    this.endItemL.xoveritem.update();
+	}
+	if(this.endItemR instanceof XoverNode) {
+	    this.endItemR.xoveritem.update();
+	}
+	//finally we can redraw the layer...
+	this.layer.draw();
+    },
+
+    breakStrand: function(pos) {
+	if(this.endItemL.prime === 5) {
+	    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	    if(this.xEnd-counter > 1) {
+		var strand1 = new StrandItem(this.parent,this.yLevel,this.xStart,counter,null,"EndPointItem");
+		this.endItemL.parent = strand1;
+		strand1.addEndItem(this.endItemL,"L");
+		var strand2 = new StrandItem(this.parent,this.yLevel,counter+1,this.xEnd,"EndPointItem",null);
+		this.endItemR.parent = strand2;
+		strand2.addEndItem(this.endItemR,"R");
+		this.close();
+		this.group.destroy();
+		this.layer.draw();
+		return;
+	    }
+	}
+	else {
+	    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	    if(counter-this.xStart > 1) {
+		var strand1 = new StrandItem(this.parent,this.yLevel,this.xStart,counter-1,null,"EndPointItem");
+		this.endItemL.parent = strand1;
+		strand1.addEndItem(this.endItemL,"L");
+		var strand2 = new StrandItem(this.parent,this.yLevel,counter,this.xEnd,"EndPointItem",null);
+		this.endItemR.parent = strand2;
+		strand2.addEndItem(this.endItemR,"R");
+		this.close();
+		this.group.destroy();
+		this.layer.draw();
+		return;
+	    }
+	}
+    },
+
+    paintStrand: function() {
+	var colour = this.parent.options.parent.paintcolor;
+	this.strandColor = colour;
+	this.connection.setFill(colour);
+	this.connection.setStroke(colour);
+	//rest of recursion goes in here
+	this.layer.draw();
+    },
+
+    applySeq: function(seq) {
+	var layer = this.parent.options.parent.finallayer;
+	var zf = this.parent.options.parent.scaleFactor;
+	var stringLen = seq.length;
+	var strandLen = this.xEnd-this.xStart+1;
+	//sequencing goes 5' -> 3'
+	for(var i=0; i<Math.min(stringLen,strandLen); i++) {
+	    var text = new Kinetic.Text({
+		x: (this.endItemL.prime === 5)?this.parent.startX+(this.xStart+i+0.5)*this.sqLength:this.parent.startX+(this.xEnd-i+0.5)*this.sqLength,
+		y: this.yCoord-(2*this.yLevel-1)/4*this.sqLength,
+		text: seq.charAt(i),
+		fontSize: this.sqLength/2,
+		fontFamily: "Calibri",
+		fill: "#000000",
+	    });
+	    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
+	    layer.setScale(zf);
+	    layer.add(text);
+	}
+	layer.draw();
     },
 
     connectSignalsSlots: function() {
