@@ -158,28 +158,33 @@ var PathHelixItem = Backbone.View.extend ({
 	var grLength = this.grLength;
 	var tempLayer = new Kinetic.Layer();
         this.options.handler.handler.add(tempLayer);
+	var zf = this.options.parent.scaleFactor;
+	tempLayer.setScale(zf);
 	this.group.superobj = this;
 	this.group.on("mousedown", function(pos) {
-	    var yLevel = Math.floor((pos.y-46)/this.superobj.sqLength);
-	    strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)-this.superobj.startX)/this.superobj.sqLength);
-	    this.on("mousemove", function(pos) {
-		strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)-this.superobj.startX)/this.superobj.sqLength);
-		strandCounter = adjustCounter(strandCounter);
-		if(Math.abs(strandCounter-strandInitCounter) >= 2) {
-		    //show imaginary strand
-		}
-		function adjustCounter(n) {
-		    return Math.min(Math.max(0,n),grLength);
-		}
-	    });
-	    this.on("mouseup", function(pos) {
-		if(Math.abs(strandCounter-strandInitCounter) >= 2) {
-		    var newStrand = new StrandItem(this.superobj, 1, Math.min(strandCounter,strandInitCounter), Math.max(strandCounter,strandInitCounter), "EndPointItem", "EndPointItem");
-		}
-		tempLayer.destroyChildren();
-		this.off("mousemove");
-		this.off("mouseup");
-	    });
+	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
+		var yLevel = Math.floor(((pos.y-54)/zf-this.superobj.startY)/this.superobj.sqLength);
+		strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/zf-this.superobj.startX)/this.superobj.sqLength);
+		strandCounter = strandInitCounter;
+		this.on("mousemove", function(pos) {
+		    strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/zf-this.superobj.startX)/this.superobj.sqLength);
+		    strandCounter = adjustCounter(strandCounter);
+		    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
+			//show imaginary strand
+		    }
+		    function adjustCounter(n) {
+			return Math.min(Math.max(0,n),grLength);
+		    }
+		});
+		this.on("mouseup", function(pos) {
+		    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
+			var newStrand = new StrandItem(this.superobj, yLevel, Math.min(strandCounter,strandInitCounter), Math.max(strandCounter,strandInitCounter), "EndPointItem", "EndPointItem");
+		    }
+		    tempLayer.destroyChildren();
+		    this.off("mousemove");
+		    this.off("mouseup");
+		});
+	    }
 	});
     },
 });
