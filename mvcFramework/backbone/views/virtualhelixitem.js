@@ -11,7 +11,6 @@ var VirtualHelixSetItem = Backbone.View.extend({
         var h = this.handler;
 
         //remove existing views.
-        //console.log(this.vhItems.length);
         for(var i=0;i<this.vhItems.length;i++){
         //    console.log(this.vhItems[i]);
             this.vhItems[i].close();

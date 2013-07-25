@@ -11,7 +11,7 @@ var Strand = Backbone.Model.extend({
     },
 
     resize: function(lowIdx, highIdx){
-                console.log('just resized the strand');
+        console.log('just resized the strand');
         var newIdxs = {lowIdx: lowIdx, highIdx: highIdx};
         this.undoStack().execute(new ResizeCommand(newIdxs, this));
     },
@@ -52,8 +52,7 @@ var Strand = Backbone.Model.extend({
         return {lowIdx: this.baseIdxLow, highIdx: this.baseIdxHigh};
     },
 
-    setIdx:
-    function(idx){
+    setIdx: function(idx){
         this.baseIdxLow = idx.lowIdx;
         this.baseIdxHigh = idx.highIdx;
     },
@@ -75,28 +74,54 @@ var Strand = Backbone.Model.extend({
 var ResizeCommand = Undo.Command.extend({
     constructor:
     function(newIdxs, strand){
-        this.strand = strand;
+        this.currDoc = strand.helix.part.currDoc;
+        this.helixId = strand.helix.id;
+        this.scaffold = strand.strandSet.scaffold;
         this.newIdxs = newIdxs;
-        this.oldIdxs = this.strand.idxs();
+        this.oldIdxs = strand.idxs();
         this.redo();
     },
+    
+    getModel:
+    function(useNew){
+        this.helix = this.currDoc.part().getModelHelix(this.helixId);
+        if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
+        else this.strandSet = this.helix.stapStrandSet;
+        //get the strand object.
+        if(useNew) {
+            this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.newIdxs.lowIdx, this.newIdxs.highIdx));
+        }
+        else { 
+            this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.oldIdxs.lowIdx, this.oldIdxs.highIdx));
+        }
+    },
+
     undo:
     function(){
+        this.getModel(true);
+        console.log('in strand.js resizecommand undo');
         this.strand.setIdx(this.oldIdxs);
-        this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal, this.oldIdxs);
+
+        this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        this.strand.trigger(cadnanoEvents.strandResizedSignal, this.oldIdxs.lowIdx, this.oldIdxs.highIdx);
+        
         //update the path view.
         //This signal has been renamed from partStrandChangedSignal
-        this.trigger(cadnanoEvents.updatePreXoverItemsSignal,
+        this.strand.helix.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
             this.strand.strandSet.helix);
     },
     redo:
     function(){
+        this.getModel(false);
         //Assuming it can be added.
         //remove old strand from strandList
         //add new strand to strand list.
 
         this.strand.setIdx(this.newIdxs);
-        this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal, this.newIdxs);
+        console.log(this.newIdxs);
+        this.strand.trigger(cadnanoEvents.strandResizedSignal, this.newIdxs.lowIdx, this.newIdxs.highIdx);
+        this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
+
         //update the path view.
         this.strand.helix.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
             this.strand.strandSet.helix);

@@ -3,7 +3,6 @@ var EndPointItem = Backbone.View.extend({
 	//accessing other objects
 	this.parent = strand;
 	this.phItem = this.parent.parent;
-    console.log(this.phItem);
 	this.layer = this.parent.layer;
 	//temporary layer that will be used for fast rendering
 	this.tempLayer = new Kinetic.Layer();

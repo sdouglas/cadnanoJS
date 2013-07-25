@@ -46,18 +46,31 @@ var StrandSet = Backbone.Model.extend({
         console.log(this.strandList);
     },
 
+    getStrandIndex: 
+    function(lowIdx, highIdx){
+        var len = this.strandList.length;
+        for(var i=0; i<len;i++){
+            if(lowIdx === this.strandList[i].low() &&
+               highIdx === this.strandList[i].high()) {
+                return i;
+            }
+        }
+        return -1;
+    },
+
+    getStrand: function(index){
+        return this.strandList[index];
+    },
+
     /**
      * @param {strand} Strand model object.
      * returns true if found the model strand and deleted it. Else false.
      */
     removeStrand: function(strand){
-        var len = this.strandList.length;
-        for(var i=0; i<len;i++){
-            if(strand.low() === this.strandList[i].low() &&
-               strand.high() === this.strandList[i].high()) {
-                this.strandList.splice(i,1);
-                return true;
-            }
+        var i = this.getStrandIndex(strand.baseIdxLow, strand.baseIdxHigh);
+        if(i !== -1) {
+            this.strandList.splice(i,1);
+            return true;
         }
         return false;
     },
@@ -130,30 +143,50 @@ var StrandSet = Backbone.Model.extend({
 var CreateStrandCommand = Undo.Command.extend({
     constructor:
     function(strandSet, startIdx, endIdx){
-        this.strandSet = strandSet;
-        this.redo(startIdx, endIdx);
+        //Need the following:
+        //helix
+        this.currDoc = strandSet.helix.part.currDoc;
+        this.helixId = strandSet.helix.id;
+        console.log(this.helixId);
+        this.scaffold = strandSet.scaffold;
+        this.startIdx = startIdx;
+        this.endIdx = endIdx;
+        this.redo();
+    },
+    getModel:
+    function(){
+        //get the helix from the helixid - since that doesn't change
+        //even if the helix is deleted.
+        //Then get the strand set.
+        //Then get the strand start and end positions.
+        this.helix = this.currDoc.part().getModelHelix(this.helixId);
+        if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
+        else this.strandSet = this.helix.stapStrandSet;
     },
     undo: 
     function(){
         //destroy the strand object.
-        this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        //The sequence of these statements is important.
+        this.getModel();
         this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal, this.strand);
         var ret = this.strandSet.removeStrand(this.strand);
-        console.log('received :' + ret + ', to remove strand');
+        this.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
         this.strand.destroy();
+        console.log('received :' + ret + ', to remove strand');
     },
     redo:
-    function(startIdx, endIdx){
+    function(){
         console.log('calling redo for strandset');
+        this.getModel();
         //Create a strand object.
         //And add it to the strand list.
         var strand = new Strand({
-            baseIdxLow: startIdx, 
-            baseIdxHigh: endIdx,
+            baseIdxLow: this.startIdx, 
+            baseIdxHigh: this.endIdx,
             strandSet: this.strandSet,
             helix: this.strandSet.helix,
         });
-        console.log(startIdx + ',' + endIdx);
+        console.log(this.startIdx + ',' + this.endIdx);
         this.strandSet.insert(strand);
         this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal,
                 strand, this.strandSet.helix.hID);

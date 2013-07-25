@@ -14,6 +14,7 @@ var PathHelixSetItem = Backbone.View.extend({
         this.buttonlayer = new Kinetic.Layer(); //button layer: PathBaseChangeItem
         this.handler.handler.add(this.buttonlayer);
         this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
+        console.log(this.strandlayer);
         this.handler.handler.add(this.strandlayer);
         //some things should be on the top
         this.activeslicelayer.moveToTop();
@@ -213,6 +214,7 @@ var PathHelixItem = Backbone.View.extend ({
     strandAddedSlot:
     function(strand, id){
         console.log('HERE in strandAddedSlot, by helix id:'+this.model.hID);
+        console.log(strand);
         //Create a strand item object.
         var stItem = new StrandItem(strand,
              this, 
@@ -229,18 +231,12 @@ var PathHelixItem = Backbone.View.extend ({
         var len = this.stItemArray.length;
         console.log(len);
         for(var i=0; i<len; i++){
-           // if(this.stItemArray[i].baseIdxLow === strand.low() &&
-           //    this.stItemArray[i].baseIdxHigh === strand.high()){
-           console.log(this.stItemArray[i].modelStrand);
-           console.log(strand);
             if(this.stItemArray[i].modelStrand === strand){
-                this.stItemArray[i].getRidOf();
+                this.stItemArray[i].getRidOf(true);
                 this.stItemArray.splice(i,1);
-                console.log('true');
                 return true;
             }
         }
-        console.log('false');
         return false;
     },
 

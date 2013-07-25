@@ -73,8 +73,15 @@ var ActiveSliceItem = Backbone.View.extend({
     },
 
     updateHeight: function() { //makes the bar span through all PathHelixItem
-	this.bot = 5*this.sqLength+4*this.sqLength*this.options.parent.phItemArray.length;
-	this.rect.setHeight(this.bot-this.top);
+    var numItems = this.options.parent.phItemArray.length;
+    if(numItems){
+        this.group.show();
+        this.bot = 5*this.sqLength+4*this.sqLength*numItems;
+        this.rect.setHeight(this.bot-this.top);
+    }
+    else{
+        this.group.hide();
+    }
 	this.layer.draw();
     },
 

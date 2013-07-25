@@ -1,4 +1,61 @@
 var StrandItem = Backbone.View.extend({
+    drawStrand: function(xL, xR){
+        //remove remnants of old strands.
+        this.getRidOf(false);
+
+	    this.xStart = xL;
+	    this.xEnd = xR;
+        console.log(this.xStart + ',' + this.xEnd);
+
+        this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
+        this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
+        this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
+
+        //the visible thin line connecting the two enditems
+        if(this.connection)
+            this.connection.destroy();
+        this.connection = new Kinetic.Rect({
+            x: this.xStartCoord,
+            y: this.yCoord-1.5,
+            width: this.xEndCoord-this.xStartCoord,
+            height: 3,
+            fill: this.strandColor,
+            stroke: this.strandColor,
+            strokeWidth: 1
+        });
+        this.group.add(this.connection);
+
+        //invisible rectangle that makes dragging the line much easier
+        if(this.invisConnection)
+            this.invisConnection.destroy();
+
+        this.invisConnection = new Kinetic.Rect({
+            x: this.xStartCoord,
+            y: this.yCoord-this.sqLength/2,
+            width: this.xEndCoord-this.xStartCoord,
+            height: this.sqLength,
+            fill: "#FFFFFF",
+            stroke: "#FFFFFF",
+            strokeWidth: 1,
+            opacity: 0
+        });
+        this.group.add(this.invisConnection);
+        this.mousePressEvents();
+
+        //Create the endpointitems.
+        if(this.modelStrand.helix.isEvenParity()){
+            //L,5
+            var endP1 = new EndPointItem(this, "L", 5);
+            var endP2 = new EndPointItem(this, "R", 3);
+        }
+        else{
+            //L,3
+            var endP1 = new EndPointItem(this, "L", 3);
+            var endP2 = new EndPointItem(this, "R", 5);
+        }
+        this.layer.draw();
+    },
+
     initialize: function(modelStrand, phItem, xL, xR) {
 	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
@@ -9,54 +66,42 @@ var StrandItem = Backbone.View.extend({
 	this.sqLength = this.parent.options.graphics.sqLength;
 	this.strandColor = "#008800";
     
-    //0 => drawn higher in the helix.
-    //1 => drawn lower in the helix.
-	this.yLevel = modelStrand.helix.isEvenParity();
-	this.xStart = xL;
-	this.xEnd = xR;
+    //Start listening to resize events.
+    this.connectSignalsSlots();
 
-	//see explanation in EndPointItem.js; the implementation of these two classes share many similarities
-        this.tempLayer = new Kinetic.Layer();
-        this.tempLayer.setScale(this.parent.options.parent.scaleFactor);
-        this.parent.options.handler.handler.add(this.tempLayer);
+    //see explanation in EndPointItem.js; the implementation of these two classes share many similarities
+    this.tempLayer = new Kinetic.Layer();
+    this.tempLayer.setScale(this.parent.options.parent.scaleFactor);
+    this.parent.options.handler.handler.add(this.tempLayer);
 
 	this.group = new Kinetic.Group({
-	    draggable: true,
-            dragBoundFunc: function(pos) {
-		return {
-		    x: this.getAbsolutePosition().x,
-		    y: this.getAbsolutePosition().y
-		}
-	    }
-        });
+        draggable: true,
+        dragBoundFunc: function(pos) {
+            return {
+                x: this.getAbsolutePosition().x,
+                y: this.getAbsolutePosition().y
+            }
+        }
+    });
 	this.group.superobj = this;
+    //0 => drawn higher in the helix.
+    //1 => drawn lower in the helix.
+    this.yLevel = this.modelStrand.helix.isEvenParity();
 
-	this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
-	this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
-	this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
-	//the visible thin line connecting the two enditems
-	this.connection = new Kinetic.Rect({
-	    x: this.xStartCoord,
-	    y: this.yCoord-1.5,
-	    width: this.xEndCoord-this.xStartCoord,
-	    height: 3,
-	    fill: this.strandColor,
-	    stroke: this.strandColor,
-	    strokeWidth: 1
-	});
-	this.group.add(this.connection);
-	//invisible rectangle that makes dragging the line much easier
-	this.invisConnection = new Kinetic.Rect({
-	    x: this.xStartCoord,
-	    y: this.yCoord-this.sqLength/2,
-	    width: this.xEndCoord-this.xStartCoord,
-	    height: this.sqLength,
-	    fill: "#FFFFFF",
-	    stroke: "#FFFFFF",
-	    strokeWidth: 1,
-	    opacity: 0
-	});
-	this.group.add(this.invisConnection);
+    this.drawStrand(xL,xR);
+
+    this.layer.add(this.group);
+    //this.layer.draw(); (not needed as you should be making the endItems immediately afterwards)
+
+    console.log('just created a stranditem');
+    console.log(this.layer);
+    this.layer.draw();
+
+    },
+
+
+    mousePressEvents:
+    function(){
 
 	//for more explanation, visit EndPointItem.js
 	this.group.on("mousedown", function(pos) {
@@ -185,29 +230,14 @@ var StrandItem = Backbone.View.extend({
 	    //finally we can redraw the layer...
 	    this.superobj.layer.draw();
 	});
-
-    this.layer.add(this.group);
-    //this.layer.draw(); (not needed as you should be making the endItems immediately afterwards)
-
-    //Create the endpointitems.
-    if(modelStrand.helix.isEvenParity()){
-        //L,5
-        var endP1 = new EndPointItem(this, "L", 5);
-        var endP2 = new EndPointItem(this, "R", 3);
-    }
-    else{
-        //L,3
-        var endP1 = new EndPointItem(this, "L", 3);
-        var endP2 = new EndPointItem(this, "R", 5);
-    }
-    this.layer.draw();
-
-    //this.connectSignalsSlots();
-
     },
 
-    updateXStartCoord: function() {this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;},
-    updateXEndCoord: function() {this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;},
+    updateXStartCoord: function() {
+        this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
+    },
+    updateXEndCoord: function() {
+        this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
+    },
 
     addEndItem: function(ei, dir) {
         if(dir === "L") {
@@ -218,26 +248,38 @@ var StrandItem = Backbone.View.extend({
         }
     },
 
-    events:
-    {
-    
-    },
+    events: {},
 
     connectSignalsSlots: function() {
-        this.listenTo(cadnanoEvents.strandResizedSignal,
-		      this.strandResizedSlot);
+        this.listenTo(this.modelStrand, 
+                cadnanoEvents.strandResizedSignal,
+                this.strandResizedSlot);
+    },
+
+    strandResizedSlot:
+    function(lowIdx, highIdx){
+        console.log('in strandResizedSlot, new coords: '+lowIdx+','+highIdx);
+        //need to resize 3 things.
+        //1. this.connection.
+        //2. this.endItemL.
+        //3. ths.endItemR.
+        this.drawStrand(lowIdx, highIdx);
     },
 
     getRidOf:
-    function(){
+    function(destroy){
         //remove strand from layer.
         //remove endpoints from layer.
-        this.endItemL.getRidOf();
-        this.endItemR.getRidOf();
+        if(this.endItemL) this.endItemL.getRidOf();
+        if(this.endItemR) this.endItemR.getRidOf();
+
         this.group.removeChildren();
-        this.group.remove();
         this.layer.draw();
-        this.close();
+
+        if(destroy) {
+            this.group.remove();
+            this.close();
+        }
         //Cannot remove layer or all children, since its 
         //the layer of the parent helix item.
     }
