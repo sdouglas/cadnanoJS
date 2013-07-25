@@ -14,6 +14,9 @@ var StrandItem = Backbone.View.extend({
 	//see explanation in EndPointItem.js; the implementation of these two classes share many similarities
         this.tempLayer = new Kinetic.Layer();
         this.parent.options.handler.handler.add(this.tempLayer);
+	//final layer is for post-sequencing DNAs
+	this.finalLayer = new Kinetic.Layer();
+	this.parent.options.handler.handler.add(this.finalLayer);
 
 	this.group = new Kinetic.Group({
 	    draggable: true,
@@ -69,23 +72,8 @@ var StrandItem = Backbone.View.extend({
 		this.superobj.paintStrand();
 	    }
 	    else if(pathTool === "seq") {
-		/*
-		var newDialog = $('<div><iframe src="cadnanoSeq.html" width="270" height="300"></div>');
-		$(newDialog).dialog({
-		    width: 301,
-		    height: 420,
-		    modal: true,
-		    title: "Choose Sequence",
-		    show: "clip",
-		    hide: "clip",
-		    buttons: {
-			OK: function() {$(this).dialog("close")},
-		        Cancel: function() {$(this).dialog("close");}
-		    }
-		});
-		$(".ui-dialog-titlebar-close", this.parentNode).hide();
-		*/
-		this.superobj.applySeq("AAATCG");
+		this.superobj.openSeqWindow();
+		//this.superobj.applySeq("AAATCG"); //apply when dialog closes
 	    }
 	});
 	this.group.on("dragmove", function(pos) {
@@ -103,16 +91,16 @@ var StrandItem = Backbone.View.extend({
 
 	this.layer.add(this.group);
 	if(endtypeL === "EndPointItem") {
-	    this.endItemL = new EndPointItem(this,"L",4-(2*(this.parent.options.model.hID%2)-1),true);
+	    this.endItemL = new EndPointItem(this,"L",4-(2*this.yLevel-1),true);
 	}
 	else if(endtypeL === "XoverNode") {
-	    this.endItemL = new XoverNode(this,"L",4-(2*(this.parent.options.model.hID%2)-1),true);
+	    this.endItemL = new XoverNode(this,"L",4-(2*this.yLevel-1),true);
 	}
 	if(endtypeR === "EndPointItem") {
-	    this.endItemR = new EndPointItem(this,"R",4+(2*(this.parent.options.model.hID%2)-1),true);
+	    this.endItemR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
 	}
 	else if(endtypeR === "XoverNode") {
-	    this.endItemR = new XoverNode(this,"R",4+(2*(this.parent.options.model.hID%2)-1),true);
+	    this.endItemR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
 	}
 	this.layer.draw();
 	//this.connectSignalsSlots();
@@ -259,8 +247,31 @@ var StrandItem = Backbone.View.extend({
 	this.layer.draw();
     },
 
+	openSeqWindow: function() { //someone fix the duplicate dialog bug (it is also in pathhelixitem.js)
+	var self = this;
+	var newDialog = $('<link rel="stylesheet" href="ui/css/jquery-ui/jquery.ui-1.9.2.min.css"><div><iframe src="cadnanoSeq.html" width="285" height="300"></div>');
+	$(newDialog).dialog({
+	    width: 316,
+	    height: 420,
+	    modal: true,
+	    title: "Choose Sequence",
+	    show: "clip",
+	    hide: "clip",
+	    buttons: {
+		OK: function() {
+			self.applySeq(window.localStorage.getItem("cadnanoSeq"));
+			$(this).dialog("close");
+		    },
+		Cancel: function() {$(this).dialog("close");}
+	    }
+	});
+	$(".ui-dialog-titlebar-close", this.parentNode).hide();
+	//if any item is modified in strandlayer, destroy final layer's children
+    },
+
     applySeq: function(seq) {
-	var layer = this.parent.options.parent.finallayer;
+	var layer = this.finalLayer;
+	layer.destroyChildren();
 	var zf = this.parent.options.parent.scaleFactor;
 	var stringLen = seq.length;
 	var strandLen = this.xEnd-this.xStart+1;
@@ -268,13 +279,16 @@ var StrandItem = Backbone.View.extend({
 	for(var i=0; i<Math.min(stringLen,strandLen); i++) {
 	    var text = new Kinetic.Text({
 		x: (this.endItemL.prime === 5)?this.parent.startX+(this.xStart+i+0.5)*this.sqLength:this.parent.startX+(this.xEnd-i+0.5)*this.sqLength,
-		y: this.yCoord-(2*this.yLevel-1)/4*this.sqLength,
+		y: this.yCoord-(2*this.yLevel-1)/4*(this.sqLength+6),
 		text: seq.charAt(i),
-		fontSize: this.sqLength/2,
+		fontSize: this.sqLength*0.4,
 		fontFamily: "Calibri",
 		fill: "#000000",
 	    });
 	    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
+	    if(this.yLevel === 1) {
+		text.rotate(Math.PI);
+	    }
 	    layer.setScale(zf);
 	    layer.add(text);
 	}

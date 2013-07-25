@@ -26,7 +26,7 @@ var EndPointItem = Backbone.View.extend({
 	//misc. properties
 	this.dir = dir;
 	this.prime = type;
-	this.parity = (this.phItem.options.model.hID)%2;
+	this.parity = this.parent.yLevel;
 	//vertices of the shape
 	var polypts;
 	if(this.prime === 3) { //3' end: triangle

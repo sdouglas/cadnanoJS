@@ -15,10 +15,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.handler.handler.add(this.buttonlayer);
 	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
 	this.handler.handler.add(this.strandlayer);
-	this.finallayer = new Kinetic.Layer(); //final layer: post-sequencing DNA bases (could be done on strand layer but takes more time)
-	this.handler.handler.add(this.finallayer);
 	//some things should be on the top
-	this.finallayer.moveToTop();
 	this.activeslicelayer.moveToTop();
 
 	//scale factor
@@ -107,7 +104,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.pratioY = this.ratioY;
 	}
 	//for UI testing purpose only, delete in final version
-	var strandItem0 = new StrandItem(pharray[pharray.length-1],(pharray.length-1)%2,0,41,"EndPointItem","EndPointItem");
+	var strandItem0 = new StrandItem(pharray[pharray.length-1],pharray[pharray.length-1].options.model.hID%2,7,34,"EndPointItem","EndPointItem");
 	//end of testing block
     },
 
@@ -155,6 +152,35 @@ var PathHelixItem = Backbone.View.extend ({
 	    }
 	}
 	this.layer.add(this.group);
+	//mouse function: dragging on helix = new StrandItem
+	var strandInitCounter = 0;
+	var strandCounter = 0;
+	var grLength = this.grLength;
+	var tempLayer = new Kinetic.Layer();
+        this.options.handler.handler.add(tempLayer);
+	this.group.superobj = this;
+	this.group.on("mousedown", function(pos) {
+	    var yLevel = Math.floor((pos.y-46)/this.superobj.sqLength);
+	    strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)-this.superobj.startX)/this.superobj.sqLength);
+	    this.on("mousemove", function(pos) {
+		strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)-this.superobj.startX)/this.superobj.sqLength);
+		strandCounter = adjustCounter(strandCounter);
+		if(Math.abs(strandCounter-strandInitCounter) >= 2) {
+		    //show imaginary strand
+		}
+		function adjustCounter(n) {
+		    return Math.min(Math.max(0,n),grLength);
+		}
+	    });
+	    this.on("mouseup", function(pos) {
+		if(Math.abs(strandCounter-strandInitCounter) >= 2) {
+		    var newStrand = new StrandItem(this.superobj, 1, Math.min(strandCounter,strandInitCounter), Math.max(strandCounter,strandInitCounter), "EndPointItem", "EndPointItem");
+		}
+		tempLayer.destroyChildren();
+		this.off("mousemove");
+		this.off("mouseup");
+	    });
+	});
     },
 });
 
@@ -260,7 +286,7 @@ var ColorChangeItem = Backbone.View.extend({
 	    fill: this.options.parent.paintcolor
 	});
 	rect.superobj = this;
-	rect.on("click", function(pos) {
+	rect.on("click", function(pos) { //someone fix the duplicate dialog bug (it is also in stranditem.js)
 	    window.localStorage.setItem("cadnanoPaint",rect.superobj.options.parent.paintcolor);
 	    var newDialog = $('<link rel="stylesheet" href="ui/css/jquery-ui/jquery.ui-1.9.2.min.css"><div><iframe src="cadnanoPaint.html" width="195" height="224"></div>');
 	    $(newDialog).dialog({
