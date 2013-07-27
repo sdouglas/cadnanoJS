@@ -46,7 +46,7 @@ var StrandSet = Backbone.Model.extend({
         console.log(this.strandList);
     },
 
-    getStrandIndex: 
+    getStrandIndex:
     function(lowIdx, highIdx){
         var len = this.strandList.length;
         for(var i=0; i<len;i++){
@@ -91,6 +91,8 @@ var StrandSet = Backbone.Model.extend({
      * the strand needs to be checked.
      * @param {high} The higher base position upto which
      * the strand needs to be checked.
+     * @param [excludeStrand] Optional strand to be excluded
+     * from the search.
      *
      * @returns {boolean} true if occupied at idx.
      * TODO:
@@ -98,10 +100,16 @@ var StrandSet = Backbone.Model.extend({
      * location or not.
      */
 
-    hasStrandAt: function(low,high){
+    hasStrandAt: function(low,high,excludeStrand){
         var len = this.strandList.length;
+        console.log(this.strandList);
         for(var i=0;i<len;i++){
             var obj = this.strandList[i];
+            if(excludeStrand){
+            if(obj.low() === excludeStrand.low() &&
+               obj.high() === excludeStrand.high())
+                continue;
+            }
             if( (obj.low() >= low && obj.low() <= high) || 
                 (obj.high() >= low && obj.high() <= high) || 
                 (low >= obj.low() && low <= obj.high())){
@@ -111,21 +119,48 @@ var StrandSet = Backbone.Model.extend({
         return false;
     },
 
-    populateRandom: function(){
-        for(var i=0;i<10;i++){
-            //var start = Math.round(Math.random()*100)%42;
-            //var end = Math.round(Math.random()*100)%42;
-            var start = i*7;
-            var end = start+3;
-            
-            if(start>end){
-                var tmp = start;
-                start = end;
-                end = tmp;
+    canBeResizedTo:
+    function(strand, low, high){
+        console.log('checking for resizing to positions:' +low + ',' + high+ ' from positions:' + strand.low() + ',' + strand.high());
+        if(low >= high) return false;
+        var curr = this.hasStrandAt(low,high,strand);
+        return !curr;
+    },
+
+    /**
+     * Assuming the strands are in sorted order in this.strandList
+     */
+    getLowHighIndices:
+    function(strand,type){
+        var len = this.strandList.length;
+        var ret = new Array(0,this.part.getStep()*this.part.getStepSize()-1);
+        var flag = true;
+        for(var i=0;i<len;i++){
+            var obj = this.strandList[i];
+            if(obj.low() === strand.low() && obj.high() === strand.high())
+                continue;
+            if(obj.high() < strand.low())
+                ret[0] = obj.high()+1;
+            if(flag && obj.low() > strand.high()){
+                ret[1] = obj.low()-1;
+                flag = false;
+                //no more high strand settings.
             }
-            var obj = {st: start, end: end};
-            this.strandList.push(obj);
         }
+        if(type === 3){
+            if(this.isDrawn5to3())
+                ret[0] = strand.low()+1;
+            else
+                ret[1] = strand.high()-1;
+        }
+        else{
+            if(this.isDrawn5to3())
+                ret[1] = strand.high()-1;
+            else
+                ret[0] = strand.low()+1;
+        
+        }
+        return ret;
     },
 
     isDrawn5to3:
@@ -186,7 +221,7 @@ var CreateStrandCommand = Undo.Command.extend({
             strandSet: this.strandSet,
             helix: this.strandSet.helix,
         });
-        console.log(this.startIdx + ',' + this.endIdx);
+        console.log(this.startIdx + ',' + this.endIdx + ':' + strand.cid);
         this.strandSet.insert(strand);
         this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal,
                 strand, this.strandSet.helix.hID);

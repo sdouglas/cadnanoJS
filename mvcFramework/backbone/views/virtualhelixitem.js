@@ -34,6 +34,8 @@ var VirtualHelixSetItem = Backbone.View.extend({
     onMouseMove: function(e){
         //calculate which helix you are on. change colour.
         var coord = this.part.latticePositionXYToCoord(e.pageX, e.pageY, 1.0);
+        if(coord.row === -1 || coord.col === -1) return;
+        if(coord.row >= this.part.getRows() || coord.col >= this.part.getCols()) return;
         var id = this.part.getStorageID(coord.row,coord.col);
         var helixModel = this.part.getModelHelix(id);
         var pos = this.part.latticeCoordToPositionXY(coord.row,

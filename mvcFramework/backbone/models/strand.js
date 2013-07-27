@@ -16,6 +16,14 @@ var Strand = Backbone.Model.extend({
         this.undoStack().execute(new ResizeCommand(newIdxs, this));
     },
 
+    /**
+     * @param {type} 3 or 5 depending on prime.
+     * returns array of size 2, with low and high indices.
+     */
+    getLowHighIndices: function(type){
+        return this.strandSet.getLowHighIndices(this,type);
+    },
+
     isDrawn5to3: function(){
         return this.strandSet.isDrawn5to3();
     },
@@ -53,6 +61,7 @@ var Strand = Backbone.Model.extend({
     },
 
     setIdx: function(idx){
+        console.log('just set the new indices');
         this.baseIdxLow = idx.lowIdx;
         this.baseIdxHigh = idx.highIdx;
     },
@@ -112,6 +121,7 @@ var ResizeCommand = Undo.Command.extend({
     },
     redo:
     function(){
+        console.log('in strand.js resizecommand redo');
         this.getModel(false);
         //Assuming it can be added.
         //remove old strand from strandList

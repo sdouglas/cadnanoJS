@@ -39,7 +39,7 @@ var VirtualHelix = Backbone.Model.extend({
     
     hasStrandAt: function(idx){
         var ret= this.scafStrandSet.hasStrandAt(idx,idx);
-        console.log('checking at index:' + idx + ':' + ret);
+        //console.log('checking at index:' + idx + ':' + ret);
         return ret;
     },
 

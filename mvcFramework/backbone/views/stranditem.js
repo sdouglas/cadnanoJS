@@ -105,7 +105,8 @@ var StrandItem = Backbone.View.extend({
 
 	//for more explanation, visit EndPointItem.js
 	this.group.on("mousedown", function(pos) {
-        console.log('mousedown called');
+        console.log('stranditem mousedown called');
+        console.log(this.superobj.modelStrand);
 	    //counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
 	    this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    this.dragCounter = this.dragCounterInit;
@@ -129,7 +130,8 @@ var StrandItem = Backbone.View.extend({
             this.superobj.tempLayer.draw();
 	});
 	this.group.on("dragmove", function(pos) {
-        console.log('dragmove called');
+        console.log('stranditem dragmove called');
+        console.log(this.superobj.modelStrand);
 	    this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    //have to watch out for both left and right end in counter adjustment here
 	    var diff = this.dragCounter-this.dragCounterInit;
@@ -150,11 +152,13 @@ var StrandItem = Backbone.View.extend({
 	    }
 	});
 	this.group.on("dragend", function(pos) {
-        console.log('dragend called');
+        console.log('stranditem dragend called');
+        console.log(this.superobj.modelStrand);
 	    var diff = this.dragCounter - this.dragCounterInit;
 	    //deleting red box
             this.redBox.remove();
             this.superobj.tempLayer.draw();
+
 	    //redrawing the line
 	    this.superobj.connection.setX(this.superobj.connection.getX()+diff*this.superobj.sqLength);
 	    this.superobj.invisConnection.setX(this.superobj.invisConnection.getX()+diff*this.superobj.sqLength);
@@ -169,12 +173,6 @@ var StrandItem = Backbone.View.extend({
 	    this.superobj.endItemR.counter += diff;
 	    this.superobj.endItemR.updateCenterX();
 	    this.superobj.endItemR.update();
-
-        //Update the model to reflect the change ins
-        //strand size.
-        console.log('reached here in stranditem');
-        this.superobj.modelStrand.resize(this.superobj.xStart,
-                this.superobj.xEnd);
 
 	    //redraw xoveritems
 	    if(this.superobj.endItemL instanceof XoverNode) {
@@ -251,9 +249,11 @@ var StrandItem = Backbone.View.extend({
     events: {},
 
     connectSignalsSlots: function() {
+        /*
         this.listenTo(this.modelStrand, 
                 cadnanoEvents.strandResizedSignal,
                 this.strandResizedSlot);
+                */
     },
 
     strandResizedSlot:
@@ -262,7 +262,7 @@ var StrandItem = Backbone.View.extend({
         //need to resize 3 things.
         //1. this.connection.
         //2. this.endItemL.
-        //3. ths.endItemR.
+        //3. this.endItemR.
         this.drawStrand(lowIdx, highIdx);
     },
 

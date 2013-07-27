@@ -77,6 +77,14 @@ var Part = Backbone.Model.extend({
         console.log('triggered helices done');
     },
 
+    getRows: function(){
+        return this.maxRow;
+    },
+
+    getCols: function(){
+        return this.maxCol;
+    },
+
     getStorageID: function(row,col){
         return row*this.maxRowsEver+col;
     },

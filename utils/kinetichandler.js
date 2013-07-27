@@ -64,7 +64,7 @@ function viewHandlerKinetic(){
     };
 
     this.render = function(){
-        console.log("kinetichandler render");
+        //console.log("kinetichandler render");
         this.shapeLayer.draw();
         this.helixLayer.draw();
         this.textLayer.draw();

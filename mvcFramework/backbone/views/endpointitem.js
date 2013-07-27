@@ -27,7 +27,8 @@ var EndPointItem = Backbone.View.extend({
 	//misc. properties
 	this.prime = type;
 	this.parity = (this.phItem.options.model.hID)%2;
-	//vertices of the shape
+
+    //vertices of the shape
 	var polypts;
 	if(this.prime === 3) { //3' end: triangle
 	    polypts = [this.centerX-(2*this.parity-1)*this.sqLength*0.3,this.centerY,
@@ -57,31 +58,39 @@ var EndPointItem = Backbone.View.extend({
 	this.shape.superobj = this; //javascript y u no have pointers?!
 	this.shape.on("mousedown", function(pos) {
         console.log('endpointitem mousedown');
+        console.log(this.superobj.parent.modelStrand);
+        //recalculate range of movement of this endpointitem.
+        this.superobj.maxMinIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
+        console.log(this.superobj.maxMinIndices);
 	    /*
 	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
 	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
 	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
 	      further.
 	    */
-	    this.redBox = new Kinetic.Rect({
-		x: this.superobj.centerX-this.superobj.sqLength/2,
-		y: this.superobj.centerY-this.superobj.sqLength/2,
-		width: this.superobj.sqLength,
-		height: this.superobj.sqLength,
-		fill: "transparent",
-		stroke: "#FF0000",
-		strokeWidth: 2,
-	    });
-	    this.redBox.superobj = this;
-	    this.redBox.on("mouseup", function(pos) {
-		    this.remove();
-		    this.superobj.superobj.tempLayer.draw();
-		});
-	    this.superobj.tempLayer.add(this.redBox);
+        //if(!this.redBox){
+            this.redBox = new Kinetic.Rect({
+                x: this.superobj.centerX-this.superobj.sqLength/2,
+                y: this.superobj.centerY-this.superobj.sqLength/2,
+                width: this.superobj.sqLength,
+                height: this.superobj.sqLength,
+                fill: "transparent",
+                stroke: "#FF0000",
+                strokeWidth: 2,
+            });
+            this.redBox.superobj = this;
+            this.redBox.on("mouseup", function(pos) {
+                var papa = this.superobj;
+                this.destroy();
+                papa.superobj.tempLayer.draw();
+            });
+            this.superobj.tempLayer.add(this.redBox);
+        //}
 	    this.superobj.tempLayer.draw();
 	});
 	this.shape.on("dragmove", function(pos) {
         console.log('dragmove endpointitem');
+        console.log(this.superobj.parent.modelStrand);
 	    //we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
 	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.phItem.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    this.superobj.adjustCounter(tempCounter);
@@ -96,11 +105,25 @@ var EndPointItem = Backbone.View.extend({
 	});
 	this.shape.on("dragend", function(pos) {
         console.log('dragend endpointitem');
-	    this.superobj.update(); //wait for all elements to be adjusted to correct location before rendering
+        console.log(this.superobj.parent.modelStrand);
+	
+
 	    //red box has finished its duty, to be deleted
-	    this.superobj.updateCenterX();
-	    this.redBox.remove();
+	    this.redBox.destroy();
 	    this.superobj.tempLayer.draw();
+
+        //checking if line can be drawn.
+        
+	    if(dir === "L") {
+            if(!this.superobj.parent.modelStrand.strandSet.canBeResizedTo(this.superobj.parent.modelStrand,this.superobj.counter,this.superobj.parent.xEnd)) return;
+        }
+        else{
+            if(!this.superobj.parent.modelStrand.strandSet.canBeResizedTo(this.superobj.parent.modelStrand,this.superobj.parent.xStart,this.superobj.counter)) return;
+        }
+    console.log('do i reach here');
+
+	    this.superobj.updateCenterX();
+	    this.superobj.update(); //wait for all elements to be adjusted to correct location before rendering
 	    //update counter and value in StrandItem
 	    if(dir === "L") {
 		this.superobj.parent.xStart = this.superobj.counter;
@@ -126,7 +149,10 @@ var EndPointItem = Backbone.View.extend({
 	this.parent.addEndItem(this,dir); //finally linking this item back to strand
     },
 
-    updateCenterX: function() {this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;},
+    updateCenterX: function() {
+        this.centerX = this.parent.parent.startX
+                     +(this.counter+0.5)*this.sqLength;
+    },
 
     update: function(boo) { //only redraws when boo is true
 	this.shape.setX((this.counter-this.initcounter)*this.sqLength);
@@ -136,7 +162,10 @@ var EndPointItem = Backbone.View.extend({
     },
 
     adjustCounter: function(n) {
-	this.counter = Math.min(Math.max(0,n),this.blkLength*this.divLength*this.phItem.options.parent.part.getStep()-1);
+	this.counter = Math.min(
+            Math.max(this.maxMinIndices[0],n),
+            this.maxMinIndices[1]
+            );
     },
 
     getRidOf:
