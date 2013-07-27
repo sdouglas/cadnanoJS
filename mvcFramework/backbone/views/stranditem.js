@@ -107,8 +107,12 @@ var StrandItem = Backbone.View.extend({
 	this.group.on("mousedown", function(pos) {
         console.log('stranditem mousedown called');
         console.log(this.superobj.modelStrand);
+        //recalculate range of movement of this endpointitem.
+        this.superobj.minMaxIndices = this.superobj.modelStrand.getLowHighIndices();
+        console.log(this.superobj.minMaxIndices);
 	    //counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
 	    this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
+        console.log(this.dragCounterInit);
 	    this.dragCounter = this.dragCounterInit;
 	    this.pDragCounter = this.dragCounter;
 	    //red box again
@@ -135,15 +139,21 @@ var StrandItem = Backbone.View.extend({
 	    this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    //have to watch out for both left and right end in counter adjustment here
 	    var diff = this.dragCounter-this.dragCounterInit;
+        this.dragCounter = this.superobj.adjustCounter(this.dragCounterInit);
+        /*
 	    if(this.superobj.xStart+diff < 0) {
 		this.dragCounter = this.dragCounterInit-this.superobj.xStart;
+        console.log(this.dragCounter + ' 1');
 	    }
 	    else {
 		var grLength = this.superobj.blkLength*this.superobj.divLength*this.superobj.parent.options.parent.part.getStep();
 		if(this.superobj.xEnd+diff >= grLength) {
 		    this.dragCounter = this.dragCounterInit+grLength-1-this.superobj.xEnd;
+        console.log(this.dragCounter + ' 2');
 		}
 	    }
+        */
+        console.log(this.dragCounter + ' 3');
 	    //same as EndPointItem
 	    if(this.dragCounter !== this.pDragCounter) {
 		this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.superobj.sqLength);
@@ -244,6 +254,30 @@ var StrandItem = Backbone.View.extend({
         else {
             this.endItemR = ei;
         }
+    },
+
+    adjustCounter: function(dcI) {
+        var xS = this.xStart;
+        var xE = this.xEnd;
+        var d = dcI-xS;
+        var rd = dcI-this.minMaxIndices[0];
+        if(d<rd) return rd;
+
+        d = dcI-xE;
+        rd = dcI - this.minMaxIndices[1];
+        if(d<rd) return rd;
+
+        return 0;
+
+        /*
+        Math.min(
+            
+        var counter = Math.min(
+                Math.max(this.minMaxIndices[0],n),
+                this.minMaxIndices[1]
+                );
+                */
+        return counter;
     },
 
     events: {},

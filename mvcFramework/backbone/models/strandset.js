@@ -129,6 +129,11 @@ var StrandSet = Backbone.Model.extend({
 
     /**
      * Assuming the strands are in sorted order in this.strandList
+     * @param {strand} The strand for which the indices are to be 
+     * calculated
+     * @param [type] Optional argument, if 3 or 5, will return the 
+     * surrounding indices where it can be extended for the endpoints,
+     * else will return the surrounding indices for the entire strand.
      */
     getLowHighIndices:
     function(strand,type){
@@ -153,7 +158,7 @@ var StrandSet = Backbone.Model.extend({
             else
                 ret[1] = strand.high()-1;
         }
-        else{
+        else if (type === 5){
             if(this.isDrawn5to3())
                 ret[1] = strand.high()-1;
             else

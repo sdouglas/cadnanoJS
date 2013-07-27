@@ -60,8 +60,8 @@ var EndPointItem = Backbone.View.extend({
         console.log('endpointitem mousedown');
         console.log(this.superobj.parent.modelStrand);
         //recalculate range of movement of this endpointitem.
-        this.superobj.maxMinIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
-        console.log(this.superobj.maxMinIndices);
+        this.superobj.minMaxIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
+        console.log(this.superobj.minMaxIndices);
 	    /*
 	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
 	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
@@ -163,8 +163,8 @@ var EndPointItem = Backbone.View.extend({
 
     adjustCounter: function(n) {
 	this.counter = Math.min(
-            Math.max(this.maxMinIndices[0],n),
-            this.maxMinIndices[1]
+            Math.max(this.minMaxIndices[0],n),
+            this.minMaxIndices[1]
             );
     },
 
