@@ -5,7 +5,6 @@ var StrandItem = Backbone.View.extend({
 
 	    this.xStart = xL;
 	    this.xEnd = xR;
-        console.log(this.xStart + ',' + this.xEnd);
 
         this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
         this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
@@ -94,7 +93,6 @@ var StrandItem = Backbone.View.extend({
     //this.layer.draw(); (not needed as you should be making the endItems immediately afterwards)
 
     console.log('just created a stranditem');
-    console.log(this.layer);
     this.layer.draw();
 
     },
@@ -106,13 +104,11 @@ var StrandItem = Backbone.View.extend({
 	//for more explanation, visit EndPointItem.js
 	this.group.on("mousedown", function(pos) {
         console.log('stranditem mousedown called');
-        console.log(this.superobj.modelStrand);
         //recalculate range of movement of this endpointitem.
         this.superobj.minMaxIndices = this.superobj.modelStrand.getLowHighIndices();
         console.log(this.superobj.minMaxIndices);
 	    //counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
 	    this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
-        console.log(this.dragCounterInit);
 	    this.dragCounter = this.dragCounterInit;
 	    this.pDragCounter = this.dragCounter;
 	    //red box again
@@ -135,26 +131,12 @@ var StrandItem = Backbone.View.extend({
 	});
 	this.group.on("dragmove", function(pos) {
         console.log('stranditem dragmove called');
-        console.log(this.superobj.modelStrand);
 	    this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    //have to watch out for both left and right end in counter adjustment here
 	    var diff = this.dragCounter-this.dragCounterInit;
-        this.dragCounter = this.superobj.adjustCounter(this.dragCounterInit);
-        /*
-	    if(this.superobj.xStart+diff < 0) {
-		this.dragCounter = this.dragCounterInit-this.superobj.xStart;
-        console.log(this.dragCounter + ' 1');
-	    }
-	    else {
-		var grLength = this.superobj.blkLength*this.superobj.divLength*this.superobj.parent.options.parent.part.getStep();
-		if(this.superobj.xEnd+diff >= grLength) {
-		    this.dragCounter = this.dragCounterInit+grLength-1-this.superobj.xEnd;
-        console.log(this.dragCounter + ' 2');
-		}
-	    }
-        */
-        console.log(this.dragCounter + ' 3');
-	    //same as EndPointItem
+        this.dragCounter = this.superobj.adjustCounter(this.dragCounterInit, this.dragCounter);
+
+        //same as EndPointItem
 	    if(this.dragCounter !== this.pDragCounter) {
 		this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.superobj.sqLength);
 		this.superobj.tempLayer.draw();
@@ -163,12 +145,12 @@ var StrandItem = Backbone.View.extend({
 	});
 	this.group.on("dragend", function(pos) {
         console.log('stranditem dragend called');
-        console.log(this.superobj.modelStrand);
 	    var diff = this.dragCounter - this.dragCounterInit;
 	    //deleting red box
             this.redBox.remove();
             this.superobj.tempLayer.draw();
 
+            //
 	    //redrawing the line
 	    this.superobj.connection.setX(this.superobj.connection.getX()+diff*this.superobj.sqLength);
 	    this.superobj.invisConnection.setX(this.superobj.invisConnection.getX()+diff*this.superobj.sqLength);
@@ -183,6 +165,10 @@ var StrandItem = Backbone.View.extend({
 	    this.superobj.endItemR.counter += diff;
 	    this.superobj.endItemR.updateCenterX();
 	    this.superobj.endItemR.update();
+
+        //send out the resize signal to the model.
+        this.superobj.modelStrand.resize(this.superobj.xStart,
+                this.superobj.xEnd);
 
 	    //redraw xoveritems
 	    if(this.superobj.endItemL instanceof XoverNode) {
@@ -256,28 +242,16 @@ var StrandItem = Backbone.View.extend({
         }
     },
 
-    adjustCounter: function(dcI) {
+    adjustCounter: function(dcI,dc) {
         var xS = this.xStart;
         var xE = this.xEnd;
-        var d = dcI-xS;
-        var rd = dcI-this.minMaxIndices[0];
-        if(d<rd) return rd;
+        var d = dc-dcI;
+        var leftD = this.minMaxIndices[0] - xS;
+        var rightD = this.minMaxIndices[1] - xE;
 
-        d = dcI-xE;
-        rd = dcI - this.minMaxIndices[1];
-        if(d<rd) return rd;
-
-        return 0;
-
-        /*
-        Math.min(
-            
-        var counter = Math.min(
-                Math.max(this.minMaxIndices[0],n),
-                this.minMaxIndices[1]
-                );
-                */
-        return counter;
+        if(d < 0)
+            return dcI+Math.max(d,leftD);
+        return dcI+Math.min(d,rightD);
     },
 
     events: {},
