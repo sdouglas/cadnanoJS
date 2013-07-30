@@ -8,18 +8,21 @@
     </style>
   </head>
   <body>
-       <input type="radio" onclick="radioClick(1)" name="seqOptions"> M13mp18
+       <input type="radio" onclick="radioClick(1)" name="seqOptions"> Test<!--M13mp18-->
     <p><input type="radio" onclick="radioClick(2)" name="seqOptions"> p7308</p>
     <p><input type="radio" onclick="radioClick(3)" name="seqOptions"> p7560</p>
     <p><input type="radio" onclick="radioClick(4)" name="seqOptions"> p7704</p>
     <p><input type="radio" onclick="radioClick(5)" name="seqOptions"> p8064</p>
     <p><input type="radio" onclick="radioClick(6)" name="seqOptions"> p8100</p>
     <p><input type="radio" onclick="radioClick(7)" name="seqOptions"> p8634</p>
-    <p><input type="radio" onclick="radioClick(8)" name="seqOptions" checked="true">
+    <p><input type="radio" onclick="radioClick(8)" name="seqOptions">
       Custom: <input type="text" id="customSeq"><button type="button" onclick="radioClick(8)">Save</button></p>
 
     <script>
       function radioClick(n) {
+        if(n === 1) {
+          window.localStorage.setItem("cadnanoSeq","ATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG");
+        }
         if(n === 8) {
           window.localStorage.setItem("cadnanoSeq",document.getElementById("customSeq").value);
         }

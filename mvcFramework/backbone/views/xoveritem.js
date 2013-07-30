@@ -1,7 +1,7 @@
 //expect a bowl of copy pasta from EndPointItem and StrandItem
 
 var XoverNode = Backbone.View.extend({
-	initialize: function(strand, dir, type, skipRedraw) {
+    initialize: function(strand, dir, type, skipRedraw) { //last param is optional
 	//accessing other objects
 	this.xoveritem = undefined;
 	this.parent = strand;
@@ -33,6 +33,7 @@ var XoverNode = Backbone.View.extend({
 	this.dir = dir;
 	this.yLevel = this.parent.yLevel;
 	this.prime = type;
+	this.isScaf = this.parent.isScaf;
 
 	this.group = new Kinetic.Group();
 	var xStart;
@@ -98,8 +99,10 @@ var XoverItem = Backbone.View.extend({
 	}
 	this.node3.xoveritem = this;
 	this.node5.xoveritem = this;
+	this.isScaf = this.node3.isScaf; //we don't need to check node5 because the strands must be both scafs or both staps
 	this.helixset = this.node3.parent.parent.options.parent;
 	this.layer = this.node3.parent.layer;
+	this.finalLayer = this.helixset.finallayer;
         this.strandColor = this.node3.parent.strandColor;
 	this.divLength = this.helixset.graphicsSettings.divLength;
 	this.blkLength = this.helixset.graphicsSettings.blkLength;
@@ -114,8 +117,9 @@ var XoverItem = Backbone.View.extend({
 		    x: this.getAbsolutePosition().x,
 		    y: this.getAbsolutePosition().y
 		}
-	    }
+	    },
 	});
+	//this.group.type = "xover";
 	this.group.superobj = this;
 	this.connection = new Kinetic.Shape({
 	    stroke: this.strandColor,
@@ -149,27 +153,30 @@ var XoverItem = Backbone.View.extend({
 	this.group.add(this.invisConnection);
 
 	//Warning: pasta and speghetti ahead
+	var isScaf = this.isScaf;
         this.group.on("mousedown", function(pos) {
 	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select") {
+	    if(pathTool === "select" && tbSelectArray[4] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
 	    }
 	});
         this.group.on("dragmove", function(pos) {
 	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select") {
+	    if(pathTool === "select" && tbSelectArray[4] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectMove(pos);
 	    }
 	});
         this.group.on("dragend", function(pos) {
 	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select") {
+	    if(pathTool === "select" && tbSelectArray[4] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectEnd(pos);
 	    }
 	});
 
 	//finally moving on...
 	this.layer.add(this.group);
+	//selectables can function more smoothly when XoverItems (which occupy large space) is at bottom of layer
+	this.group.moveToBottom();
 	this.layer.draw();
     },
 
@@ -298,6 +305,7 @@ var XoverItem = Backbone.View.extend({
 	var strand3 = this.node3.parent;
 	if(this.node3.dir === "L") {
 	    strand3.xStart += diff;
+	    strand3.updateAlteration(-diff);
 	}
 	else {
 	    strand3.xEnd += diff;
@@ -306,11 +314,15 @@ var XoverItem = Backbone.View.extend({
 	var strand5 = this.node5.parent;
 	if(this.node5.dir === "L") {
 	    strand5.xStart += diff;
+	    strand5.updateAlteration(-diff);
 	}
 	else {
 	    strand5.xEnd += diff;
 	}
 	strand5.update();
 	this.layer.draw();
+
+        this.finalLayer.destroyChildren();
+        this.finalLayer.draw();
     },
 });

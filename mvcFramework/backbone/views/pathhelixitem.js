@@ -15,15 +15,22 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.handler.handler.add(this.buttonlayer);
 	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
 	this.handler.handler.add(this.strandlayer);
+	this.finallayer = new Kinetic.Layer(); //final layer: post-sequencing bases
+	this.handler.handler.add(this.finallayer);
 	//some things should be on the top
 	this.activeslicelayer.moveToTop();
+
+	//for selectables
+	this.strandlayerGroups = new Array();
+	this.strandGroupID = 0;
 
 	//scale factor
 	this.ratioX = 1;
 	this.ratioY = 1;
-	this.pratioX = 1;
-	this.pratioY = 1;
-	this.scaleFactor = 1;
+	this.autoScale = 1;
+	this.userScale = 1;
+	this.scaleFactor = this.autoScale * this.userScale;
+	this.pScaleFactor = 1;
 	//objects
 	this.phItemArray = new Array(); //stores PathHelixItem
 	this.graphicsSettings = {
@@ -82,13 +89,14 @@ var PathHelixSetItem = Backbone.View.extend({
 	//calculating the new scale factor
 	this.ratioX = Math.min(1,this.handler.handler.getWidth()/(8*dims.sqLength+dims.sqLength*dims.grLength));
 	this.ratioY = Math.min(1,this.handler.handler.getHeight()/(7*dims.sqLength+4*pharray.length*dims.sqLength));
+	this.autoScale = Math.min(this.ratioX,this.ratioY);
+	this.scaleFactor = this.autoScale * this.userScale;
 	//no scale factor changes, just redraw backlayer
-	if(this.ratioX === this.pratioX && this.ratioY === this.pratioY) {
+	if(this.scaleFactor === this.pScaleFactor) {
 	    this.backlayer.draw();
 	}
-	//scale factor changed, have to rescale and redraw EVERY layer and update pratio
+	//scale factor changed, have to rescale and redraw EVERY layer
 	else {
-	    this.scaleFactor = Math.min(this.ratioX,this.ratioY);
 	    this.backlayer.setScale(this.scaleFactor); //ensures everything can be seen while maintaining aspect ratio
 	    this.backlayer.draw();
 	    this.activeslicelayer.setScale(this.scaleFactor);
@@ -99,15 +107,12 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.strandlayer.draw();
 	    this.finallayer.setScale(this.scaleFactor);
 	    this.finallayer.draw();
-	    //reset previous ratio
-	    this.pratioX = this.ratioX;
-	    this.pratioY = this.ratioY;
+	    this.pScaleFactor = this.scaleFactor;
 	}
 	//for UI testing purpose only, delete in final version
 	var strandItem0 = new StrandItem(pharray[pharray.length-1],pharray[pharray.length-1].options.model.hID%2,7,34,"EndPointItem","EndPointItem");
 	//end of testing block
     },
-
 
     onMouseMove: function(e){
     },
@@ -125,9 +130,10 @@ var PathHelixItem = Backbone.View.extend ({
 	this.grLength = this.options.graphics.grLength;
 	this.divLength = this.options.graphics.divLength;
 	this.sqLength = this.options.graphics.sqLength;
+	this.order = this.options.parent.phItemArray.length;
 
 	this.startX = 5*this.sqLength;
-	this.startY = 5*this.sqLength+4*(this.options.parent.phItemArray.length)*this.sqLength;
+	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
 		var rect = new Kinetic.Rect({
@@ -144,7 +150,7 @@ var PathHelixItem = Backbone.View.extend ({
 	    if(i%7 == 0) { //divider lines are blacker
 		var divLineXStart = this.startX+i*this.sqLength;
 		var divLine = new Kinetic.Line({
-		    points: [divLineXStart,this.startY,divLineXStart,this.startY+2*this.sqLength],
+		    points: [divLineXStart,this.startY-1,divLineXStart,this.startY+2*this.sqLength+1],
 		    stroke: "#666666",
 		    strokeWidth: 2
 		});
@@ -156,22 +162,17 @@ var PathHelixItem = Backbone.View.extend ({
 	var strandInitCounter = 0;
 	var strandCounter = 0;
 	var grLength = this.grLength;
-	var tempLayer = new Kinetic.Layer();
-        this.options.handler.handler.add(tempLayer);
 	var zf = this.options.parent.scaleFactor;
-	tempLayer.setScale(zf);
 	this.group.superobj = this;
 	this.group.on("mousedown", function(pos) {
 	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
 		var yLevel = Math.floor(((pos.y-54)/zf-this.superobj.startY)/this.superobj.sqLength);
 		strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/zf-this.superobj.startX)/this.superobj.sqLength);
 		strandCounter = strandInitCounter;
+		strandPCounter = strandCounter;
 		this.on("mousemove", function(pos) {
 		    strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/zf-this.superobj.startX)/this.superobj.sqLength);
 		    strandCounter = adjustCounter(strandCounter);
-		    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
-			//show imaginary strand
-		    }
 		    function adjustCounter(n) {
 			return Math.min(Math.max(0,n),grLength);
 		    }
@@ -180,7 +181,6 @@ var PathHelixItem = Backbone.View.extend ({
 		    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
 			var newStrand = new StrandItem(this.superobj, yLevel, Math.min(strandCounter,strandInitCounter), Math.max(strandCounter,strandInitCounter), "EndPointItem", "EndPointItem");
 		    }
-		    tempLayer.destroyChildren();
 		    this.off("mousemove");
 		    this.off("mouseup");
 		});
@@ -194,8 +194,8 @@ var PathHelixHandlerItem = Backbone.View.extend({
     initialize: function() {
 	this.sqLength = this.options.graphics.sqLength;
 	this.part = this.options.model.getPart();
-
 	this.layer = this.options.parent.backlayer;
+
 	this.group = new Kinetic.Group();
 	var helixNum = this.options.model.hID;
 	var circ = new Kinetic.Circle({
@@ -219,6 +219,19 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	    x: helixNumText.getWidth()/2
 	});
         //end: number on the circle
+
+	this.group.superobj = this;
+	this.group.on("mouseover", function() {
+	    this.on("mousedown", function(pos) {
+	        var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+		if(pathTool === "select" && tbSelectArray[2]) {
+		    this.on("mouseup", function() {
+			alert("test");
+			this.off("mouseup");
+		    });
+		}
+	    });
+	});
 	this.group.add(circ);
         this.group.add(helixNumText);
 	this.layer.add(this.group);
@@ -298,7 +311,7 @@ var ColorChangeItem = Backbone.View.extend({
 		width: 226,
 		height: 344,
 		modal: true,
-	        title: "Color picker",
+	        title: "Select color",
 		show: "clip",
 		hide: "clip",
 		buttons: {

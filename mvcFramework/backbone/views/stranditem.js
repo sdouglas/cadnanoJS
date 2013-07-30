@@ -1,8 +1,11 @@
 var StrandItem = Backbone.View.extend({
-	initialize: function(phItem, y, xL, xR, endtypeL, endtypeR) {
+    initialize: function(phItem, y, xL, xR, endtypeL, endtypeR, layer) { //layer is optional
 	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
-	this.layer = this.parent.options.parent.strandlayer;
+	this.layer = layer;
+	if(layer === undefined) { //default value for layer
+	    this.layer = this.parent.options.parent.strandlayer;
+	}
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;
@@ -10,13 +13,16 @@ var StrandItem = Backbone.View.extend({
 	this.yLevel = y;
 	this.xStart = xL;
 	this.xEnd = xR;
+	this.isScaf = (this.parent.options.model.hID%2 === this.yLevel);
+
+	this.alterationArray = new Array();
+	this.alterationGroupArray = new Array();
 
 	//see explanation in EndPointItem.js; the implementation of these two classes share many similarities
         this.tempLayer = new Kinetic.Layer();
         this.parent.options.handler.handler.add(this.tempLayer);
 	//final layer is for post-sequencing DNAs
-	this.finalLayer = new Kinetic.Layer();
-	this.parent.options.handler.handler.add(this.finalLayer);
+	this.finalLayer = this.parent.options.parent.finallayer;
 
 	this.group = new Kinetic.Group({
 	    draggable: true,
@@ -35,14 +41,15 @@ var StrandItem = Backbone.View.extend({
 	//the visible thin line connecting the two enditems
 	this.connection = new Kinetic.Rect({
 	    x: this.xStartCoord,
-	    y: this.yCoord-1.5,
+	    y: this.yCoord-1,
 	    width: this.xEndCoord-this.xStartCoord,
-	    height: 3,
+	    height: 2,
 	    fill: this.strandColor,
 	    stroke: this.strandColor,
 	    strokeWidth: 1
 	});
 	this.group.add(this.connection);
+	this.connection.moveToBottom();
 	//invisible rectangle that makes dragging the line much easier
 	this.invisConnection = new Kinetic.Rect({
 	    x: this.xStartCoord,
@@ -57,9 +64,10 @@ var StrandItem = Backbone.View.extend({
 	this.group.add(this.invisConnection);
 
 	//for more explanation, visit EndPointItem.js
+	var isScaf = this.isScaf;
 	this.group.on("mousedown", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select") {
+	    if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
 	    }
 	});
@@ -71,20 +79,26 @@ var StrandItem = Backbone.View.extend({
 	    else if(pathTool === "paint") {
 		this.superobj.paintStrand();
 	    }
+	    else if(pathTool === "insert") {
+		this.superobj.insertBase(pos);
+	    }
+	    else if(pathTool === "skip") {
+		this.superobj.skipBase(pos);
+	    }
 	    else if(pathTool === "seq") {
 		this.superobj.openSeqWindow();
-		//this.superobj.applySeq("AAATCG"); //apply when dialog closes
+		//applySeq is called when dialog closes
 	    }
 	});
 	this.group.on("dragmove", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select") {
+	    if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectMove(pos);
 	    }
 	});
 	this.group.on("dragend", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select") {
+	    if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectEnd(pos);
 	    }
 	});
@@ -189,6 +203,10 @@ var StrandItem = Backbone.View.extend({
 	this.xStart += diff;
 	this.xEnd += diff;
 	this.update();
+	//moving the inserts and skips
+	for(var i=0; i<this.alterationGroupArray.length; i++) {
+	    this.alterationGroupArray[i].setX(this.alterationGroupArray[i].getX()+diff*this.sqLength);
+	}
 	//redraw enditems as well as updating their values
 	this.endItemL.counter += diff;
 	this.endItemL.update();
@@ -201,11 +219,16 @@ var StrandItem = Backbone.View.extend({
 	if(this.endItemR instanceof XoverNode) {
 	    this.endItemR.xoveritem.update();
 	}
+	//remove post-sequencing DNA bases
+	this.finalLayer.destroyChildren();
+	this.finalLayer.draw();
 	//finally we can redraw the layer...
 	this.layer.draw();
     },
 
     breakStrand: function(pos) {
+	this.finalLayer.destroyChildren();
+	this.finalLayer.draw();
 	if(this.endItemL.prime === 5) {
 	    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	    if(this.xEnd-counter > 1) {
@@ -237,6 +260,42 @@ var StrandItem = Backbone.View.extend({
 	    }
 	}
     },
+    
+    insertBase: function(pos) {
+	var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	if(!this.alterationArray[counter-this.xStart]) {
+	    var insert = new InsertItem(this,counter-this.xStart);
+	    this.finalLayer.destroyChildren();
+	    this.finalLayer.draw();
+	}
+    },
+
+    skipBase: function(pos) {
+	var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	if(!this.alterationArray[counter-this.xStart]) {
+	    var skip = new SkipItem(this,counter-this.xStart);
+	    this.finalLayer.destroyChildren();
+	    this.finalLayer.draw();
+	}
+    },
+
+    updateAlteration: function(n) {
+	var copyArray = new Array();
+	if(n !== 0) {
+	    for(var i=0; i<this.xEnd-this.xStart; i++) {
+		if(this.alterationArray[i]) {
+		    this.alterationArray[i].position += n;
+		}
+		if(n>0) { //strand length increase
+		    copyArray[i+n] = this.alterationArray[i];
+		}
+		else { //strand length decrease
+		    copyArray[i] = this.alterationArray[i-n];
+		}
+	    }
+	    this.alterationArray = copyArray;
+	}
+    },
 
     paintStrand: function() {
 	var colour = this.parent.options.parent.paintcolor;
@@ -247,14 +306,15 @@ var StrandItem = Backbone.View.extend({
 	this.layer.draw();
     },
 
-	openSeqWindow: function() { //someone fix the duplicate dialog bug (it is also in pathhelixitem.js)
+    openSeqWindow: function() { //someone fix the duplicate dialog bug (it is also in pathhelixitem.js)
 	var self = this;
+	window.localStorage.setItem("cadnanoSeq",""); //clears out old string
 	var newDialog = $('<link rel="stylesheet" href="ui/css/jquery-ui/jquery.ui-1.9.2.min.css"><div><iframe src="cadnanoSeq.html" width="285" height="300"></div>');
 	$(newDialog).dialog({
 	    width: 316,
 	    height: 420,
 	    modal: true,
-	    title: "Choose Sequence",
+	    title: "Choose a sequence",
 	    show: "clip",
 	    hide: "clip",
 	    buttons: {
@@ -271,27 +331,134 @@ var StrandItem = Backbone.View.extend({
 
     applySeq: function(seq) {
 	var layer = this.finalLayer;
-	layer.destroyChildren();
 	var zf = this.parent.options.parent.scaleFactor;
-	var stringLen = seq.length;
-	var strandLen = this.xEnd-this.xStart+1;
+	var seqIndex = 0;
+	var strandCounter = 0;
+	var strandLen = this.xEnd-this.xStart;
 	//sequencing goes 5' -> 3'
-	for(var i=0; i<Math.min(stringLen,strandLen); i++) {
-	    var text = new Kinetic.Text({
-		x: (this.endItemL.prime === 5)?this.parent.startX+(this.xStart+i+0.5)*this.sqLength:this.parent.startX+(this.xEnd-i+0.5)*this.sqLength,
-		y: this.yCoord-(2*this.yLevel-1)/4*(this.sqLength+6),
-		text: seq.charAt(i),
-		fontSize: this.sqLength*0.4,
-		fontFamily: "Calibri",
-		fill: "#000000",
-	    });
-	    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
-	    if(this.yLevel === 1) {
-		text.rotate(Math.PI);
+	while(seqIndex < seq.length && strandCounter <= strandLen) {
+	    if(this.endItemL.prime === 5) {
+		if(!this.alterationArray[strandCounter]) {
+		    var text = new Kinetic.Text({
+			x: this.parent.startX+(this.xStart+strandCounter+0.5)*this.sqLength,
+			y: this.yCoord-(2*this.yLevel-1)/4*(this.sqLength+6),
+			text: seq.charAt(seqIndex),
+			fontSize: this.sqLength*0.4,
+			fontFamily: "Calibri",
+			fill: "#000000",
+		    });
+		    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
+		    if(this.yLevel === 1) {
+			text.rotate(Math.PI);
+		    }
+		    layer.add(text);
+		    seqIndex++;
+		    strandCounter++;
+		}
+		else if(this.alterationArray[strandCounter].extraBases === -1) { //skip
+		    strandCounter++;
+		}
+		else if(this.alterationArray[strandCounter].extraBases >= 1) { //insert
+		    //normal base pair comes first
+                    var text = new Kinetic.Text({
+			x: this.parent.startX+(this.xStart+strandCounter+0.5)*this.sqLength,
+                        y: this.yCoord-(2*this.yLevel-1)/4*(this.sqLength+6),
+                        text: seq.charAt(seqIndex),
+                        fontSize: this.sqLength*0.4,
+                        fontFamily: "Calibri",
+                        fill: "#000000",
+		    });
+		    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
+		    if(this.yLevel === 1) {
+			text.rotate(Math.PI);
+		    }
+		    layer.add(text);
+		    seqIndex++;
+		    //the extras
+		    var additionalBase = this.alterationArray[strandCounter].extraBases;
+		    var additionalText = new Kinetic.Text({
+			x: this.parent.startX+(this.xStart+strandCounter+0.75)*this.sqLength,
+			y: this.yCoord+(2*this.yLevel-1)/4*(5*this.sqLength),
+			text: seq.substring(seqIndex),
+			fontSize: this.sqLength*0.4,
+			fontFamily: "Calibri",
+			fill: "#000000",
+		    });
+		    if(seqIndex+additionalBase <= seq.length) {
+			additionalText.setText(seq.substring(seqIndex,seqIndex+additionalBase));
+		    }
+		    additionalText.setOffset({x: additionalText.getWidth()/2, y: additionalText.getHeight()/2});
+		    if(this.yLevel === 1) {
+			additionalText.rotate(Math.PI);
+		    }
+		    layer.add(additionalText);
+		    seqIndex += additionalBase; //also works for "else" conditional as this will also force the "while" loop to stop
+		    strandCounter++;
+		}
 	    }
-	    layer.setScale(zf);
-	    layer.add(text);
+	    else {
+                if(!this.alterationArray[strandLen-strandCounter]) {
+                    var text = new Kinetic.Text({
+			x: this.parent.startX+(this.xEnd-strandCounter+0.5)*this.sqLength,
+			y: this.yCoord-(2*this.yLevel-1)/4*(this.sqLength+6),
+			text: seq.charAt(seqIndex),
+			fontSize: this.sqLength*0.4,
+			fontFamily: "Calibri",
+			fill: "#000000",
+		    });
+                    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
+                    if(this.yLevel === 1) {
+			text.rotate(Math.PI);
+                    }
+                    layer.add(text);
+                    seqIndex++;
+                    strandCounter++;
+		}
+                else if(this.alterationArray[strandLen-strandCounter].extraBases === -1) { //skip
+                    strandCounter++;
+		}
+		else if(this.alterationArray[strandLen-strandCounter].extraBases >= 1) { //insert
+		    //the extras
+		    var additionalBase = this.alterationArray[strandLen-strandCounter].extraBases;
+		    var additionalText = new Kinetic.Text({
+			x: this.parent.startX+(this.xEnd-strandCounter+0.75)*this.sqLength,
+			y: this.yCoord+(2*this.yLevel-1)/4*(5*this.sqLength),
+			text: seq.substring(seqIndex),
+			fontSize: this.sqLength*0.4,
+			fontFamily: "Calibri",
+			fill: "#000000",
+		    });
+		    if(seqIndex+additionalBase <= seq.length) {
+			additionalText.setText(seq.substring(seqIndex,seqIndex+additionalBase));
+		    }
+		    additionalText.setOffset({x: additionalText.getWidth()/2, y: additionalText.getHeight()/2});
+		    if(this.yLevel === 1) {
+			additionalText.rotate(Math.PI);
+		    }
+		    layer.add(additionalText);
+		    seqIndex += additionalBase;
+		    //normal base pair comes later
+		    if(seqIndex < seq.length) {
+			var text = new Kinetic.Text({
+			    x: this.parent.startX+(this.xEnd-strandCounter+0.5)*this.sqLength,
+			    y: this.yCoord-(2*this.yLevel-1)/4*(this.sqLength+6),
+			    text: seq.charAt(seqIndex),
+			    fontSize: this.sqLength*0.4,
+			    fontFamily: "Calibri",
+			    fill: "#000000",
+			});
+			text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
+			if(this.yLevel === 1) {
+			    text.rotate(Math.PI);
+			}
+			layer.add(text);
+			seqIndex++;
+			strandCounter++;
+		    }
+		}
+	    }
 	}
+	layer.setScale(zf);
 	layer.draw();
     },
 
@@ -301,5 +468,97 @@ var StrandItem = Backbone.View.extend({
     },
 
     strandResizedSlot: function() {
+    },
+});
+
+var InsertItem = Backbone.View.extend({
+    initialize: function(strand, loc) {
+	this.position = loc;
+        this.parent = strand;
+        this.startX = this.parent.parent.startX;
+        this.yCoord = this.parent.yCoord;
+        this.sqLength = this.parent.sqLength;
+        this.extraBases = 1;
+
+	this.parent.alterationArray[this.position] = this;
+	var insertArrow = new Kinetic.Group();
+	var counter = this.position+this.parent.xStart;
+	var polypts;
+	if(this.parent.yLevel === 0) {
+	    polypts = [this.startX+(counter+0.7)*this.sqLength, this.yCoord-1.5,
+		       this.startX+(counter+0.3)*this.sqLength, this.yCoord-this.sqLength,
+		       this.startX+(counter+1.1)*this.sqLength, this.yCoord-this.sqLength
+		       ];
+	}
+	else {
+	    polypts = [this.startX+(counter+0.7)*this.sqLength, this.yCoord+1.5,
+		       this.startX+(counter+0.3)*this.sqLength, this.yCoord+this.sqLength,
+		       this.startX+(counter+1.1)*this.sqLength, this.yCoord+this.sqLength
+		       ];
+	}
+	var triangle = new Kinetic.Polygon({
+            points: polypts,
+	    fill: "transparent",
+	    stroke: this.parent.strandColor,
+	    strokeWidth: 2
+        });
+	var text = new Kinetic.Text({
+	    x: this.startX+(counter+0.7)*this.sqLength,
+	    y: this.yCoord+(2*this.parent.yLevel-1)*this.sqLength*2/3,
+	    text: this.extraBases,
+	    fontSize: this.sqLength*0.5,
+	    fontFamily: "Calibri",
+	    fill: "#000000",
+	});
+	text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
+	insertArrow.superobj = this;
+	insertArrow.on("click", function() {
+	    var newExtra = prompt("Number of insertions","");
+	    if(newExtra !== null) {
+		var nE = parseInt(newExtra,10);
+		if(nE > 0) {
+		    this.superobj.extraBases = nE;
+		    text.setText(nE);
+		    this.superobj.parent.layer.draw();
+		}
+	    }
+	});
+	insertArrow.add(triangle);
+	insertArrow.add(text);
+	this.parent.layer.add(insertArrow);
+	this.parent.alterationGroupArray.push(insertArrow);
+	this.parent.layer.draw();
+    },
+});
+
+var SkipItem = Backbone.View.extend({
+    initialize: function(strand, loc) {
+	this.position = loc;
+	this.parent = strand;
+	this.startX = this.parent.parent.startX;
+	this.yCoord = this.parent.yCoord;
+	this.sqLength = this.parent.sqLength;
+	this.extraBases = -1;
+
+	this.parent.alterationArray[this.position] = this;
+	var skipCross = new Kinetic.Group();
+	var counter = this.position+this.parent.xStart;
+	var slash1 = new Kinetic.Line({
+            points: [this.startX+counter*this.sqLength, this.yCoord-this.sqLength/2,
+		     this.startX+(counter+1)*this.sqLength, this.yCoord+this.sqLength/2],
+	    stroke: "#FF0000",
+	    strokeWidth: 2
+        });
+	var slash2 = new Kinetic.Line({
+            points: [this.startX+(counter+1)*this.sqLength, this.yCoord-this.sqLength/2,
+		     this.startX+counter*this.sqLength, this.yCoord+this.sqLength/2],
+	    stroke: "#FF0000",
+	    strokeWidth: 2
+        });
+	skipCross.add(slash1);
+	skipCross.add(slash2);
+	this.parent.layer.add(skipCross);
+	this.parent.alterationGroupArray.push(skipCross);
+	this.parent.layer.draw();
     },
 });

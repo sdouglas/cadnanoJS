@@ -1,9 +1,10 @@
 var EndPointItem = Backbone.View.extend({
-    initialize: function(strand, dir, type, skipRedraw) {
+    initialize: function(strand, dir, type, skipRedraw) { //last param is optional
 	//accessing other objects
 	this.parent = strand;
 	this.phItem = this.parent.parent;
 	this.layer = this.parent.layer;
+	this.finalLayer = this.phItem.options.parent.finallayer;
 	//temporary layer that will be used for fast rendering
 	this.tempLayer = new Kinetic.Layer();
 	this.phItem.options.handler.handler.add(this.tempLayer);
@@ -27,6 +28,7 @@ var EndPointItem = Backbone.View.extend({
 	this.dir = dir;
 	this.prime = type;
 	this.parity = this.parent.yLevel;
+	this.isScaf = this.parent.isScaf;
 	//vertices of the shape
 	var polypts;
 	if(this.prime === 3) { //3' end: triangle
@@ -55,6 +57,7 @@ var EndPointItem = Backbone.View.extend({
 	    }
 	});
 	this.shape.superobj = this; //javascript y u no have pointers?!
+	var isScaf = this.isScaf;
 	this.shape.on("mousedown", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
 	    /*
@@ -63,7 +66,7 @@ var EndPointItem = Backbone.View.extend({
 	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
 	      further.
 	    */
-	    if(pathTool === "select") {
+	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
 	    }
 	});
@@ -75,13 +78,13 @@ var EndPointItem = Backbone.View.extend({
 	});
 	this.shape.on("dragmove", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select") {
+	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectMove(pos);
 	    }
 	});
 	this.shape.on("dragend", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select") {
+	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectEnd(pos);
 	    }
 	});
@@ -92,6 +95,7 @@ var EndPointItem = Backbone.View.extend({
     updateCenterX: function() {this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;},
 
     update: function() {
+	this.pCounter = this.counter;
 	this.updateCenterX();
 	this.shape.setX((this.counter-this.initcounter)*this.sqLength);
     },
@@ -101,6 +105,7 @@ var EndPointItem = Backbone.View.extend({
     },
 
     selectStart: function(pos) {
+       this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
        this.redBox = new Kinetic.Rect({
 	   x: this.centerX-this.sqLength/2,
 	   y: this.centerY-this.sqLength/2,
@@ -146,8 +151,14 @@ var EndPointItem = Backbone.View.extend({
 	else {
 	    this.parent.xEnd = this.counter;
 	}
+	//remove elements on final layer
+        this.finalLayer.destroyChildren();
+        this.finalLayer.draw();
 	//redrawing the line between two enditems aka strand
 	this.parent.update();
+	if(this.dir === "L") {
+	    this.parent.updateAlteration(this.dragInit-this.counter);
+	}
 	this.layer.draw();
     },
 
@@ -156,10 +167,21 @@ var EndPointItem = Backbone.View.extend({
 	if(helixset.pencilendpoint === undefined) {
 	    helixset.pencilendpoint = this;
 	    var pencilNotifier = helixset.pencilendpoint.shape.clone();
+	    pencilNotifier.off("mousedown");
+	    pencilNotifier.off("click");
 	    pencilNotifier.setFill("#FF0000");
 	    this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
 	    this.tempLayer.add(pencilNotifier);
 	    this.tempLayer.draw();
+	    /*
+	    pencilNotifier.on("click", function() {
+		helixset.pencilendpoint.tempLayer.destroyChildren();
+		helixset.pencilendpoint.close();
+		helixset.pencilendpoint.shape.destroy();
+		helixset.pencilendpoint.tempLayer.draw();
+		helixset.pencilendpoint = undefined;
+	    });
+	    */
 	}
 	else {
 	    var nodeAInfo = {
@@ -173,18 +195,25 @@ var EndPointItem = Backbone.View.extend({
 		type: this.prime
 	    };
 	    if(nodeAInfo.type + nodeBInfo.type === 8) {
-		helixset.pencilendpoint.tempLayer.destroyChildren();
-		helixset.pencilendpoint.tempLayer.draw();
-		helixset.pencilendpoint.close();
-		helixset.pencilendpoint.shape.destroy();
-		helixset.pencilendpoint = undefined;
-		this.close();
-		this.shape.destroy();
-		this.shape = undefined; //check if this line is actually needed
-		var nodeA = new XoverNode(nodeAInfo.strand, nodeAInfo.dir, nodeAInfo.type);
-		var nodeB = new XoverNode(nodeBInfo.strand, nodeBInfo.dir, nodeBInfo.type);
-		var xover = new XoverItem(nodeA,nodeB); //initialization comes with a redrawn strandlayer
-		return;
+		if(!(nodeAInfo.strand.isScaf^nodeBInfo.strand.isScaf)) {
+		    helixset.pencilendpoint.tempLayer.destroyChildren();
+		    helixset.pencilendpoint.close();
+		    helixset.pencilendpoint.shape.destroy();
+		    helixset.pencilendpoint.tempLayer.draw();
+		    helixset.pencilendpoint = undefined;
+		    this.close();
+		    this.shape.destroy();
+		    this.shape = undefined; //check if this line is actually needed
+		    var nodeA = new XoverNode(nodeAInfo.strand, nodeAInfo.dir, nodeAInfo.type);
+		    var nodeB = new XoverNode(nodeBInfo.strand, nodeBInfo.dir, nodeBInfo.type);
+		    var xover = new XoverItem(nodeA,nodeB); //initialization comes with a redrawn strandlayer
+		    this.finalLayer.destroyChildren();
+		    this.finalLayer.draw();
+		    return;
+		}
+		else {
+		    alert("A scaffold cannot xover with a staple!");
+		}
 	    }
 	    else {
 		alert("Crossover can only occur between a 3' and a 5'!");
