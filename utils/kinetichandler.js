@@ -64,7 +64,11 @@ function viewHandlerKinetic(){
     };
 
     this.render = function(){
-        console.log("kinetichandler render");
+        //console.log("kinetichandler render");
+        this.shapeLayer.draw();
+        this.helixLayer.draw();
+        this.textLayer.draw();
+        this.hoverLayer.draw();
     };
 
     this.getX = function(){
@@ -113,7 +117,6 @@ function viewHandlerKinetic(){
         else if(helixNum < 100) {textX = this.getX()-this.getR()/2;}
         else {textX = this.getX()-this.getR()*3/4;}
         var textY = this.getY()-this.getR()/2;
-        console.log(textX + '.' + textY + '.' + helixNum);
         var helixNumText = new Kinetic.Text({
             x: textX,
             y: textY,

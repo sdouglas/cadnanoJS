@@ -24,8 +24,8 @@ var VirtualHelix = Backbone.Model.extend({
             helix: this,
         });
 
-        this.scafStrandSet.populateRandom();
-        this.stapStrandSet.populateRandom();
+        //this.scafStrandSet.populateRandom();
+        //this.stapStrandSet.populateRandom();
     },
     getRow: function(){
         return this.row;
@@ -38,7 +38,9 @@ var VirtualHelix = Backbone.Model.extend({
     },
     
     hasStrandAt: function(idx){
-        return this.scafStrandSet.hasStrandAt(idx-1,idx+1);
+        var ret= this.scafStrandSet.hasStrandAt(idx,idx);
+        //console.log('checking at index:' + idx + ':' + ret);
+        return ret;
     },
 
     isDrawn5to3: function(strandSet){

@@ -27,7 +27,8 @@ var EndPointItem = Backbone.View.extend({
 	//misc. properties
 	this.dir = dir;
 	this.prime = type;
-	this.parity = this.parent.yLevel;
+	this.parity = (this.phItem.options.model.hID)%2;
+	//this.parity = this.parent.yLevel;
 	this.isScaf = this.parent.isScaf;
 	//vertices of the shape
 	var polypts;
@@ -60,6 +61,10 @@ var EndPointItem = Backbone.View.extend({
 	var isScaf = this.isScaf;
 	this.shape.on("mousedown", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+        console.log(this.superobj.parent.modelStrand);
+        //recalculate range of movement of this endpointitem.
+        this.superobj.minMaxIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
+        console.log(this.superobj.minMaxIndices);
 	    /*
 	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
 	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
@@ -101,7 +106,10 @@ var EndPointItem = Backbone.View.extend({
     },
 
     adjustCounter: function(n) {
-	this.counter = Math.min(Math.max(0,n),this.blkLength*this.divLength*this.phItem.options.parent.part.getStep()-1);
+	this.counter = Math.min(
+            Math.max(this.minMaxIndices[0],n),
+            this.minMaxIndices[1]
+            );
     },
 
     selectStart: function(pos) {
@@ -117,8 +125,9 @@ var EndPointItem = Backbone.View.extend({
        });
        this.redBox.superobj = this;
        this.redBox.on("mouseup", function(pos) {
-	   this.remove();
-	   this.superobj.tempLayer.draw();
+           var papa = this.superobj;
+           this.destroy();
+           papa.tempLayer.draw();
        });
        this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
        this.tempLayer.add(this.redBox);
@@ -159,7 +168,17 @@ var EndPointItem = Backbone.View.extend({
 	if(this.dir === "L") {
 	    this.parent.updateAlteration(this.dragInit-this.counter);
 	}
+    //send out the resize signal to the model.
+    this.parent.modelStrand.resize(this.parent.xStart,
+                            this.parent.xEnd);
+         
 	this.layer.draw();
+    },
+
+    getRidOf:
+    function(){
+        this.shape.destroy();
+        this.close();
     },
 
     createXover: function() {

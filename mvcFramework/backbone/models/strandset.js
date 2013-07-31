@@ -37,8 +37,42 @@ var StrandSet = Backbone.Model.extend({
      * easier later on.
      */
     insert: function(strand){
-        var obj = {st: strand.start, end: strand.end};
-        this.strandList.push(obj);
+        var len = this.strandList.length;
+        for(var i=0; i<len;i++){
+            if(strand.high() < this.strandList[i].low())
+                break;
+        }
+        this.strandList.splice(i,0,strand);
+        console.log(this.strandList);
+    },
+
+    getStrandIndex:
+    function(lowIdx, highIdx){
+        var len = this.strandList.length;
+        for(var i=0; i<len;i++){
+            if(lowIdx === this.strandList[i].low() &&
+               highIdx === this.strandList[i].high()) {
+                return i;
+            }
+        }
+        return -1;
+    },
+
+    getStrand: function(index){
+        return this.strandList[index];
+    },
+
+    /**
+     * @param {strand} Strand model object.
+     * returns true if found the model strand and deleted it. Else false.
+     */
+    removeStrand: function(strand){
+        var i = this.getStrandIndex(strand.baseIdxLow, strand.baseIdxHigh);
+        if(i !== -1) {
+            this.strandList.splice(i,1);
+            return true;
+        }
+        return false;
     },
 
     isStaple:
@@ -57,6 +91,8 @@ var StrandSet = Backbone.Model.extend({
      * the strand needs to be checked.
      * @param {high} The higher base position upto which
      * the strand needs to be checked.
+     * @param [excludeStrand] Optional strand to be excluded
+     * from the search.
      *
      * @returns {boolean} true if occupied at idx.
      * TODO:
@@ -64,34 +100,72 @@ var StrandSet = Backbone.Model.extend({
      * location or not.
      */
 
-    hasStrandAt: function(low,high){
-        //TODO: hack
-        var idx = (low+high)/2;
-        console.log(idx);
+    hasStrandAt: function(low,high,excludeStrand){
         var len = this.strandList.length;
+        console.log(this.strandList);
         for(var i=0;i<len;i++){
             var obj = this.strandList[i];
-            if(idx < obj.st) break;
-            if(idx >= obj.st && idx < obj.end) return true;
+            if(excludeStrand){
+            if(obj.low() === excludeStrand.low() &&
+               obj.high() === excludeStrand.high())
+                continue;
+            }
+            if( (obj.low() >= low && obj.low() <= high) || 
+                (obj.high() >= low && obj.high() <= high) || 
+                (low >= obj.low() && low <= obj.high())){
+                return true;
+            }
         }
         return false;
     },
 
-    populateRandom: function(){
-        for(var i=0;i<10;i++){
-            //var start = Math.round(Math.random()*100)%42;
-            //var end = Math.round(Math.random()*100)%42;
-            var start = i*7;
-            var end = start+3;
-            
-            if(start>end){
-                var tmp = start;
-                start = end;
-                end = tmp;
+    canBeResizedTo:
+    function(strand, low, high){
+        console.log('checking for resizing to positions:' +low + ',' + high+ ' from positions:' + strand.low() + ',' + strand.high());
+        if(low >= high) return false;
+        var curr = this.hasStrandAt(low,high,strand);
+        return !curr;
+    },
+
+    /**
+     * Assuming the strands are in sorted order in this.strandList
+     * @param {strand} The strand for which the indices are to be 
+     * calculated
+     * @param [type] Optional argument, if 3 or 5, will return the 
+     * surrounding indices where it can be extended for the endpoints,
+     * else will return the surrounding indices for the entire strand.
+     */
+    getLowHighIndices:
+    function(strand,type){
+        var len = this.strandList.length;
+        var ret = new Array(0,this.part.getStep()*this.part.getStepSize()-1);
+        var flag = true;
+        for(var i=0;i<len;i++){
+            var obj = this.strandList[i];
+            if(obj.low() === strand.low() && obj.high() === strand.high())
+                continue;
+            if(obj.high() < strand.low())
+                ret[0] = obj.high()+1;
+            if(flag && obj.low() > strand.high()){
+                ret[1] = obj.low()-1;
+                flag = false;
+                //no more high strand settings.
             }
-            var obj = {st: start, end: end};
-            this.strandList.push(obj);
         }
+        if(type === 3){
+            if(this.isDrawn5to3())
+                ret[0] = strand.low()+1;
+            else
+                ret[1] = strand.high()-1;
+        }
+        else if (type === 5){
+            if(this.isDrawn5to3())
+                ret[1] = strand.high()-1;
+            else
+                ret[0] = strand.low()+1;
+        
+        }
+        return ret;
     },
 
     isDrawn5to3:
@@ -109,27 +183,54 @@ var StrandSet = Backbone.Model.extend({
 var CreateStrandCommand = Undo.Command.extend({
     constructor:
     function(strandSet, startIdx, endIdx){
-        this.strandSet = strandSet;
-        this.redo(startIdx, endIdx);
+        //Need the following:
+        //helix
+        this.currDoc = strandSet.helix.part.currDoc;
+        this.helixId = strandSet.helix.id;
+        console.log(this.helixId);
+        this.scaffold = strandSet.scaffold;
+        this.startIdx = startIdx;
+        this.endIdx = endIdx;
+        this.redo();
+    },
+    getModel:
+    function(){
+        //get the helix from the helixid - since that doesn't change
+        //even if the helix is deleted.
+        //Then get the strand set.
+        //Then get the strand start and end positions.
+        this.helix = this.currDoc.part().getModelHelix(this.helixId);
+        if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
+        else this.strandSet = this.helix.stapStrandSet;
     },
     undo: 
     function(){
         //destroy the strand object.
+        //The sequence of these statements is important.
+        this.getModel();
+        this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal, this.strand);
+        var ret = this.strandSet.removeStrand(this.strand);
+        this.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
         this.strand.destroy();
-        //this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal);
+        console.log('received :' + ret + ', to remove strand');
     },
     redo:
-    function(startIdx, endIdx){
+    function(){
+        console.log('calling redo for strandset');
+        this.getModel();
         //Create a strand object.
         //And add it to the strand list.
         var strand = new Strand({
-            baseLowIdx: startIdx, 
-            baseHighIdx: endIdx,
+            baseIdxLow: this.startIdx, 
+            baseIdxHigh: this.endIdx,
             strandSet: this.strandSet,
             helix: this.strandSet.helix,
         });
+        console.log(this.startIdx + ',' + this.endIdx + ':' + strand.cid);
         this.strandSet.insert(strand);
-        this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal);
+        this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal,
+                strand, this.strandSet.helix.hID);
+        this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
         this.strandSet.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
                     this.strandSet.helix);
         this.strand = strand;

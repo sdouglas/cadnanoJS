@@ -29,6 +29,10 @@ var PartItem = Backbone.View.extend({
             cadnanoEvents.partActiveSliceResizedSignal,
             this.partActiveSliceResizedSlot
         );
+        this.listenTo(this.part,
+            cadnanoEvents.partStrandChangedSignal,
+            this.partStrandChangedSlot
+        );
     },
 
     isHelixSelected: function(row,col){
@@ -87,6 +91,10 @@ var SlicePartItem = PartItem.extend({
         //to show selection.
         this.vhItemSet.render();
 
+    },
+
+    partStrandChangedSlot: function(){
+        this.vhItemSet.render();
     },
 
     partRemovedSlot: function(){
@@ -155,13 +163,27 @@ var PathPartItem = PartItem.extend({
     updatePreXoverItemsSlot:
     function(virtualHelix){
         console.log('in updatePreXoverItemsSlot');
-        this.part.potentialCrossoverList(virtualHelix);
         //3. Remove all current prexoveritems.
+        var len = this.preXoverItems.length;
+        for(var i=0;i<len;i++){
+        //this.preXOverItems[i].remove();
+        }
         //empty the layer containing the prexoveritems.
         //this.preXoverItemsLayer.removeChildren();
         //
         //1. Get the vhitem.
         //2. Get the potential crossovers locations.
+        var xoverlist = this.part.potentialCrossoverList(virtualHelix);
+        var len = xoverlist.length;
+        for(var i=0;i<len;i++)
+        for(var j=0;j<4;j++){
+            //j=0: neighbour
+            //j=1: index
+            //j=2: strandType
+            //j=3: isLowIdx
+            //var preXoverItem = new PreXoverItem(virtualHelix,xoverlist[i][0],xoverlist[i][1],xoverlist[i][2],xoverlist[i][3]);
+            //this.preXoverItems.push(preXoverItem);
+        }
         //4. Create new prexover items at these locations.
         //Get active virtual helix item.
         //Re-render the xover items.
@@ -175,6 +197,11 @@ var PathPartItem = PartItem.extend({
 	    slicebar.update();
 	}
 	this.pathItemSet.renderBack();
+    },
+
+    partStrandChangedSlot:
+    function(){
+        console.log('received signal: partStrandChangedSlot');
     },
 
 });

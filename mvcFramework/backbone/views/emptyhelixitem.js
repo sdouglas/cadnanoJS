@@ -33,6 +33,7 @@ var EmptyHelixSetItem = Backbone.View.extend({
         //Figure out which helix was clicked.
         var coord = this.part.latticePositionXYToCoord(e.pageX, e.pageY, 1.0);
         if(coord.row === -1 || coord.col === -1) return;
+        if(coord.row >= this.part.getRows() || coord.col >= this.part.getCols()) return;
 
         var id = this.part.getStorageID(coord.row,coord.col);
         var helixModel = this.part.getModelHelix(id);
@@ -50,6 +51,7 @@ var EmptyHelixSetItem = Backbone.View.extend({
         else {
             var idx = this.part.activeBaseIndex();
             if (!helixModel.scafStrandSet.hasStrandAt(idx-1,idx+1)){
+                console.log('creating strand at :' + idx);
                 helixModel.scafStrandSet.createStrand(idx-1,idx+1);
             }
         }

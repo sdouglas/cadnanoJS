@@ -6,15 +6,18 @@ var PathHelixSetItem = Backbone.View.extend({
 	//PathHelixSetItem should contains variables that multiple sub-classes need
         this.handler = this.options.handler;
         this.part = this.options.part;
+
 	//path view layers
 	this.backlayer = new Kinetic.Layer(); //background layer: PathHelixItem, PathHelixHandlerItem, PathBaseChangeItem
 	this.handler.handler.add(this.backlayer);
 	this.activeslicelayer = new Kinetic.Layer(); //slidebar layer: ActiveSliceItem
+
 	this.handler.handler.add(this.activeslicelayer);
 	this.buttonlayer = new Kinetic.Layer(); //button layer: PathBaseChangeItem, ColorChangeItem
 	this.handler.handler.add(this.buttonlayer);
 	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
 	this.handler.handler.add(this.strandlayer);
+
 	this.finallayer = new Kinetic.Layer(); //final layer: post-sequencing bases
 	this.handler.handler.add(this.finallayer);
 	//some things should be on the top
@@ -33,11 +36,14 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.pScaleFactor = 1;
 	//objects
 	this.phItemArray = new Array(); //stores PathHelixItem
+    this.phHandlerItemArray = new Array(); //stores PathHelixHandlerItem
+
 	this.graphicsSettings = {
 	    sqLength: 20,
 	    divLength: 7,
 	    blkLength: 3
 	};
+
 	//slidebar
 	this.activesliceItem = new ActiveSliceItem({
 	    handler: this.handler,
@@ -50,10 +56,7 @@ var PathHelixSetItem = Backbone.View.extend({
     },
     renderBack: function(){
 	//removing all old shapes before drawing new ones
-	this.backlayer.removeChildren();
-	this.buttonlayer.removeChildren();
-	this.phItemArray = new Array();
-        console.log('in render function vhitemset');
+    this.clear();
 	//buttons
 	this.c2Item = new ColorChangeItem({
 	    parent: this,
@@ -69,6 +72,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	dims.grLength = dims.blkLength*dims.divLength*this.part.getStep(); //grLength is only used here because background is immutable
 	var helixset = this;
 	var pharray = this.phItemArray;
+    var phharray = this.phHandlerItemArray;
 	//for each VirtualHelixItem, we create a path helix and a path helix handler
         this.collection.each(function(vh){
             var phItem = new PathHelixItem({
@@ -84,6 +88,7 @@ var PathHelixSetItem = Backbone.View.extend({
 		graphics: dims
 	    });
 	    pharray.push(phItem);
+        phharray.push(phHandlerItem);
         });
 
 	//calculating the new scale factor
@@ -110,7 +115,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.pScaleFactor = this.scaleFactor;
 	}
 	//for UI testing purpose only, delete in final version
-	var strandItem0 = new StrandItem(pharray[pharray.length-1],pharray[pharray.length-1].options.model.hID%2,7,34,"EndPointItem","EndPointItem");
+	//var strandItem0 = new StrandItem(pharray[pharray.length-1],pharray[pharray.length-1].options.model.hID%2,7,34,"EndPointItem","EndPointItem");
 	//end of testing block
     },
 
@@ -120,6 +125,19 @@ var PathHelixSetItem = Backbone.View.extend({
     remove: function(){
     },
 
+    clear: function(){
+        this.backlayer.removeChildren();
+        var len = this.phItemArray.length;
+        for(var i=0;i<len;i++){
+            this.phItemArray[i].close();
+            this.phHandlerItemArray[i].close();
+        }
+        this.phItemArray.length = 0;
+        this.phHandlerItemArray.length = 0;
+        if(this.resizerItem) this.resizerItem.close();
+        if(this.pbcItem) this.pbcItem.close();
+        this.buttonlayer.removeChildren();
+    },
 });
 
 //the long rectangular base grid
@@ -134,6 +152,9 @@ var PathHelixItem = Backbone.View.extend ({
 
 	this.startX = 5*this.sqLength;
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
+
+    //Keeping track of all the strandItems
+    this.stItemArray = new Array();
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
 		var rect = new Kinetic.Rect({
@@ -158,11 +179,15 @@ var PathHelixItem = Backbone.View.extend ({
 	    }
 	}
 	this.layer.add(this.group);
+    this.connectSignalsSlots();
+
 	//mouse function: dragging on helix = new StrandItem
 	var strandInitCounter = 0;
 	var strandCounter = 0;
 	var grLength = this.grLength;
 	var zf = this.options.parent.scaleFactor;
+
+    //This is for the pencil object to drag and draw.
 	this.group.superobj = this;
 	this.group.on("mousedown", function(pos) {
 	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
@@ -174,11 +199,13 @@ var PathHelixItem = Backbone.View.extend ({
 		    strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/zf-this.superobj.startX)/this.superobj.sqLength);
 		    strandCounter = adjustCounter(strandCounter);
 		    function adjustCounter(n) {
-			return Math.min(Math.max(0,n),grLength);
+			    //TODO: fix it to move only to a specified length - minMaxindices.
+                return Math.min(Math.max(0,n),grLength);
 		    }
 		});
 		this.on("mouseup", function(pos) {
 		    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
+                console.log(this.superobj);
 			var newStrand = new StrandItem(this.superobj, yLevel, Math.min(strandCounter,strandInitCounter), Math.max(strandCounter,strandInitCounter), "EndPointItem", "EndPointItem");
 		    }
 		    this.off("mousemove");
@@ -186,6 +213,57 @@ var PathHelixItem = Backbone.View.extend ({
 		});
 	    }
 	});
+    },
+
+    connectSignalsSlots:
+    function(){
+        this.listenTo(this.model.scafStrandSet,
+                cadnanoEvents.strandSetStrandAddedSignal,
+                this.strandAddedSlot
+                );
+        this.listenTo(this.model.scafStrandSet,
+                cadnanoEvents.strandSetStrandRemovedSignal,
+                this.strandRemovedSlot
+                );
+    },
+
+    strandAddedSlot:
+    function(strand, id){
+        console.log('HERE in strandAddedSlot, by helix id:'+this.model.hID);
+        console.log(strand);
+        //Create a strand item object.
+		var stItem = new StrandItem(
+                strand,
+                this,
+                strand.baseIdxLow,
+                strand.baseIdxHigh,
+                "EndPointItem",
+                "EndPointItem"
+                );
+        /*
+        var stItem = new StrandItem(strand,
+             this, 
+             strand.baseIdxLow, 
+             strand.baseIdxHigh
+        );
+        */
+        this.stItemArray.push(stItem);
+        console.log(this.stItemArray.length);
+    },
+
+    strandRemovedSlot:
+    function(strand){
+        console.log('in strandRemovedSlot');
+        var len = this.stItemArray.length;
+        console.log(len);
+        for(var i=0; i<len; i++){
+            if(this.stItemArray[i].modelStrand === strand){
+                this.stItemArray[i].getRidOf(true);
+                this.stItemArray.splice(i,1);
+                return true;
+            }
+        }
+        return false;
     },
 });
 
@@ -195,7 +273,6 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	this.sqLength = this.options.graphics.sqLength;
 	this.part = this.options.model.getPart();
 	this.layer = this.options.parent.backlayer;
-
 	this.group = new Kinetic.Group();
 	var helixNum = this.options.model.hID;
 	var circ = new Kinetic.Circle({

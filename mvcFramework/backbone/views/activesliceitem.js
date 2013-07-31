@@ -13,7 +13,7 @@ var ActiveSliceItem = Backbone.View.extend({
 
 	this.rect = new Kinetic.Rect({
 	    x: 5*this.sqLength+this.counter*this.sqLength,
-	    y: -2,
+	    y: this.top,
 	    width: this.sqLength,
 	    height: 0,
 	    fill: colours.orangefill,
@@ -23,7 +23,7 @@ var ActiveSliceItem = Backbone.View.extend({
 	});
 	this.counterText = new Kinetic.Text({
 	    x: 5*this.sqLength+(this.counter+0.5)*this.sqLength,
-	    y: -2-18,
+	    y: this.top-18,
 	    text: this.counter,
 	    fontSize: 16,
 	    fontFamily: "Calibri",
@@ -73,12 +73,19 @@ var ActiveSliceItem = Backbone.View.extend({
     },
 
     updateHeight: function() { //makes the bar span through all PathHelixItem
-	if(this.options.parent.phItemArray.length === 1) {
-	    this.rect.setY(this.top);
-	    this.counterText.setY(this.top-18);
-	}
-	this.bot = 5*this.sqLength+4*this.sqLength*this.options.parent.phItemArray.length;
-	this.rect.setHeight(this.bot-this.top);
+    var numItems = this.options.parent.phItemArray.length;
+    if(numItems >= 1){
+        this.group.show();
+	    if(numItems === 1){
+	        this.rect.setY(this.top);
+	        this.counterText.setY(this.top-18);
+        }
+        this.bot = 5*this.sqLength+4*this.sqLength*numItems;
+        this.rect.setHeight(this.bot-this.top);
+    }
+    else{
+        this.group.hide();
+    }
 	this.layer.draw();
     },
 
