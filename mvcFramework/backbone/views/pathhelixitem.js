@@ -33,6 +33,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.pScaleFactor = 1;
 	//objects
 	this.phItemArray = new Array(); //stores PathHelixItem
+	this.phItemArray.defined = new Array();
 	this.graphicsSettings = {
 	    sqLength: 20,
 	    divLength: 7,
@@ -44,15 +45,29 @@ var PathHelixSetItem = Backbone.View.extend({
 	    parent: this,
 	    graphics: this.graphicsSettings
 	});
+
+	this.bgLayer = new Kinetic.Layer({id: "bgLayer"});
+	this.bgRect = new Kinetic.Rect({
+	    x: 0,
+	    y: 0,
+	    width: this.handler.handler.getWidth(),
+	    height: this.handler.handler.getHeight(),
+	    opacity: 0,
+	    id: "bgRect"
+	});
+	this.bgLayer.add(this.bgRect);
+	this.handler.handler.add(this.bgLayer);
+	this.bgLayer.moveToBottom();
+	this.handler.handler.on("mousedown", function(pos) {
+		//alert("test");
+	});
     },
     events: {
         "mousemove" : "onMouseMove",
     },
-    renderBack: function(){
+    render: function(){
 	//removing all old shapes before drawing new ones
-	this.backlayer.removeChildren();
 	this.buttonlayer.removeChildren();
-	this.phItemArray = new Array();
         console.log('in render function vhitemset');
 	//buttons
 	this.c2Item = new ColorChangeItem({
@@ -71,7 +86,8 @@ var PathHelixSetItem = Backbone.View.extend({
 	var pharray = this.phItemArray;
 	//for each VirtualHelixItem, we create a path helix and a path helix handler
         this.collection.each(function(vh){
-            var phItem = new PathHelixItem({
+	    if(pharray[vh.id]) return;
+	    var phItem = new PathHelixItem({
                 model: vh,
                 handler: h,
 		parent: helixset,
@@ -81,14 +97,17 @@ var PathHelixSetItem = Backbone.View.extend({
 		model: vh,
 		handler: h,
 		parent: helixset,
-		graphics: dims
+		graphics: dims,
+		helixitem: phItem
 	    });
-	    pharray.push(phItem);
+	    
+	    pharray[vh.id] = phItem;
+	    pharray.defined.push(vh.id);
         });
 
 	//calculating the new scale factor
 	this.ratioX = Math.min(1,this.handler.handler.getWidth()/(8*dims.sqLength+dims.sqLength*dims.grLength));
-	this.ratioY = Math.min(1,this.handler.handler.getHeight()/(7*dims.sqLength+4*pharray.length*dims.sqLength));
+	this.ratioY = Math.min(1,this.handler.handler.getHeight()/(7*dims.sqLength+4*pharray.defined.length*dims.sqLength));
 	this.autoScale = Math.min(this.ratioX,this.ratioY);
 	this.scaleFactor = this.autoScale * this.userScale;
 	//no scale factor changes, just redraw backlayer
@@ -110,14 +129,27 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.pScaleFactor = this.scaleFactor;
 	}
 	//for UI testing purpose only, delete in final version
-	var strandItem0 = new StrandItem(pharray[pharray.length-1],pharray[pharray.length-1].options.model.hID%2,7,34,"EndPointItem","EndPointItem");
+	//var strandItem0 = new StrandItem(pharray[pharray.length-1],pharray[pharray.length-1].options.model.hID%2,7,34,"EndPointItem","EndPointItem");
 	//end of testing block
+    },
+
+    redrawBack: function() {
+	this.backlayer.destroyChildren();
+	for(var i=0; i<this.phItemArray.defined.length; i++) {
+	    this.phItemArray[this.phItemArray.defined[i]].redraw();
+	    this.phItemArray[this.phItemArray.defined[i]].helixhandler.initialize();
+	}
+	this.backlayer.draw();
     },
 
     onMouseMove: function(e){
     },
 
     remove: function(){
+    },
+
+    comparator: function(){
+	return model.get("index");
     },
 
 });
@@ -129,8 +161,10 @@ var PathHelixItem = Backbone.View.extend ({
 	this.group = new Kinetic.Group();
 	this.grLength = this.options.graphics.grLength;
 	this.divLength = this.options.graphics.divLength;
+	this.blkLength = this.options.graphics.blkLength;
 	this.sqLength = this.options.graphics.sqLength;
-	this.order = this.options.parent.phItemArray.length;
+	this.order = this.options.parent.phItemArray.defined.length;
+	this.strandArray = new Array();
 
 	this.startX = 5*this.sqLength;
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
@@ -162,10 +196,10 @@ var PathHelixItem = Backbone.View.extend ({
 	var strandInitCounter = 0;
 	var strandCounter = 0;
 	var grLength = this.grLength;
-	var zf = this.options.parent.scaleFactor;
 	this.group.superobj = this;
 	this.group.on("mousedown", function(pos) {
 	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
+		var zf = this.superobj.options.parent.scaleFactor;
 		var yLevel = Math.floor(((pos.y-54)/zf-this.superobj.startY)/this.superobj.sqLength);
 		strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/zf-this.superobj.startX)/this.superobj.sqLength);
 		strandCounter = strandInitCounter;
@@ -187,6 +221,41 @@ var PathHelixItem = Backbone.View.extend ({
 	    }
 	});
     },
+
+    updateStartY: function() {this.startY = 5*this.sqLength+4*this.order*this.sqLength;},
+    updateStrandY: function() {
+	for(var i=0; i<this.strandArray.length; i++) {
+	    this.strandArray[i].updateY();
+	}
+    },
+
+    redraw: function() {
+	this.grLength = this.blkLength*this.divLength*this.options.parent.part.getStep();
+	for(var i=0; i<this.grLength; i++) {
+	    for(var j=0; j<2; j++) {
+		var rect = new Kinetic.Rect({
+		    x: this.startX+i*this.sqLength,
+		    y: this.startY+j*this.sqLength,
+		    width: this.sqLength,
+		    height: this.sqLength,
+		    fill: "#FFFFFF",
+		    stroke: "#DDDDDD",
+		    strokeWidth: 2,
+		});
+		this.group.add(rect);
+	    }
+	    if(i%7 == 0) { //divider lines are blacker
+		var divLineXStart = this.startX+i*this.sqLength;
+		var divLine = new Kinetic.Line({
+		    points: [divLineXStart,this.startY-1,divLineXStart,this.startY+2*this.sqLength+1],
+		    stroke: "#666666",
+		    strokeWidth: 2
+		});
+		this.group.add(divLine);
+	    }
+	}
+	this.layer.add(this.group);
+    },
 });
 
 //the circle next to PathHelixItem
@@ -195,12 +264,14 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	this.sqLength = this.options.graphics.sqLength;
 	this.part = this.options.model.getPart();
 	this.layer = this.options.parent.backlayer;
+	this.helixitem = this.options.helixitem;
+	this.helixitem.helixhandler = this;
 
 	this.group = new Kinetic.Group();
 	var helixNum = this.options.model.hID;
 	var circ = new Kinetic.Circle({
 	    x: 2.5*this.sqLength,
-	    y: 6*this.sqLength + 4*(this.options.parent.phItemArray.length)*this.sqLength,
+	    y: this.helixitem.startY+this.sqLength,
 	    radius: this.part.radius,
 	    fill: colours.orangefill,
 	    stroke: colours.orangestroke,
@@ -220,17 +291,47 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	});
         //end: number on the circle
 
+	var tempLayer = new Kinetic.Layer();
+	this.options.handler.handler.add(tempLayer);
 	this.group.superobj = this;
-	this.group.on("mouseover", function() {
-	    this.on("mousedown", function(pos) {
-	        var pathTool = this.superobj.options.model.part.currDoc.pathTool;
-		if(pathTool === "select" && tbSelectArray[2]) {
-		    this.on("mouseup", function() {
-			alert("test");
-			this.off("mouseup");
-		    });
-		}
-	    });
+	this.group.on("mousedown", function(pos) {
+	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select" && tbSelectArray[2]) {
+		var zf = this.superobj.options.parent.scaleFactor;
+		var dragCirc = new Kinetic.Circle({
+		    x: circ.getX(),
+		    y: circ.getY(),
+		    radius: circ.getRadius(),
+		    fill: "transparent",
+		    stroke: colours.bluestroke,
+		    strokeWidth: 4,
+		    draggable: true,
+		    dragBoundFunc: function(pos) {
+			return {
+			    x: this.getAbsolutePosition().x,
+			    y: pos.y
+			}
+		    },
+		});
+		dragCirc.superobj = this.superobj;
+		tempLayer.add(dragCirc);
+		tempLayer.setScale(zf);
+		tempLayer.draw();
+		dragCirc.on("dragend", function(pos) {
+		    var order = Math.floor(((pos.y-54)/zf/dragCirc.superobj.sqLength-2)/4);
+		    order = Math.min(Math.max(0,order),this.superobj.options.parent.phItemArray.defined.length);
+		    if(order-this.superobj.helixitem.order < 0) { //moved upward
+			var pharray = this.superobj.options.parent.phItemArray;
+			for(var i=order; i<this.superobj.helixitem.order; i++) {
+			    pharray[pharray.defined[i]].startY += 4*this.superobj.sqLength;
+			    pharray[pharray.defined[i]].updateStrandY();
+			}
+			this.superobj.options.parent.strandlayer.draw();
+		    }
+		    dragCirc.destroy();
+		    tempLayer.draw();
+		});
+	    }
 	});
 	this.group.add(circ);
         this.group.add(helixNumText);
@@ -245,6 +346,7 @@ var PathBaseChangeItem = Backbone.View.extend({
 	var canvas = this.options.handler.handler;
 	var layer = this.options.parent.buttonlayer;
 	var baseperblk = this.options.graphics.blkLength*this.options.graphics.divLength;
+	var parent = this.options.parent;
 
 	var removeBaseImg = new Image();
 	removeBaseImg.onload = function() {
@@ -258,6 +360,7 @@ var PathBaseChangeItem = Backbone.View.extend({
 	    removeBase.on("click",function() {
 		    if(part.getStep() > 0) {
 			part.setStep(part.getStep()-1);
+			parent.redrawBack();			
 		    }
 		});
 	    layer.add(removeBase);
@@ -279,6 +382,7 @@ var PathBaseChangeItem = Backbone.View.extend({
 			var baseInc = parseInt(baseIncrease,10);
 			if(baseInc > 0 && baseInc%baseperblk === 0) {
 			    part.setStep(part.getStep()+baseInc/baseperblk);
+			    parent.redrawBack();
 			}
 		    }
 		});

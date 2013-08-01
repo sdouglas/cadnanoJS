@@ -123,6 +123,8 @@ var DocumentItem = Backbone.View.extend({
 		    self.sliceView.handler.handler.setSize(sliceHandler.getWidth()+posDiff, innerLayout.state.west.innerHeight);
 		    var pathHandler = self.pathView.handler.handler;
 		    self.pathView.handler.handler.setSize(pathHandler.getWidth()-posDiff, innerLayout.state.center.innerHeight);
+		    pathHandler.get("#bgRect")[0].setSize(self.pathView.handler.handler.getWidth(),self.pathView.handler.handler.getHeight());
+		    pathHandler.get("#bgLayer").draw();
 		    if(self.sliceView.vhItemSet.vhItems.length !== 0) {
 			self.pathView.pathItemSet.renderBack(); //let auto-zoom do the rest
 		    }

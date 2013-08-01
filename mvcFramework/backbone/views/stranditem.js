@@ -99,10 +99,10 @@ var StrandItem = Backbone.View.extend({
 	this.group.on("dragend", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
 	    if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-		this.superobj.selectEnd(pos);
+		this.superobj.selectEnd();
 	    }
 	});
-
+	
 	this.layer.add(this.group);
 	if(endtypeL === "EndPointItem") {
 	    this.endItemL = new EndPointItem(this,"L",4-(2*this.yLevel-1),true);
@@ -117,9 +117,10 @@ var StrandItem = Backbone.View.extend({
 	    this.endItemR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
 	}
 	this.layer.draw();
+	this.parent.strandArray.push(this);
 	//this.connectSignalsSlots();
     },
-
+    
     events:
     {    
     },
@@ -134,6 +135,14 @@ var StrandItem = Backbone.View.extend({
 	this.connection.setWidth(this.xEndCoord-this.xStartCoord);
 	this.invisConnection.setX(this.xStartCoord);
 	this.invisConnection.setWidth(this.xEndCoord-this.xStartCoord);
+    },
+
+    updateY: function() {
+	this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
+	this.connection.setY(this.yCoord-1);
+	this.invisConnection.setY(this.yCoord-this.sqLength/2);
+	this.endItemL.updateY();
+	this.endItemR.updateY();
     },
 
     addEndItem: function(ei, dir, skipRedraw) {
@@ -194,11 +203,15 @@ var StrandItem = Backbone.View.extend({
 	}
     },
 
-    selectEnd: function(pos) {
+    selectEnd: function() {
 	var diff = this.dragCounter-this.dragCounterInit;
 	//deleting red box
 	this.redBox.remove();
 	this.tempLayer.draw();
+	this.move(diff);
+    },
+
+    move: function(diff) { //forced move
 	//redrawing the line
 	this.xStart += diff;
 	this.xEnd += diff;

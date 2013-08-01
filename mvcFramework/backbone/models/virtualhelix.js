@@ -9,6 +9,7 @@ var VirtualHelix = Backbone.Model.extend({
         this.col = this.get('col');
         this.part = this.get('part');
         this.hID = this.get('hID');
+	this.id = this.get('id');
         this.undoStack = this.get('undoStack');
 
         this.scafStrandSet = new StrandSet({

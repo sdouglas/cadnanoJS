@@ -100,6 +100,10 @@ var EndPointItem = Backbone.View.extend({
 	this.shape.setX((this.counter-this.initcounter)*this.sqLength);
     },
 
+    updateY: function() {
+	this.centerY = this.parent.yCoord;
+    },
+
     adjustCounter: function(n) {
 	this.counter = Math.min(Math.max(0,n),this.blkLength*this.divLength*this.phItem.options.parent.part.getStep()-1);
     },
