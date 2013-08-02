@@ -159,17 +159,10 @@ var PathPartItem = PartItem.extend({
 
 	this.pathItemSet.prexoverlayer.destroyChildren();
 	for(var i=0; i<xoverList.length; i++) {
-	    var yLevel = (virtualHelix.hID%2+xoverList[i][2])%2;
-	    var variety;
-	    if(yLevel === 0) {
-		if(xoverList[i][3]) {variety = 2;}
-		else {variety = 1;}
-	    }
-	    else {
-		if(xoverList[i][3]) {variety = 3;}
-		else {variety = 4;}
-	    }
-	    var preXover = new PreXoverItem(this.pathItemSet.phItemArray[virtualHelix.id],xoverList[i][1],variety,xoverList[i][0]);
+	    var preXover = new PreXoverItem(this.pathItemSet.phItemArray[virtualHelix.id],xoverList[i][0],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
+	    var preXoverC = new PreXoverItem(this.pathItemSet.phItemArray[xoverList[i][0].id],virtualHelix,xoverList[i][1],xoverList[i][2],xoverList[i][3]);
+	    //var preXover = new PreXoverItem(this.pathItemSet.phItemArray[virtualHelix.id],this.pathItemSet.phItemArray[xoverList[i][0].id],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
+	    //var preXoverC = new PreXoverItem(this.pathItemSet.phItemArray[xoverList[i][0].id],this.pathItemSet.phItemArray[virtualHelix.id],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
 	}
 	this.pathItemSet.prexoverlayer.draw();
     },

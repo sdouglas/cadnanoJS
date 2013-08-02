@@ -73,17 +73,18 @@ var StrandItem = Backbone.View.extend({
 	});
 	this.group.on("click", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+	    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor)/this.superobj.sqLength)-5;
 	    if(pathTool === "break") {
-		this.superobj.breakStrand(pos);
+		this.superobj.breakStrand(counter);
 	    }
 	    else if(pathTool === "paint") {
 		this.superobj.paintStrand();
 	    }
 	    else if(pathTool === "insert") {
-		this.superobj.insertBase(pos);
+		this.superobj.insertBase(counter);
 	    }
 	    else if(pathTool === "skip") {
-		this.superobj.skipBase(pos);
+		this.superobj.skipBase(counter);
 	    }
 	    else if(pathTool === "seq") {
 		this.superobj.openSeqWindow();
@@ -117,7 +118,12 @@ var StrandItem = Backbone.View.extend({
 	    this.endItemR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
 	}
 	this.layer.draw();
-	this.parent.strandArray.push(this);
+	if(isScaf) {
+	    this.parent.scafArray.push(this);
+	}
+	else {
+	    this.parent.stapArray.push(this);
+	}
 	//this.connectSignalsSlots();
     },
     
@@ -138,9 +144,16 @@ var StrandItem = Backbone.View.extend({
     },
 
     updateY: function() {
+	var diff = -this.yCoord;
 	this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
+	diff += this.yCoord;
+	this.finalLayer.destroyChildren();
+	this.finalLayer.draw();
 	this.connection.setY(this.yCoord-1);
 	this.invisConnection.setY(this.yCoord-this.sqLength/2);
+        for(var i=0; i<this.alterationGroupArray.length; i++) {
+	    this.alterationGroupArray[i].setY(this.alterationGroupArray[i].getY()+diff);
+        }
 	this.endItemL.updateY();
 	this.endItemR.updateY();
     },
@@ -233,11 +246,10 @@ var StrandItem = Backbone.View.extend({
 	this.layer.draw();
     },
 
-    breakStrand: function(pos) {
+    breakStrand: function(counter) {
 	this.finalLayer.destroyChildren();
 	this.finalLayer.draw();
 	if(this.endItemL.prime === 5) {
-	    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	    if(this.xEnd-counter > 1) {
 		var strand1 = new StrandItem(this.parent,this.yLevel,this.xStart,counter,null,"EndPointItem");
 		this.endItemL.parent = strand1;
@@ -252,7 +264,6 @@ var StrandItem = Backbone.View.extend({
 	    }
 	}
 	else {
-	    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	    if(counter-this.xStart > 1) {
 		var strand1 = new StrandItem(this.parent,this.yLevel,this.xStart,counter-1,null,"EndPointItem");
 		this.endItemL.parent = strand1;
@@ -268,8 +279,7 @@ var StrandItem = Backbone.View.extend({
 	}
     },
     
-    insertBase: function(pos) {
-	var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+    insertBase: function(counter) {
 	if(!this.alterationArray[counter-this.xStart]) {
 	    var insert = new InsertItem(this,counter-this.xStart);
 	    this.finalLayer.destroyChildren();
@@ -277,8 +287,7 @@ var StrandItem = Backbone.View.extend({
 	}
     },
 
-    skipBase: function(pos) {
-	var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+    skipBase: function(counter) {
 	if(!this.alterationArray[counter-this.xStart]) {
 	    var skip = new SkipItem(this,counter-this.xStart);
 	    this.finalLayer.destroyChildren();

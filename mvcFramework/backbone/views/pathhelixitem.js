@@ -168,7 +168,9 @@ var PathHelixItem = Backbone.View.extend ({
 	this.blkLength = this.options.graphics.blkLength;
 	this.sqLength = this.options.graphics.sqLength;
 	this.order = this.options.parent.phItemArray.defined.length;
-	this.strandArray = new Array(); //should be replaced by StrandSet functions post-merge
+	console.log(this.options.model);
+	this.scafArray = new Array(); //doesn't fit MVC, should be replaced by other functions
+	this.stapArray = new Array(); //doesn't fit MVC, should be replaced by other functions
 
 	this.startX = 5*this.sqLength;
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
@@ -229,10 +231,32 @@ var PathHelixItem = Backbone.View.extend ({
 	});
     },
 
+    getStrandItem: function(isScaf,n) { //another function that should be replaced
+	if(isScaf) {
+	    for(var i=0; i<this.scafArray.length; i++) {
+		if(this.scafArray[i].xStart <= n && this.scafArray[i].xEnd >= n) {
+		    return this.scafArray[i];
+		}
+	    }
+	    return null;
+	}
+	else {
+	    for(var i=0; i<this.stapArray.length; i++) {
+		if(this.stapArray[i].xStart <= n && this.stapArray[i].xEnd >= n) {
+		    return this.stapArray[i];
+		}
+	    }
+	    return null;
+	}
+    },
+
     updateStartY: function() {this.startY = 5*this.sqLength+4*this.order*this.sqLength;},
     updateStrandY: function() {
-	for(var i=0; i<this.strandArray.length; i++) {
-	    this.strandArray[i].updateY();
+	for(var i=0; i<this.scafArray.length; i++) {
+	    this.scafArray[i].updateY();
+	}
+	for(var i=0; i<this.stapArray.length; i++) {
+	    this.stapArray[i].updateY();
 	}
     },
 

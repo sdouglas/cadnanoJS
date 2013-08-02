@@ -1,60 +1,75 @@
 var PreXoverItem = Backbone.View.extend({
-	initialize: function(phItem, xPos, variety, comp) {
+    initialize: function(phItem, comp, xPos, isStap, onLeft) {
 	this.parent = phItem;
 	this.pos = xPos;
-	this.cStrand = comp;
-	this.variety = variety;
-
+	this.cHelixItem = comp;
+	this.isScaf = 1-isStap; //1 if true, 0 if false
+	this.onLeft = onLeft;
+	
         this.divLength = this.parent.divLength;
         this.blkLength = this.parent.blkLength;
         this.sqLength = this.parent.sqLength;
-
 	this.layer = this.parent.options.parent.prexoverlayer;
 	this.centerX = this.parent.startX+(this.pos+0.5)*this.sqLength;
-	if(this.variety <= 2) {
-	    this.centerY = this.parent.startY-0.2*this.sqLength;
+
+	if(this.parent.getStrandItem(this.isScaf,this.pos)) {
+	    //if(this.parent.getStrandItem(this.isScaf,this.pos) && this.cHelixItem.getStrandItem(this.isScaf,this.pos)) {
+	    this.colour = colours.bluestroke;
 	}
 	else {
-	    this.centerY = this.parent.startY+2.2*this.sqLength;
+	    this.colour = "#B0B0B0";
 	}
 
 	this.group = new Kinetic.Group();
-	//FREAKING ROTATION DOESNT WORK
-	var arm = 0.5*this.sqLength;
+	var pt1x,pt2y,textY;
+	if((this.parent.options.model.hID+this.isScaf)%2) { //top
+	    if(this.onLeft) {
+		pt1x = this.centerX-0.5*this.sqLength;
+	    }
+	    else {
+		pt1x = this.centerX+0.5*this.sqLength;
+	    }
+	    this.centerY = this.parent.startY-0.15*this.sqLength;
+	    pt2y = this.centerY-0.4*this.sqLength;
+	    textY = pt2y-0.25*this.sqLength;
+	}
+	else { //bottom
+	    if(this.onLeft) {
+		pt1x = this.centerX-0.5*this.sqLength;
+	    }
+	    else {
+		pt1x = this.centerX+0.5*this.sqLength;
+	    }
+	    this.centerY = this.parent.startY+2.15*this.sqLength;
+	    pt2y = this.centerY+0.4*this.sqLength;
+	    textY = pt2y+0.25*this.sqLength;
+	}
 	var line1 = new Kinetic.Line({
-	    points: [this.centerX, this.centerY, this.centerX+arm*Math.cos(-Math.PI/2*(variety-1)), this.centerY+arm*Math.sin(-Math.PI/2*(variety-1))],
-	    stroke: "#B0B0B0",
+	    points: [this.centerX, this.centerY, pt1x, this.centerY],
+	    stroke: this.colour,
 	    strokeWidth: 2
 	});
 	var line2 = new Kinetic.Line({
-	    points: [this.centerX, this.centerY, this.centerX+arm*Math.cos(-Math.PI/2*variety), this.centerY+arm*Math.sin(-Math.PI/2*variety)],
-	    stroke: "#B0B0B0",
+	    points: [this.centerX, this.centerY, this.centerX, pt2y],
+	    stroke: this.colour,
 	    strokeWidth: 2
 	});
-	var textY;
-	if(this.variety <= 2) {
-	    textY = this.centerY-0.7*this.sqLength;
-	}
-	else {
-	    textY = this.centerY+0.75*this.sqLength;
-	}
 	var text = new Kinetic.Text({
 	    x: this.centerX,
 	    y: textY,
-	    text: this.cStrand.hID,
+	    text: this.cHelixItem.hID,
 	    fontSize: this.sqLength*0.5,
 	    fontFamily: "Calibri",
-	    fill: "#B0B0B0",
+	    fill: this.colour,
 	});
 	text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 	this.group.add(line1);
 	this.group.add(line2);
 	this.group.add(text);
 	this.layer.add(this.group);
-	this.layer.draw();
 
+	this.group.superobj = this;
 	this.group.on("click", function() {
-		
 	});
     },
 });
