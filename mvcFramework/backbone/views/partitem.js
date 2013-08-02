@@ -155,16 +155,23 @@ var PathPartItem = PartItem.extend({
     updatePreXoverItemsSlot:
     function(virtualHelix){
         console.log('in updatePreXoverItemsSlot');
-        this.part.potentialCrossoverList(virtualHelix);
-        //3. Remove all current prexoveritems.
-        //empty the layer containing the prexoveritems.
-        //this.preXoverItemsLayer.removeChildren();
-        //
-        //1. Get the vhitem.
-        //2. Get the potential crossovers locations.
-        //4. Create new prexover items at these locations.
-        //Get active virtual helix item.
-        //Re-render the xover items.
+        var xoverList = this.part.potentialCrossoverList(virtualHelix);
+
+	this.pathItemSet.prexoverlayer.destroyChildren();
+	for(var i=0; i<xoverList.length; i++) {
+	    var yLevel = (virtualHelix.hID%2+xoverList[i][2])%2;
+	    var variety;
+	    if(yLevel === 0) {
+		if(xoverList[i][3]) {variety = 2;}
+		else {variety = 1;}
+	    }
+	    else {
+		if(xoverList[i][3]) {variety = 3;}
+		else {variety = 4;}
+	    }
+	    var preXover = new PreXoverItem(this.pathItemSet.phItemArray[virtualHelix.id],xoverList[i][1],variety,xoverList[i][0]);
+	}
+	this.pathItemSet.prexoverlayer.draw();
     },
 
     partStepSizeChangedSlot: function(){

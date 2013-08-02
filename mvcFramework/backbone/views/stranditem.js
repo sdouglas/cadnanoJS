@@ -225,13 +225,7 @@ var StrandItem = Backbone.View.extend({
 	this.endItemL.update();
 	this.endItemR.counter += diff;
 	this.endItemR.update();
-	//redraw xoveritems
-	if(this.endItemL instanceof XoverNode) {
-	    this.endItemL.xoveritem.update();
-	}
-	if(this.endItemR instanceof XoverNode) {
-	    this.endItemR.xoveritem.update();
-	}
+	//note: if endItemL/R is a XoverNode, its corresponding XoverItem will be automatically updated
 	//remove post-sequencing DNA bases
 	this.finalLayer.destroyChildren();
 	this.finalLayer.draw();

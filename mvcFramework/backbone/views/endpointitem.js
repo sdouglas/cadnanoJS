@@ -101,7 +101,9 @@ var EndPointItem = Backbone.View.extend({
     },
 
     updateY: function() {
+	var diff = this.parent.yCoord-this.centerY;
 	this.centerY = this.parent.yCoord;
+	this.shape.setY(this.shape.getY()+diff);
     },
 
     adjustCounter: function(n) {
@@ -177,15 +179,13 @@ var EndPointItem = Backbone.View.extend({
 	    this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
 	    this.tempLayer.add(pencilNotifier);
 	    this.tempLayer.draw();
-	    /*
 	    pencilNotifier.on("click", function() {
 		helixset.pencilendpoint.tempLayer.destroyChildren();
 		helixset.pencilendpoint.close();
-		helixset.pencilendpoint.shape.destroy();
+		pencilNotifier.destroy();
 		helixset.pencilendpoint.tempLayer.draw();
 		helixset.pencilendpoint = undefined;
 	    });
-	    */
 	}
 	else {
 	    var nodeAInfo = {

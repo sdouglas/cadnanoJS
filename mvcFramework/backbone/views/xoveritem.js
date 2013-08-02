@@ -76,11 +76,26 @@ var XoverNode = Backbone.View.extend({
     updateCenterX: function() {this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;},
     updateLinkageX: function() {this.linkageX = this.centerX;},
 
-    update: function() { //only redraws when boo is true
+    update: function() {
 	this.updateCenterX();
 	this.updateLinkageX();
 	this.group.setX((this.counter-this.initcounter)*this.sqLength);
+	this.xoveritem.update();
     },
+
+    updateY: function() {
+	var diff = this.parent.yCoord-this.centerY;
+	this.centerY = this.parent.yCoord;
+        if(this.yLevel === 0) {
+            this.linkageY = this.centerY-this.sqLength/2;
+        }
+        else {
+            this.linkageY = this.centerY+this.sqLength/2;
+        }
+	this.group.setY(this.group.getY()+diff);
+	this.xoveritem.update();
+    },
+
 });
 
 var XoverItem = Backbone.View.extend({
@@ -201,7 +216,9 @@ var XoverItem = Backbone.View.extend({
 	});
 	this.group.add(this.connection);
 	this.invisConnection.setX(Math.min(this.node3.centerX,this.node5.centerX)-this.sqLength/2);
+	this.invisConnection.setY(Math.min(this.node3.centerY,this.node5.centerY)-this.sqLength/2);
 	this.invisConnection.setWidth(Math.abs(this.node3.centerX-this.node5.centerX)+this.sqLength);
+	this.invisConnection.setHeight(Math.abs(this.node3.centerY-this.node5.centerY)+this.sqLength);
     },
 
     /*
