@@ -6,6 +6,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	//PathHelixSetItem should contains variables that multiple sub-classes need
         this.handler = this.options.handler;
         this.part = this.options.part;
+	this.panel = this.options.handler.handler.getContainer();
 	//path view layers
 	this.backlayer = new Kinetic.Layer(); //background layer: PathHelixItem, PathHelixHandlerItem, PathBaseChangeItem
 	this.handler.handler.add(this.backlayer);
@@ -105,12 +106,21 @@ var PathHelixSetItem = Backbone.View.extend({
 	    
 	    pharray[vh.id] = phItem;
 	    pharray.defined.push(vh.id);
+	    //for UI testing purpose only, delete in final version
+	    var strandItem0 = new StrandItem(phItem,phItem.options.model.hID%2,0,41,"EndPointItem","EndPointItem");
+	    //end of testing block
         });
 
 	//calculating the new scale factor
+	/*
 	this.ratioX = Math.min(1,this.handler.handler.getWidth()/(8*dims.sqLength+dims.sqLength*dims.grLength));
 	this.ratioY = Math.min(1,this.handler.handler.getHeight()/(7*dims.sqLength+4*pharray.defined.length*dims.sqLength));
 	this.autoScale = Math.min(this.ratioX,this.ratioY);
+	this.scaleFactor = this.autoScale * this.userScale;
+	*/
+	this.handler.handler.setWidth(8*dims.sqLength+dims.sqLength*dims.grLength);
+	this.handler.handler.setHeight(7*dims.sqLength+4*pharray.defined.length*dims.sqLength);
+	this.autoScale = 1;
 	this.scaleFactor = this.autoScale * this.userScale;
 	//no scale factor changes, just redraw backlayer
 	if(this.scaleFactor === this.pScaleFactor) {
@@ -132,12 +142,10 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.finallayer.draw();
 	    this.pScaleFactor = this.scaleFactor;
 	}
-	//for UI testing purpose only, delete in final version
-	//var strandItem0 = new StrandItem(pharray[pharray.length-1],pharray[pharray.length-1].options.model.hID%2,7,34,"EndPointItem","EndPointItem");
-	//end of testing block
     },
 
     redrawBack: function() {
+	this.prexoverlayer.destroyChildren();
 	this.backlayer.destroyChildren();
 	for(var i=0; i<this.phItemArray.defined.length; i++) {
 	    this.phItemArray[this.phItemArray.defined[i]].redraw();
@@ -160,6 +168,12 @@ var PathHelixSetItem = Backbone.View.extend({
 
 //the long rectangular base grid
 var PathHelixItem = Backbone.View.extend ({
+    /*
+      Note 001:
+      The variables and functions marked with this should be replaced by other functions from Strand and StrandSet after
+      merge as they deviate from the MVC architecture. StrandItem and PreXoverItem also uses some of these variables or
+      functions, but they should also be marked with "Note 001".
+     */
     initialize: function(){
 	this.layer = this.options.parent.backlayer;
 	this.group = new Kinetic.Group();
@@ -169,15 +183,15 @@ var PathHelixItem = Backbone.View.extend ({
 	this.sqLength = this.options.graphics.sqLength;
 	this.order = this.options.parent.phItemArray.defined.length;
 	console.log(this.options.model);
-	this.scafArray = new Array(); //doesn't fit MVC, should be replaced by other functions
-	this.stapArray = new Array(); //doesn't fit MVC, should be replaced by other functions
+	this.scafArray = new Array(); //Note 001
+	this.stapArray = new Array(); //Note 001
 
 	this.startX = 5*this.sqLength;
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
 		var rect = new Kinetic.Rect({
-		    x: this.startX+i*this.sqLength,
+	    x: this.startX+i*this.sqLength,
 		    y: this.startY+j*this.sqLength,
 		    width: this.sqLength,
 		    height: this.sqLength,
@@ -203,10 +217,10 @@ var PathHelixItem = Backbone.View.extend ({
 	var strandCounter = 0;
 	var grLength = this.grLength;
 	this.group.superobj = this;
-	this.group.on("click", function() {
-	    this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
-	});
 	this.group.on("mousedown", function(pos) {
+	    this.superobj.options.parent.prexoverlayer.destroyChildren();
+	    this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
+
 	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
 		var zf = this.superobj.options.parent.scaleFactor;
 		var yLevel = Math.floor(((pos.y-54)/zf-this.superobj.startY)/this.superobj.sqLength);
@@ -231,10 +245,11 @@ var PathHelixItem = Backbone.View.extend ({
 	});
     },
 
-    getStrandItem: function(isScaf,n) { //another function that should be replaced
+    getStrandItem: function(isScaf, n, indexMode) { //Note 001
 	if(isScaf) {
 	    for(var i=0; i<this.scafArray.length; i++) {
-		if(this.scafArray[i].xStart <= n && this.scafArray[i].xEnd >= n) {
+		if(this.scafArray[i] && this.scafArray[i].xStart <= n && this.scafArray[i].xEnd >= n) {
+		    if(indexMode) {return i;}
 		    return this.scafArray[i];
 		}
 	    }
@@ -242,7 +257,8 @@ var PathHelixItem = Backbone.View.extend ({
 	}
 	else {
 	    for(var i=0; i<this.stapArray.length; i++) {
-		if(this.stapArray[i].xStart <= n && this.stapArray[i].xEnd >= n) {
+		if(this.scafArray[i] && this.stapArray[i].xStart <= n && this.stapArray[i].xEnd >= n) {
+		    if(indexMode) {return i;}
 		    return this.stapArray[i];
 		}
 	    }
@@ -344,7 +360,6 @@ var PathHelixHandlerItem = Backbone.View.extend({
 			    y: pos.y
 			}
 		    },
-
 		});
 		dragCirc.superobj = this.superobj;
 		tempLayer.add(dragCirc);
@@ -363,10 +378,6 @@ var PathHelixHandlerItem = Backbone.View.extend({
 			    }
 			}
 			this.superobj.helixitem.order = order;
-			this.superobj.helixitem.updateStartY();
-			this.superobj.helixitem.updateStrandY();
-			this.superobj.options.parent.redrawBack();
-			this.superobj.options.parent.strandlayer.draw();
 		    }
 		    else if(order-this.superobj.helixitem.order > 1) {
 			var pharray = this.superobj.options.parent.phItemArray;
@@ -378,15 +389,15 @@ var PathHelixHandlerItem = Backbone.View.extend({
 			    }
 			}
 			this.superobj.helixitem.order = order-1;
-			this.superobj.helixitem.updateStartY();
-			this.superobj.helixitem.updateStrandY();
-			this.superobj.options.parent.redrawBack();
-			this.superobj.options.parent.strandlayer.draw();
 		    }
-		    this.superobj.options.parent.prexoverlayer.destroyChildren();
-		    this.superobj.options.parent.prexoverlayer.draw();
+		    this.superobj.helixitem.updateStartY();
+		    this.superobj.helixitem.updateStrandY();
+		    this.superobj.options.parent.redrawBack();
+		    this.superobj.options.parent.strandlayer.draw();
 		    dragCirc.destroy();
 		    tempLayer.draw();
+		    this.superobj.options.parent.prexoverlayer.destroyChildren();
+		    this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
 		});
 	    }
 	});

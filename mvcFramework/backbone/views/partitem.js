@@ -159,10 +159,8 @@ var PathPartItem = PartItem.extend({
 
 	this.pathItemSet.prexoverlayer.destroyChildren();
 	for(var i=0; i<xoverList.length; i++) {
-	    var preXover = new PreXoverItem(this.pathItemSet.phItemArray[virtualHelix.id],xoverList[i][0],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
-	    var preXoverC = new PreXoverItem(this.pathItemSet.phItemArray[xoverList[i][0].id],virtualHelix,xoverList[i][1],xoverList[i][2],xoverList[i][3]);
-	    //var preXover = new PreXoverItem(this.pathItemSet.phItemArray[virtualHelix.id],this.pathItemSet.phItemArray[xoverList[i][0].id],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
-	    //var preXoverC = new PreXoverItem(this.pathItemSet.phItemArray[xoverList[i][0].id],this.pathItemSet.phItemArray[virtualHelix.id],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
+	    var preXover = new PreXoverItem(this.pathItemSet.phItemArray[virtualHelix.id],this.pathItemSet.phItemArray[xoverList[i][0].id],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
+	    var preXoverC = new PreXoverItem(this.pathItemSet.phItemArray[xoverList[i][0].id],this.pathItemSet.phItemArray[virtualHelix.id],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
 	}
 	this.pathItemSet.prexoverlayer.draw();
     },

@@ -11,12 +11,14 @@ var PreXoverItem = Backbone.View.extend({
         this.sqLength = this.parent.sqLength;
 	this.layer = this.parent.options.parent.prexoverlayer;
 	this.centerX = this.parent.startX+(this.pos+0.5)*this.sqLength;
+	var clickable;
 
-	if(this.parent.getStrandItem(this.isScaf,this.pos)) {
-	    //if(this.parent.getStrandItem(this.isScaf,this.pos) && this.cHelixItem.getStrandItem(this.isScaf,this.pos)) {
+	if(this.parent.getStrandItem(this.isScaf,this.pos) && this.cHelixItem.getStrandItem(this.isScaf,this.pos)) {
+	    clickable = true;
 	    this.colour = colours.bluestroke;
 	}
 	else {
+	    clickable = false;
 	    this.colour = "#B0B0B0";
 	}
 
@@ -57,19 +59,66 @@ var PreXoverItem = Backbone.View.extend({
 	var text = new Kinetic.Text({
 	    x: this.centerX,
 	    y: textY,
-	    text: this.cHelixItem.hID,
+	    text: this.cHelixItem.options.model.hID,
 	    fontSize: this.sqLength*0.5,
 	    fontFamily: "Calibri",
 	    fill: this.colour,
+	});
+	var invisClicker = new Kinetic.Rect({
+	    x: this.centerX,
+	    y: this.centerY,
+	    width: pt1x-this.centerX,
+	    height: pt2y-this.centerY,
+	    opacity: 0
 	});
 	text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 	this.group.add(line1);
 	this.group.add(line2);
 	this.group.add(text);
+	this.group.add(invisClicker);
 	this.layer.add(this.group);
 
 	this.group.superobj = this;
 	this.group.on("click", function() {
+	    if(clickable) {
+		this.superobj.createXover();
+	    }
 	});
     },
+
+    createXover: function() { //Note 001; DOES NOT WORK
+	if(this.onLeft) {
+	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
+		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
+	    }
+	    else { //bottom, aka 3->5
+		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
+		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+	    }
+	    /*
+	      After merge and "Note 001" is taken care of:
+	      this.parent.leftStrandItem.endItemR.createXover();
+	      this.cHelixItem.leftStrandItem.endItemR.createXover();
+	      (replace leftStrandItem with correct code)
+	    */
+	}
+	else {
+	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
+		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
+		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+	    }
+	    else { //bottom, aka 3->5
+		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
+	    }
+	    /*
+	      After merge and "Note 001" is taken care of:
+	      this.parent.rightStrandItem.endItemL.createXover();
+	      this.cHelixItem.rightStrandItem.endItemL.createXover();
+	      (replace leftStrandItem with correct code)
+	    */
+	}
+    },
+
 });

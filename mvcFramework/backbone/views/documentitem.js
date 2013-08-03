@@ -126,7 +126,7 @@ var DocumentItem = Backbone.View.extend({
 		    pathHandler.get("#bgRect")[0].setSize(self.pathView.handler.handler.getWidth(),self.pathView.handler.handler.getHeight());
 		    pathHandler.get("#bgLayer").draw();
 		    if(self.sliceView.vhItemSet.vhItems.length !== 0) {
-			self.pathView.pathItemSet.renderBack(); //let auto-zoom do the rest
+			self.pathView.pathItemSet.render(); //let auto-zoom do the rest
 		    }
 		}
 		$("#drawnPanels").off("mouseup"); //without this line, clicking on path view will trigger the mouseup handler

@@ -5,6 +5,7 @@ var EndPointItem = Backbone.View.extend({
 	this.phItem = this.parent.parent;
 	this.layer = this.parent.layer;
 	this.finalLayer = this.phItem.options.parent.finallayer;
+	this.panel = this.parent.panel;
 	//temporary layer that will be used for fast rendering
 	this.tempLayer = new Kinetic.Layer();
 	this.phItem.options.handler.handler.add(this.tempLayer);
@@ -111,7 +112,7 @@ var EndPointItem = Backbone.View.extend({
     },
 
     selectStart: function(pos) {
-       this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+       this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
        this.redBox = new Kinetic.Rect({
 	   x: this.centerX-this.sqLength/2,
 	   y: this.centerY-this.sqLength/2,
@@ -133,7 +134,7 @@ var EndPointItem = Backbone.View.extend({
 
     selectMove: function(pos) {
 	//we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
-	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	this.adjustCounter(tempCounter);
 	if(this.counter !== this.pCounter) {
 	    //redrawing red box

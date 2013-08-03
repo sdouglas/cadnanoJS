@@ -6,6 +6,7 @@ var StrandItem = Backbone.View.extend({
 	if(layer === undefined) { //default value for layer
 	    this.layer = this.parent.options.parent.strandlayer;
 	}
+	this.panel = this.parent.options.parent.panel;
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;
@@ -73,7 +74,7 @@ var StrandItem = Backbone.View.extend({
 	});
 	this.group.on("click", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-	    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.parent.options.parent.scaleFactor)/this.superobj.sqLength)-5;
+	    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.parent.options.parent.scaleFactor)/this.superobj.sqLength)-5;
 	    if(pathTool === "break") {
 		this.superobj.breakStrand(counter);
 	    }
@@ -118,10 +119,10 @@ var StrandItem = Backbone.View.extend({
 	    this.endItemR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
 	}
 	this.layer.draw();
-	if(isScaf) {
+	if(isScaf) { //Note 001
 	    this.parent.scafArray.push(this);
 	}
-	else {
+	else { //Note 001
 	    this.parent.stapArray.push(this);
 	}
 	//this.connectSignalsSlots();
@@ -141,6 +142,8 @@ var StrandItem = Backbone.View.extend({
 	this.connection.setWidth(this.xEndCoord-this.xStartCoord);
 	this.invisConnection.setX(this.xStartCoord);
 	this.invisConnection.setWidth(this.xEndCoord-this.xStartCoord);
+	this.parent.options.parent.prexoverlayer.destroyChildren();
+	this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
     },
 
     updateY: function() {
@@ -172,7 +175,7 @@ var StrandItem = Backbone.View.extend({
 
     selectStart: function(pos) {
 	//counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
-	this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	this.dragCounter = this.dragCounterInit;
 	this.pDragCounter = this.dragCounter;
 	//red box again
@@ -196,7 +199,7 @@ var StrandItem = Backbone.View.extend({
     },
 
     selectMove: function(pos) {
-	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	//have to watch out for both left and right end in counter adjustment here
 	var diff = this.dragCounter-this.dragCounterInit;
 	if(this.xStart+diff < 0) {
