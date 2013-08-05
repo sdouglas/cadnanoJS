@@ -30,6 +30,12 @@ var StrandSet = Backbone.Model.extend({
                 endIdx));
     },
 
+    removeStrand:
+    function(startIdx, endIdx, isInverse){
+        this.undoStack.execute(new CreateStrandCommand(this,startIdx,
+                    endIdx, isInverse));
+    },
+
     /**
      * Insert a new strand into the strand set.
      * @param {strand} strand model object.
@@ -66,7 +72,7 @@ var StrandSet = Backbone.Model.extend({
      * @param {strand} Strand model object.
      * returns true if found the model strand and deleted it. Else false.
      */
-    removeStrand: function(strand){
+    removeStrandRefs: function(strand){
         var i = this.getStrandIndex(strand.baseIdxLow, strand.baseIdxHigh);
         if(i !== -1) {
             this.strandList.splice(i,1);
@@ -182,7 +188,7 @@ var StrandSet = Backbone.Model.extend({
 
 var CreateStrandCommand = Undo.Command.extend({
     constructor:
-    function(strandSet, startIdx, endIdx){
+    function(strandSet, startIdx, endIdx, isInverse){
         //Need the following:
         //helix
         this.currDoc = strandSet.helix.part.currDoc;
@@ -191,6 +197,15 @@ var CreateStrandCommand = Undo.Command.extend({
         this.scaffold = strandSet.scaffold;
         this.startIdx = startIdx;
         this.endIdx = endIdx;
+        this.isInverse = isInverse;
+        if(this.isInverse){
+            this.redo = this.delStrand;
+            this.undo = this.addStrand;
+        }
+        else{
+            this.undo = this.delStrand;
+            this.redo = this.addStrand;
+        }
         this.redo();
     },
     getModel:
@@ -203,18 +218,18 @@ var CreateStrandCommand = Undo.Command.extend({
         if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
         else this.strandSet = this.helix.stapStrandSet;
     },
-    undo: 
+    delStrand: 
     function(){
         //destroy the strand object.
         //The sequence of these statements is important.
         this.getModel();
         this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal, this.strand);
-        var ret = this.strandSet.removeStrand(this.strand);
+        var ret = this.strandSet.removeStrandRefs(this.strand);
         this.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
         this.strand.destroy();
         console.log('received :' + ret + ', to remove strand');
     },
-    redo:
+    addStrand:
     function(){
         console.log('calling redo for strandset');
         this.getModel();
