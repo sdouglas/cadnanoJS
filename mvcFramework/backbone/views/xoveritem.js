@@ -7,6 +7,7 @@ var XoverNode = Backbone.View.extend({
 	this.parent = strand;
 	this.phItem = this.parent.parent;
 	this.layer = this.parent.layer;
+	this.panel = this.parent.panel;
 	//temporary layer that will be used for fast rendering
 	this.tempLayer = new Kinetic.Layer();
 	this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
@@ -80,6 +81,20 @@ var XoverNode = Backbone.View.extend({
 	this.updateCenterX();
 	this.updateLinkageX();
 	this.group.setX((this.counter-this.initcounter)*this.sqLength);
+	this.xoveritem.update();
+    },
+
+    updateY: function() {
+	var diff = this.parent.yCoord-this.centerY;
+	this.centerY = this.parent.yCoord;
+        if(this.yLevel === 0) {
+            this.linkageY = this.centerY-this.sqLength/2;
+        }
+        else {
+            this.linkageY = this.centerY+this.sqLength/2;
+        }
+	this.group.setY(this.group.getY()+diff);
+	this.xoveritem.update();
     },
 });
 
@@ -101,6 +116,7 @@ var XoverItem = Backbone.View.extend({
 	this.node5.xoveritem = this;
 	this.isScaf = this.node3.isScaf; //we don't need to check node5 because the strands must be both scafs or both staps
 	this.helixset = this.node3.parent.parent.options.parent;
+	this.panel = this.helixset.panel;
 	this.layer = this.node3.parent.layer;
 	this.finalLayer = this.helixset.finallayer;
         this.strandColor = this.node3.parent.strandColor;
@@ -201,7 +217,9 @@ var XoverItem = Backbone.View.extend({
 	});
 	this.group.add(this.connection);
 	this.invisConnection.setX(Math.min(this.node3.centerX,this.node5.centerX)-this.sqLength/2);
+	this.invisConnection.setY(Math.min(this.node3.centerY,this.node5.centerY)-this.sqLength/2);
 	this.invisConnection.setWidth(Math.abs(this.node3.centerX-this.node5.centerX)+this.sqLength);
+	this.invisConnection.setHeight(Math.abs(this.node3.centerY-this.node5.centerY)+this.sqLength);
     },
 
     /*
@@ -248,7 +266,7 @@ var XoverItem = Backbone.View.extend({
     },
 
     selectStart: function(pos) {
-	this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.helixset.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.helixset.scaleFactor-5*this.sqLength)/this.sqLength);
 	this.dragCounter = this.dragCounterInit;
 	this.pDragCounter = this.dragCounter;
 	this.redBox = new Kinetic.Rect({
@@ -271,7 +289,7 @@ var XoverItem = Backbone.View.extend({
     },
 
     selectMove: function(pos) {
-	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.helixset.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.helixset.scaleFactor-5*this.sqLength)/this.sqLength);
 	var diff = this.dragCounter-this.dragCounterInit;
 	var minCounterX = Math.min(this.node3.counter,this.node5.counter);
 	if(minCounterX+diff < 0) {

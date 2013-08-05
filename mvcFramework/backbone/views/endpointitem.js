@@ -1,10 +1,12 @@
 var EndPointItem = Backbone.View.extend({
-    initialize: function(strand, dir, type, skipRedraw) { //last param is optional
+    initialize: function(strandItem, dir, type, skipRedraw) { //last param is optional
 	//accessing other objects
-	this.parent = strand;
+	this.parent = strandItem;
+    console.log(this.parent);
 	this.phItem = this.parent.parent;
 	this.layer = this.parent.layer;
 	this.finalLayer = this.phItem.options.parent.finallayer;
+	this.panel = this.parent.panel;
 	//temporary layer that will be used for fast rendering
 	this.tempLayer = new Kinetic.Layer();
 	this.phItem.options.handler.handler.add(this.tempLayer);
@@ -28,7 +30,6 @@ var EndPointItem = Backbone.View.extend({
 	this.dir = dir;
 	this.prime = type;
 	this.parity = (this.phItem.options.model.hID)%2;
-	//this.parity = this.parent.yLevel;
 	this.isScaf = this.parent.isScaf;
 	//vertices of the shape
 	var polypts;
@@ -105,6 +106,12 @@ var EndPointItem = Backbone.View.extend({
 	this.shape.setX((this.counter-this.initcounter)*this.sqLength);
     },
 
+    updateY: function() {
+	var diff = this.parent.yCoord-this.centerY;
+	this.centerY = this.parent.yCoord;
+	this.shape.setY(this.shape.getY()+diff);
+    },
+
     adjustCounter: function(n) {
 	this.counter = Math.min(
             Math.max(this.minMaxIndices[0],n),
@@ -113,7 +120,7 @@ var EndPointItem = Backbone.View.extend({
     },
 
     selectStart: function(pos) {
-       this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+       this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
        this.redBox = new Kinetic.Rect({
 	   x: this.centerX-this.sqLength/2,
 	   y: this.centerY-this.sqLength/2,
@@ -136,7 +143,7 @@ var EndPointItem = Backbone.View.extend({
 
     selectMove: function(pos) {
 	//we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
-	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	this.adjustCounter(tempCounter);
 	if(this.counter !== this.pCounter) {
 	    //redrawing red box
@@ -192,15 +199,13 @@ var EndPointItem = Backbone.View.extend({
 	    this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
 	    this.tempLayer.add(pencilNotifier);
 	    this.tempLayer.draw();
-	    /*
 	    pencilNotifier.on("click", function() {
 		helixset.pencilendpoint.tempLayer.destroyChildren();
 		helixset.pencilendpoint.close();
-		helixset.pencilendpoint.shape.destroy();
+		pencilNotifier.destroy();
 		helixset.pencilendpoint.tempLayer.draw();
 		helixset.pencilendpoint = undefined;
 	    });
-	    */
 	}
 	else {
 	    var nodeAInfo = {

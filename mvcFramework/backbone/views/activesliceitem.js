@@ -1,6 +1,7 @@
 var ActiveSliceItem = Backbone.View.extend({
     initialize: function(){
 	this.layer = this.options.parent.activeslicelayer;
+	this.panel = this.options.parent.panel;
 	this.divLength = this.options.graphics.divLength;
 	this.blkLength = this.options.graphics.blkLength;
 	this.sqLength = this.options.graphics.sqLength;
@@ -49,6 +50,7 @@ var ActiveSliceItem = Backbone.View.extend({
 	this.group.superobj = this;
 	this.group.on("dragmove", function(pos) {
 	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/this.superobj.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
+	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.options.parent.scaleFactor-5*this.superobj.sqLength)/this.superobj.sqLength);
 	    this.superobj.adjustCounter(tempCounter); //counter should always be between 0 and grid length
 	    if(this.superobj.counter !== this.superobj.pCounter) { //only draws when counter is changed; more efficient
 		this.superobj.pCounter = this.superobj.counter;

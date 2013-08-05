@@ -154,7 +154,7 @@ var PathPartItem = PartItem.extend({
     },
 
     partVirtualHelixAddedSlot: function(virtualHelix){
-	this.pathItemSet.renderBack();
+	this.pathItemSet.render();
 	this.pathItemSet.activesliceItem.updateHeight();
         //TODO
         //Add in a new path in the path view panel.
@@ -163,30 +163,14 @@ var PathPartItem = PartItem.extend({
     updatePreXoverItemsSlot:
     function(virtualHelix){
         console.log('in updatePreXoverItemsSlot');
-        //3. Remove all current prexoveritems.
-        var len = this.preXoverItems.length;
-        for(var i=0;i<len;i++){
-        //this.preXOverItems[i].remove();
-        }
-        //empty the layer containing the prexoveritems.
-        //this.preXoverItemsLayer.removeChildren();
-        //
-        //1. Get the vhitem.
-        //2. Get the potential crossovers locations.
-        var xoverlist = this.part.potentialCrossoverList(virtualHelix);
-        var len = xoverlist.length;
-        for(var i=0;i<len;i++)
-        for(var j=0;j<4;j++){
-            //j=0: neighbour
-            //j=1: index
-            //j=2: strandType
-            //j=3: isLowIdx
-            //var preXoverItem = new PreXoverItem(virtualHelix,xoverlist[i][0],xoverlist[i][1],xoverlist[i][2],xoverlist[i][3]);
-            //this.preXoverItems.push(preXoverItem);
-        }
-        //4. Create new prexover items at these locations.
-        //Get active virtual helix item.
-        //Re-render the xover items.
+        var xoverList = this.part.potentialCrossoverList(virtualHelix);
+
+	this.pathItemSet.prexoverlayer.destroyChildren();
+	for(var i=0; i<xoverList.length; i++) {
+	    var preXover = new PreXoverItem(this.pathItemSet.phItemArray[virtualHelix.id],this.pathItemSet.phItemArray[xoverList[i][0].id],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
+	    var preXoverC = new PreXoverItem(this.pathItemSet.phItemArray[xoverList[i][0].id],this.pathItemSet.phItemArray[virtualHelix.id],xoverList[i][1],xoverList[i][2],xoverList[i][3]);
+	}
+	this.pathItemSet.prexoverlayer.draw();
     },
 
     partStepSizeChangedSlot: function(){
@@ -196,12 +180,7 @@ var PathPartItem = PartItem.extend({
 	if(slicebar.counter !== pCounter) {
 	    slicebar.update();
 	}
-	this.pathItemSet.renderBack();
-    },
-
-    partStrandChangedSlot:
-    function(){
-        console.log('received signal: partStrandChangedSlot');
+	this.pathItemSet.render();
     },
 
 });

@@ -7,7 +7,7 @@ var Document = Backbone.Model.extend({
     initialize: function(){
         this.parts = new Array();
         this.undostack = new Undo.Stack();
-	this.pathTool = "select";
+	    this.pathTool = "select";
     },
 
     isSaved: function(){
