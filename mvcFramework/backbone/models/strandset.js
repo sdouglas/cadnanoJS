@@ -27,13 +27,13 @@ var StrandSet = Backbone.Model.extend({
     createStrand:
     function(startIdx, endIdx){
         this.undoStack.execute(new CreateStrandCommand(this,startIdx,
-                endIdx));
+                endIdx, false));
     },
 
     removeStrand:
-    function(startIdx, endIdx, isInverse){
+    function(startIdx, endIdx){
         this.undoStack.execute(new CreateStrandCommand(this,startIdx,
-                    endIdx, isInverse));
+                    endIdx, true));
     },
 
     /**
