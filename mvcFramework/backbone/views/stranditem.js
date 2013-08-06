@@ -1,25 +1,23 @@
 var StrandItem = Backbone.View.extend({
     initialize: function(modelStrand, phItem, xL, xR, endtypeL, endtypeR, layer) { //layer is optional
+	console.log("STRANDITEM INSTANCED");
 	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
 	this.layer = layer;
-    console.log(modelStrand);
-    console.log(phItem);
 	if(layer === undefined) { //default value for layer
-        console.log(this.parent);
 	    this.layer = this.parent.options.parent.strandlayer;
 	}
-    this.panel = this.parent.options.parent.panel;
+	this.panel = this.parent.options.parent.panel;
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;
 	this.strandColor = this.parent.options.parent.paintcolor;
 	this.xStart = xL;
 	this.xEnd = xR;
-    this.modelStrand = modelStrand;
+	this.modelStrand = modelStrand;
 
-    //Start listening to resize events.
-    //this.connectSignalsSlots();
+	//Start listening to resize events.
+	//this.connectSignalsSlots();
 
 	this.alterationArray = new Array();
 	this.alterationGroupArray = new Array();
@@ -41,10 +39,16 @@ var StrandItem = Backbone.View.extend({
         });
 	this.group.superobj = this;
 
-    //0 => drawn higher in the helix.
-    //1 => drawn lower in the helix.
-    this.yLevel = this.modelStrand.helix.isOddParity();
 	this.isScaf = this.modelStrand.strandSet.isScaffold();
+	//0 => drawn higher in the helix.
+	//1 => drawn lower in the helix.
+	if(this.modelStrand.helix.isOddParity()^this.isScaf) {
+	    this.yLevel = 0;
+	}
+	else {
+	    this.yLevel = 1;
+	}
+	//this.yLevel = this.modelStrand.helix.isOddParity();
 
 	this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
 	this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
@@ -129,12 +133,6 @@ var StrandItem = Backbone.View.extend({
 	    this.endItemR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
 	}
 	this.layer.draw();
-	if(isScaf) { //Note 001
-	    this.parent.scafArray.push(this);
-	}
-	else { //Note 001
-	    this.parent.stapArray.push(this);
-	}
     },
 
     events:
@@ -283,36 +281,19 @@ var StrandItem = Backbone.View.extend({
     breakStrand: function(counter) {
 	this.finalLayer.destroyChildren();
 	this.finalLayer.draw();
-	if(this.endItemL.prime === 5) {
-	    if(this.xEnd-counter > 1) {
-		var strand1 = new StrandItem(this.parent,this.yLevel,this.xStart,counter,null,"EndPointItem");
-		this.endItemL.parent = strand1;
-		strand1.addEndItem(this.endItemL,"L");
-		var strand2 = new StrandItem(this.parent,this.yLevel,counter+1,this.xEnd,"EndPointItem",null);
-		this.endItemR.parent = strand2;
-		strand2.addEndItem(this.endItemR,"R");
-		this.close();
-		this.group.destroy();
-		this.layer.draw();
-		return;
-	    }
+	var strandSet = this.modelStrand.strandSet;
+	if(this.endItemL.prime === 5 && this.xEnd-counter > 1) {
+	    strandSet.removeStrand(this.xStart,this.xEnd);
+	    strandSet.createStrand(this.xStart,counter);
+	    strandSet.createStrand(counter+1,this.xEnd);
 	}
-	else {
-	    if(counter-this.xStart > 1) {
-		var strand1 = new StrandItem(this.parent,this.yLevel,this.xStart,counter-1,null,"EndPointItem");
-		this.endItemL.parent = strand1;
-		strand1.addEndItem(this.endItemL,"L");
-		var strand2 = new StrandItem(this.parent,this.yLevel,counter,this.xEnd,"EndPointItem",null);
-		this.endItemR.parent = strand2;
-		strand2.addEndItem(this.endItemR,"R");
-		this.close();
-		this.group.destroy();
-		this.layer.draw();
-		return;
-	    }
+	else if(this.endItemL.prime === 3 && counter-this.xStart > 1) {
+	    strandSet.removeStrand(this.xStart,this.xEnd);
+	    strandSet.createStrand(this.xStart,counter-1);
+	    strandSet.createStrand(counter,this.xEnd);
 	}
     },
-    
+
     insertBase: function(counter) {
 	if(!this.alterationArray[counter-this.xStart]) {
 	    var insert = new InsertItem(this,counter-this.xStart);

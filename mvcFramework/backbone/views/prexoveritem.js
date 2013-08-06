@@ -86,7 +86,7 @@ var PreXoverItem = Backbone.View.extend({
 	});
     },
 
-    createXover: function() { //Note 001; DOES NOT WORK
+    createXover: function() {
 	if(this.onLeft) {
 	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
 		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
@@ -96,12 +96,9 @@ var PreXoverItem = Backbone.View.extend({
 		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
 		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
 	    }
-	    /*
-	      After merge and "Note 001" is taken care of:
-	      this.parent.leftStrandItem.endItemR.createXover();
-	      this.cHelixItem.leftStrandItem.endItemR.createXover();
-	      (replace leftStrandItem with correct code)
-	    */
+	    this.parent.getStrandItem(this.isScaf,this.pos).endItemR.createXover();
+	    this.cHelixItem.getStrandItem(this.isScaf,this.pos).endItemR.createXover();
+	    this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
 	}
 	else {
 	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
@@ -112,12 +109,9 @@ var PreXoverItem = Backbone.View.extend({
 		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
 		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
 	    }
-	    /*
-	      After merge and "Note 001" is taken care of:
-	      this.parent.rightStrandItem.endItemL.createXover();
-	      this.cHelixItem.rightStrandItem.endItemL.createXover();
-	      (replace leftStrandItem with correct code)
-	    */
+	    this.parent.getStrandItem(this.isScaf,this.pos).endItemL.createXover();
+	    this.cHelixItem.getStrandItem(this.isScaf,this.pos).endItemL.createXover();
+	    this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
 	}
     },
 

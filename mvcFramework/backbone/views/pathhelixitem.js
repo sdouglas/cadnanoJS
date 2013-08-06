@@ -40,8 +40,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	//objects
 	this.phItemArray = new Array(); //stores PathHelixItem
 	this.phItemArray.defined = new Array();
-    //this.phHandlerItemArray = new Array(); //stores PathHelixHandlerItem
-
+	
 	this.graphicsSettings = {
 	    sqLength: 20,
 	    divLength: 7,
@@ -76,8 +75,8 @@ var PathHelixSetItem = Backbone.View.extend({
     },
     render: function(){
 	//removing all old shapes before drawing new ones
-    //this.clear();
-    this.buttonlayer.removeChildren();
+	//this.clear();
+	this.buttonlayer.removeChildren();
 	//buttons
 	this.c2Item = new ColorChangeItem({
 	    parent: this,
@@ -93,12 +92,11 @@ var PathHelixSetItem = Backbone.View.extend({
 	dims.grLength = dims.blkLength*dims.divLength*this.part.getStep(); //grLength is only used here because background is immutable
 	var helixset = this;
 	var pharray = this.phItemArray;
-    var phharray = this.phHandlerItemArray;
 	//for each VirtualHelixItem, we create a path helix and a path helix handler
         this.collection.each(function(vh){
 	    if(pharray[vh.id]) return;
-        var phItem = new PathHelixItem({
-                model: vh,
+	    var phItem = new PathHelixItem({
+		model: vh,
                 handler: h,
 		parent: helixset,
 		graphics: dims 
@@ -113,18 +111,15 @@ var PathHelixSetItem = Backbone.View.extend({
 
 	    pharray[vh.id] = phItem;
 	    pharray.defined.push(vh.id);
-	    //for UI testing purpose only, delete in final version
-	    //var strandItem0 = new StrandItem(phItem,phItem.options.model.hID%2,0,41,"EndPointItem","EndPointItem");
-	    //end of testing block
         });
 
 	//calculating the new scale factor
-    /*
-	this.ratioX = Math.min(1,this.handler.handler.getWidth()/(8*dims.sqLength+dims.sqLength*dims.grLength));
-	this.ratioY = Math.min(1,this.handler.handler.getHeight()/(7*dims.sqLength+4*pharray.defined.length*dims.sqLength));
-	this.autoScale = Math.min(this.ratioX,this.ratioY);
-	this.scaleFactor = this.autoScale * this.userScale;
-    */
+	/*
+	  this.ratioX = Math.min(1,this.handler.handler.getWidth()/(8*dims.sqLength+dims.sqLength*dims.grLength));
+	  this.ratioY = Math.min(1,this.handler.handler.getHeight()/(7*dims.sqLength+4*pharray.defined.length*dims.sqLength));
+	  this.autoScale = Math.min(this.ratioX,this.ratioY);
+	  this.scaleFactor = this.autoScale * this.userScale;
+	*/
 	this.handler.handler.setWidth(8*dims.sqLength+dims.sqLength*dims.grLength);
 	this.handler.handler.setHeight(7*dims.sqLength+4*pharray.defined.length*dims.sqLength);
 	this.autoScale = 1;
@@ -182,12 +177,6 @@ var PathHelixSetItem = Backbone.View.extend({
 
 //the long rectangular base grid
 var PathHelixItem = Backbone.View.extend ({
-    /*
-      Note 001:
-      The variables and functions marked with this should be replaced by other functions from Strand and StrandSet after
-      merge as they deviate from the MVC architecture. StrandItem and PreXoverItem also uses some of these variables or
-      functions, but they should also be marked with "Note 001".
-     */
     initialize: function(){
 	this.layer = this.options.parent.backlayer;
 	this.group = new Kinetic.Group();
@@ -196,15 +185,13 @@ var PathHelixItem = Backbone.View.extend ({
 	this.blkLength = this.options.graphics.blkLength;
 	this.sqLength = this.options.graphics.sqLength;
 	this.order = this.options.parent.phItemArray.defined.length;
-	console.log(this.options.model);
-	this.scafArray = new Array(); //Note 001
-	this.stapArray = new Array(); //Note 001
+	this.scafItemArray = new Array();
+	this.stapItemArray = new Array();
 
 	this.startX = 5*this.sqLength;
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
 
-    //Keeping track of all the strandItems
-    this.stItemArray = new Array();
+	//Keeping track of all the strandItems
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
 		var rect = new Kinetic.Rect({
@@ -229,15 +216,15 @@ var PathHelixItem = Backbone.View.extend ({
 	    }
 	}
 	this.layer.add(this.group);
-    this.connectSignalsSlots();
-
+	this.connectSignalsSlots();
+	
 	//mouse function: dragging on helix = new StrandItem
 	var strandInitCounter = 0;
 	var strandCounter = 0;
 	var grLength = this.grLength;
 	var zf = this.options.parent.scaleFactor;
 
-    //This is for the pencil object to drag and draw.
+	//This is for the pencil object to drag and draw.
 	this.group.superobj = this;
 	this.group.on("mousedown", function(pos) {
 	    this.superobj.options.parent.prexoverlayer.destroyChildren();
@@ -252,21 +239,27 @@ var PathHelixItem = Backbone.View.extend ({
 		    strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/zf-this.superobj.startX)/this.superobj.sqLength);
 		    strandCounter = adjustCounter(strandCounter);
 		    function adjustCounter(n) {
-			    //TODO: fix it to move only to a specified length - minMaxindices.
-                return Math.min(Math.max(0,n),grLength);
+			//TODO: fix it to move only to a specified length - minMaxindices.
+			return Math.min(Math.max(0,n),grLength);
 		    }
 		});
 		this.on("mouseup", function(pos) {
 		    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
-                console.log(this.superobj);
-                //Call model with create strand.
-                //Testing with just scaf strand set.
-                var left = Math.min(strandCounter,strandInitCounter);
-                var right = Math.max(strandCounter,strandInitCounter);
-                if (!this.superobj.options.model.scafStrandSet.hasStrandAt(left,right)){
-                    console.log('creating strand at :' + left + '::' + right);
-                    this.superobj.options.model.scafStrandSet.createStrand(left,right);
-                }
+			//Call model with create strand.
+			//Testing with just scaf strand set.
+			var left = Math.min(strandCounter,strandInitCounter);
+			var right = Math.max(strandCounter,strandInitCounter);
+			var strandSet;
+			if(yLevel === 0^this.superobj.model.isOddParity()) {
+			    strandSet = this.superobj.options.model.scafStrandSet;
+			}
+			else {
+			    strandSet = this.superobj.options.model.stapStrandSet;
+			}
+			if(!strandSet.hasStrandAt(left,right)) {
+			    console.log('creating strand at :' + left + '::' + right);
+			    strandSet.createStrand(left,right);
+			}
 		    }
 		    this.off("mousemove");
 		    this.off("mouseup");
@@ -275,21 +268,21 @@ var PathHelixItem = Backbone.View.extend ({
 	});
     },
 
-    getStrandItem: function(isScaf, n, indexMode) { //Note 001
+    getStrandItem: function(isScaf, n, indexMode) {
 	if(isScaf) {
-	    for(var i=0; i<this.scafArray.length; i++) {
-		if(this.scafArray[i] && this.scafArray[i].xStart <= n && this.scafArray[i].xEnd >= n) {
+	    for(var i=0; i<this.scafItemArray.length; i++) {
+		if(this.scafItemArray[i] && this.scafItemArray[i].xStart <= n && this.scafItemArray[i].xEnd >= n) {
 		    if(indexMode) {return i;}
-		    return this.scafArray[i];
+		    return this.scafItemArray[i];
 		}
 	    }
 	    return null;
 	}
 	else {
-	    for(var i=0; i<this.stapArray.length; i++) {
-		if(this.scafArray[i] && this.stapArray[i].xStart <= n && this.stapArray[i].xEnd >= n) {
+	    for(var i=0; i<this.stapItemArray.length; i++) {
+		if(this.stapItemArray[i] && this.stapItemArray[i].xStart <= n && this.stapItemArray[i].xEnd >= n) {
 		    if(indexMode) {return i;}
-		    return this.stapArray[i];
+		    return this.stapItemArray[i];
 		}
 	    }
 	    return null;
@@ -298,11 +291,11 @@ var PathHelixItem = Backbone.View.extend ({
 
     updateStartY: function() {this.startY = 5*this.sqLength+4*this.order*this.sqLength;},
     updateStrandY: function() {
-	for(var i=0; i<this.scafArray.length; i++) {
-	    this.scafArray[i].updateY();
+	for(var i=0; i<this.scafItemArray.length; i++) {
+	    this.scafItemArray[i].updateY();
 	}
-	for(var i=0; i<this.stapArray.length; i++) {
-	    this.stapArray[i].updateY();
+	for(var i=0; i<this.stapItemArray.length; i++) {
+	    this.stapItemArray[i].updateY();
 	}
     },
 
@@ -335,52 +328,55 @@ var PathHelixItem = Backbone.View.extend ({
 	this.layer.add(this.group);
     },
 
-    connectSignalsSlots:
-    function(){
+    connectSignalsSlots: function() {
         this.listenTo(this.model.scafStrandSet,
                 cadnanoEvents.strandSetStrandAddedSignal,
                 this.strandAddedSlot
-                );
+		);
         this.listenTo(this.model.scafStrandSet,
+                cadnanoEvents.strandSetStrandRemovedSignal,
+                this.strandRemovedSlot
+                );
+        this.listenTo(this.model.stapStrandSet,
+                cadnanoEvents.strandSetStrandAddedSignal,
+                this.strandAddedSlot
+                );
+        this.listenTo(this.model.stapStrandSet,
                 cadnanoEvents.strandSetStrandRemovedSignal,
                 this.strandRemovedSlot
                 );
     },
 
-    strandAddedSlot:
-    function(strand, id){
-        console.log('HERE in strandAddedSlot, by helix id:'+this.model.hID);
-        console.log(strand);
+    strandAddedSlot: function(strand, id) {
         //Create a strand item object.
-		var stItem = new StrandItem(
-                strand,
-                this,
-                strand.baseIdxLow,
-                strand.baseIdxHigh,
-                "EndPointItem",
-                "EndPointItem"
-                );
-        /*
-        var stItem = new StrandItem(strand,
-             this, 
-             strand.baseIdxLow, 
-             strand.baseIdxHigh
-        );
-        */
-        this.stItemArray.push(stItem);
-        console.log(this.stItemArray.length);
+	var stItem = new StrandItem(
+	    strand,
+	    this,
+	    strand.baseIdxLow,
+	    strand.baseIdxHigh,
+	    "EndPointItem",
+	    "EndPointItem"
+	);
+	if(stItem.isScaf) {
+	    this.scafItemArray.push(stItem);
+	}
+	else {
+	    this.stapItemArray.push(stItem);
+	}
     },
 
-    strandRemovedSlot:
-    function(strand){
-        console.log('in strandRemovedSlot');
-        var len = this.stItemArray.length;
+    strandRemovedSlot: function(strand) {
+	var stItemArray = this.stapItemArray;
+	if(strand.strandSet.isScaffold()) {
+	    stItemArray = this.scafItemArray;
+	}
+        var len = stItemArray.length;
         console.log(len);
         for(var i=0; i<len; i++){
-            if(this.stItemArray[i].modelStrand === strand){
-                this.stItemArray[i].getRidOf(true);
-                this.stItemArray.splice(i,1);
-                return true;
+            if(stItemArray[i].modelStrand === strand){
+                stItemArray[i].getRidOf(true);
+                stItemArray.splice(i,1);
+		return true;
             }
         }
         return false;

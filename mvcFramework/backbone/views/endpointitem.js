@@ -2,7 +2,6 @@ var EndPointItem = Backbone.View.extend({
     initialize: function(strandItem, dir, type, skipRedraw) { //last param is optional
 	//accessing other objects
 	this.parent = strandItem;
-    console.log(this.parent);
 	this.phItem = this.parent.parent;
 	this.layer = this.parent.layer;
 	this.finalLayer = this.phItem.options.parent.finallayer;
@@ -29,21 +28,21 @@ var EndPointItem = Backbone.View.extend({
 	//misc. properties
 	this.dir = dir;
 	this.prime = type;
-	this.parity = (this.phItem.options.model.hID)%2;
+	this.yLevel = this.parent.yLevel;
 	this.isScaf = this.parent.isScaf;
 	//vertices of the shape
 	var polypts;
 	if(this.prime === 3) { //3' end: triangle
-	    polypts = [this.centerX-(2*this.parity-1)*this.sqLength*0.3,this.centerY,
-		       this.centerX+(2*this.parity-1)*this.sqLength*0.5,this.centerY-this.sqLength*0.5,
-		       this.centerX+(2*this.parity-1)*this.sqLength*0.5,this.centerY+this.sqLength*0.5];
+	    polypts = [this.centerX-(2*this.yLevel-1)*this.sqLength*0.3,this.centerY,
+		       this.centerX+(2*this.yLevel-1)*this.sqLength*0.5,this.centerY-this.sqLength*0.5,
+		       this.centerX+(2*this.yLevel-1)*this.sqLength*0.5,this.centerY+this.sqLength*0.5];
 	}
 	else if(this.prime === 5) { //5' end: square
 	    //reason I didn't use Kinetic.Rect: its getX() works differently and shows the shape at wrong position
-	    polypts = [this.centerX-this.sqLength*0.2-this.sqLength*this.parity*0.3,this.centerY-this.sqLength*0.35,
-		       this.centerX-this.sqLength*0.2-this.sqLength*this.parity*0.3,this.centerY+this.sqLength*0.35,
-		       this.centerX+this.sqLength*0.5-this.sqLength*this.parity*0.3,this.centerY+this.sqLength*0.35,
-		       this.centerX+this.sqLength*0.5-this.sqLength*this.parity*0.3,this.centerY-this.sqLength*0.35];
+	    polypts = [this.centerX-this.sqLength*0.2-this.sqLength*this.yLevel*0.3,this.centerY-this.sqLength*0.35,
+		       this.centerX-this.sqLength*0.2-this.sqLength*this.yLevel*0.3,this.centerY+this.sqLength*0.35,
+		       this.centerX+this.sqLength*0.5-this.sqLength*this.yLevel*0.3,this.centerY+this.sqLength*0.35,
+		       this.centerX+this.sqLength*0.5-this.sqLength*this.yLevel*0.3,this.centerY-this.sqLength*0.35];
 	}
 	this.shape = new Kinetic.Polygon({
 	    points: polypts,
