@@ -184,6 +184,61 @@ var StrandSet = Backbone.Model.extend({
         return true;
     },
 
+    /**
+     * Returns a js object, containing the positions
+     * of each strand in the strand set. Each strandset
+     * contains 0--maxBaseIdx positions. At each position p
+     * there are 4 values v[0] - v[3] stored. 
+     * v[0] = helix number of 5' end of strand at index p-1.
+     * v[1] = position of 5' end of strand at index p-1.
+     * v[2] = helix number of 3' end of strand at index p+1.
+     * v[3] = position of 3' end of strand at index p+1.
+     */
+    getLegacyArray:
+    function(){
+        /**
+         * go through every index from 0 to maxbaseidx.
+         * initialize all to -1.
+         * go through every strand, and for each strand
+         * get its low,high,isdrawn5to3.
+         *
+         */
+        var ret = new Array();
+        for(var i=0;i<this.part.maxBaseIdx();i++){
+            ret[i] = [-1,-1,-1,-1];
+        }
+        if(this.isDrawn5to3()){
+            var len = this.strandList.length;
+            for(var i=0;i<len;i++){
+                var low = this.strandList[i].low();
+                var high = this.strandList[i].high();
+                var hnum = this.helix.hID;
+                if(false){
+                    ret[low][0] = 1;
+                    ret[low][1] = 1;
+                }
+                ret[low][2] = hnum;
+                ret[low][3] = low+1;
+                for(var pos=low+1; pos<high; pos++){
+                    ret[pos][0] = hnum;
+                    ret[pos][1] = pos-1;
+                    ret[pos][2] = hnum;
+                    ret[pos][3] = pos+1;
+                }
+                ret[high][0] = hnum;
+                ret[high][1] = high-1;
+                if(false){
+                    ret[low][2] = 1;
+                    ret[low][3] = 1;
+                }
+            }
+        }
+        else{
+        }
+
+        return ret;
+    },
+
 });
 
 var CreateStrandCommand = Undo.Command.extend({
@@ -217,6 +272,7 @@ var CreateStrandCommand = Undo.Command.extend({
         this.helix = this.currDoc.part().getModelHelix(this.helixId);
         if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
         else this.strandSet = this.helix.stapStrandSet;
+        this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.endIdx));
     },
     delStrand: 
     function(){

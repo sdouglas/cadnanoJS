@@ -64,6 +64,7 @@ var Document = Backbone.Model.extend({
     numParts: function(){
         return this.parts.length;
     },
+
 });
 
 var AddPartCommand = new Undo.Command.extend({
@@ -79,12 +80,14 @@ var AddPartCommand = new Undo.Command.extend({
         this.modelPart.trigger(cadnanoEvents.partRemovedSignal);
         if(this.modelDoc.numParts() === 0)
             this.modelDoc.trigger(cadnanoEvents.documentClearSelectionsSignal);
+        this.modelDoc.save();
     },
     redo: function(){
         console.log('AddPartCommand redo');
         this.modelDoc.push(this.modelPart);
         this.modelDoc.trigger(cadnanoEvents.documentPartAddedSignal, 
                 this.modelPart);
+        this.modelDoc.save();
     },
     execute: function(){},
 });

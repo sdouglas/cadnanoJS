@@ -22,6 +22,7 @@
 <script src="utils/twohandler.js"></script>
 <script src="utils/kinetichandler.js"></script>
 <script src="utils/util.js"></script>
+<script src="utils/encodedecode.js"></script>
 <script src="current/models/strand.js"></script>
 <script src="current/models/strandset.js"></script>
 <script src="current/views/prexoveritem.js"></script>
@@ -163,7 +164,7 @@ $(document).ready(function($) {
 <div id="toolbar">
   <button type="button" onclick="DocControl.newDocument();" class="hbutton"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
   <button type="button" onclick="" class="hbutton"><img src="ui/images/data-open_32.png" width="32" height="32"><br>Open</br></button>
-  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
+  <button type="button" onclick="DocControl.saveDocument();" class="hbutton"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
   <button type="button" onclick="" class="hbutton"><img src="ui/images/data-svg.png" width="32" height="32"><br>SVG</br></button>
   <button type="button" onclick="" class="hbutton"><img src="ui/images/export-staples.png" width="32" height="32"><br>Export</br></button>
   <button type="button" onclick="DocControl.createHoneyCombLattice();" class="hbutton"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
