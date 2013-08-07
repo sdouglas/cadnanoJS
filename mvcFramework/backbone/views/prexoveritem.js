@@ -87,31 +87,94 @@ var PreXoverItem = Backbone.View.extend({
     },
 
     createXover: function() {
+	var canCreate = false;
 	if(this.onLeft) {
-	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
-		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
+	    if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xEnd && this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xEnd) { //both sites are endpoints
+		canCreate = true;
 	    }
-	    else { //bottom, aka 3->5
-		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
-		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+	    else if((this.parent.options.model.hID+this.isScaf)%2) { //parent strand 5->3 (upper helix)
+		var canBreakP = this.parent.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos);
+		var canBreakC = this.cHelixItem.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos+1);
+		if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xEnd && canBreakC) { //parent strand's xover site is an endpoint (but not cStrand's)
+		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
+		    canCreate = true;
+		}
+		else if(this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xEnd && canBreakP) { //complementary strand's site is an endpoint (but not parent's)
+		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		    canCreate = true;
+		}
+		else if(this.parent.getStrandItem(canBreakP && canBreakC)) { //no endpoints
+		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
+		    canCreate = true;
+		}
 	    }
-	    this.parent.getStrandItem(this.isScaf,this.pos).endItemR.createXover();
-	    this.cHelixItem.getStrandItem(this.isScaf,this.pos).endItemR.createXover();
-	    this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
+	    else { //parent strand 3->5 (lower helix)
+		var canBreakP = this.parent.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos+1);
+		var canBreakC = this.cHelixItem.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos);
+		if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xEnd && canBreakC) { //parent strand's xover site is an endpoint (but not cStrand's)
+		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		    canCreate = true;
+		}
+		else if(this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xEnd && canBreakP) { //complementary strand's site is an endpoint (but not parent's)
+		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
+		    canCreate = true;
+		}
+		else if(canBreakP && canBreakC) { //no endpoints
+		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
+		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		    canCreate = true;
+		}
+	    }
+	    if(canCreate) {
+		this.parent.getStrandItem(this.isScaf,this.pos).endItemR.createXover();
+		this.cHelixItem.getStrandItem(this.isScaf,this.pos).endItemR.createXover();
+		this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
+	    }
 	}
-	else {
-	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
-		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
-		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+	else { //onRight
+	    if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xStart && this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xStart) { //both sites are endpoints
+		canCreate = true;
+	    }
+	    else if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
+		var canBreakP = this.parent.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos-1);
+		var canBreakC = this.cHelixItem.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos);
+		if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xStart && canBreakC) { //parent strand's xover site is an endpoint (but not cStrand's)
+		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		    canCreate = true;
+		}
+		else if(this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xStart && canBreakP) { //complementary strand's site is an endpoint (but not parent's)
+		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
+		    canCreate = true;
+		}
+		else if(this.parent.getStrandItem(canBreakP && canBreakC)) { //no endpoints
+		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
+		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		    canCreate = true;
+		}
 	    }
 	    else { //bottom, aka 3->5
-		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
+		var canBreakP = this.parent.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos);
+		var canBreakC = this.cHelixItem.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos-1);
+		if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xStart && canBreakC) { //parent strand's xover site is an endpoint (but not cStrand's)
+		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
+		    canCreate = true;
+		}
+		else if(this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xStart && canBreakP) { //complementary strand's site is an endpoint (but not parent's)
+		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		    canCreate = true;
+		}
+		else if(this.parent.getStrandItem(canBreakP && canBreakC)) { //no endpoints
+		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
+		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
+		    canCreate = true;
+		}
 	    }
-	    this.parent.getStrandItem(this.isScaf,this.pos).endItemL.createXover();
-	    this.cHelixItem.getStrandItem(this.isScaf,this.pos).endItemL.createXover();
-	    this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
+	    if(canCreate) {
+		this.parent.getStrandItem(this.isScaf,this.pos).endItemL.createXover();
+		this.cHelixItem.getStrandItem(this.isScaf,this.pos).endItemL.createXover();
+		this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
+	    }
 	}
     },
 

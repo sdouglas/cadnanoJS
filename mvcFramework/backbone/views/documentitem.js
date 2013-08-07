@@ -11,6 +11,7 @@ var DocumentItem = Backbone.View.extend({
         _.bindAll(this);
         $(document).bind('keypress',this.undohere);
 	$("#drawnPanels").bind('mousedown',this.autoresize); //we will check where we are clicking in autoresize
+	//$("#pathView").bind('keypress',this.userzoom);
 
         //Rest of init.
         this.currDoc = this.options.currDoc;
@@ -79,6 +80,9 @@ var DocumentItem = Backbone.View.extend({
             params: pvParams, 
             who:    Constants.RendererKinetic,
         });
+	var canvas = $(this.pathView.pathItemSet.activeslicelayer.getContext().canvas);
+	canvas.attr("tabindex",0);
+	canvas.keydown(function(e) {this.userzoom(e);});
     },
 
     documentClearSelectionsSlot: function(){
@@ -112,6 +116,17 @@ var DocumentItem = Backbone.View.extend({
         }
     },
 
+    userzoom: function(e) {
+	console.log(e.keyCode);
+	if(e.keyCode === 43) { //plus sign
+	    this.pathView.pathItemSet.userScale += 0.2;
+	    this.pathView.pathItemSet.zoom();
+	    this.pathView.pathItemSet.render();
+	}
+	else if(e.keyCode === 45) { //minus sign
+	}
+    },
+
     autoresize: function(pos) {
 	if(pos.pageX-50-innerLayout.state.west.innerWidth <= 0 && pos.pageX-50-innerLayout.state.west.innerWidth >= -4) { //checking if we're clicking divider
 	    var self = this;
@@ -122,9 +137,6 @@ var DocumentItem = Backbone.View.extend({
 		    var sliceHandler = self.sliceView.handler.handler;
 		    self.sliceView.handler.handler.setSize(sliceHandler.getWidth()+posDiff, innerLayout.state.west.innerHeight);
 		    var pathHandler = self.pathView.handler.handler;
-		    self.pathView.handler.handler.setSize(pathHandler.getWidth()-posDiff, innerLayout.state.center.innerHeight);
-		    pathHandler.get("#bgRect")[0].setSize(self.pathView.handler.handler.getWidth(),self.pathView.handler.handler.getHeight());
-		    pathHandler.get("#bgLayer").draw();
 		    if(self.sliceView.vhItemSet.vhItems.length !== 0) {
 			self.pathView.pathItemSet.render(); //let auto-zoom do the rest
 		    }

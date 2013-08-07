@@ -7,8 +7,7 @@ var EndPointItem = Backbone.View.extend({
 	this.finalLayer = this.phItem.options.parent.finallayer;
 	this.panel = this.parent.panel;
 	//temporary layer that will be used for fast rendering
-	this.tempLayer = new Kinetic.Layer();
-	this.phItem.options.handler.handler.add(this.tempLayer);
+	this.tempLayer = this.phItem.options.parent.templayer;
 	//graphics
 	this.divLength = this.parent.divLength;
 	this.blkLength = this.parent.blkLength;
@@ -135,7 +134,6 @@ var EndPointItem = Backbone.View.extend({
            this.destroy();
            papa.tempLayer.draw();
        });
-       this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
        this.tempLayer.add(this.redBox);
        this.tempLayer.draw();
     },
@@ -195,7 +193,6 @@ var EndPointItem = Backbone.View.extend({
 	    pencilNotifier.off("mousedown");
 	    pencilNotifier.off("click");
 	    pencilNotifier.setFill("#FF0000");
-	    this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
 	    this.tempLayer.add(pencilNotifier);
 	    this.tempLayer.draw();
 	    pencilNotifier.on("click", function() {

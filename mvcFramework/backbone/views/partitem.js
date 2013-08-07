@@ -164,7 +164,12 @@ var PathPartItem = PartItem.extend({
     function(virtualHelix){
         console.log('in updatePreXoverItemsSlot');
         var xoverList = this.part.potentialCrossoverList(virtualHelix);
-
+	/*
+	  0: complementary VirtualHelix
+	  1: position
+	  2: 1 = is staple strand
+	  3: true = on left
+	 */
 	this.pathItemSet.prexoverlayer.destroyChildren();
 	for(var i=0; i<xoverList.length; i++) {
 	    var preXover = new PreXoverItem(this.pathItemSet.phItemArray[virtualHelix.id],this.pathItemSet.phItemArray[xoverList[i][0].id],xoverList[i][1],xoverList[i][2],xoverList[i][3]);

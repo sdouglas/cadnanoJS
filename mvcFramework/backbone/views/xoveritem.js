@@ -9,9 +9,7 @@ var XoverNode = Backbone.View.extend({
 	this.layer = this.parent.layer;
 	this.panel = this.parent.panel;
 	//temporary layer that will be used for fast rendering
-	this.tempLayer = new Kinetic.Layer();
-	this.tempLayer.setScale(this.phItem.options.parent.scaleFactor);
-	this.phItem.options.handler.handler.add(this.tempLayer);
+	this.tempLayer = this.phItem.options.parent.templayer;
 	//graphics
 	this.divLength = this.parent.divLength;
 	this.blkLength = this.parent.blkLength;
@@ -100,7 +98,7 @@ var XoverNode = Backbone.View.extend({
 
 var XoverItem = Backbone.View.extend({
     initialize: function(n1, n2) {
-	if(n1.prime === 3 && n2.prime ===5) {
+	if(n1.prime === 3 && n2.prime === 5) {
 	    this.node3 = n1;
 	    this.node5 = n2;
 	}
@@ -123,8 +121,7 @@ var XoverItem = Backbone.View.extend({
 	this.divLength = this.helixset.graphicsSettings.divLength;
 	this.blkLength = this.helixset.graphicsSettings.blkLength;
 	this.sqLength = this.helixset.graphicsSettings.sqLength;
-        this.tempLayer = new Kinetic.Layer();
-        this.helixset.handler.handler.add(this.tempLayer);
+        this.tempLayer = this.node3.tempLayer;
 
 	this.group = new Kinetic.Group({
 	    draggable: true,
@@ -283,7 +280,6 @@ var XoverItem = Backbone.View.extend({
 	    this.remove();
 	    this.superobj.tempLayer.draw();
 	});
-	this.tempLayer.setScale(this.helixset.scaleFactor);
 	this.tempLayer.add(this.redBox);
 	this.tempLayer.draw();
     },

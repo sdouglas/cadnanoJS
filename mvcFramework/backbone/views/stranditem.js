@@ -1,6 +1,5 @@
 var StrandItem = Backbone.View.extend({
     initialize: function(modelStrand, phItem, xL, xR, endtypeL, endtypeR, layer) { //layer is optional
-	console.log("STRANDITEM INSTANCED");
 	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
 	this.layer = layer;
@@ -23,8 +22,7 @@ var StrandItem = Backbone.View.extend({
 	this.alterationGroupArray = new Array();
 
 	//see explanation in EndPointItem.js; the implementation of these two classes share many similarities
-        this.tempLayer = new Kinetic.Layer();
-        this.parent.options.handler.handler.add(this.tempLayer);
+        this.tempLayer = this.parent.options.parent.templayer;
 	//final layer is for post-sequencing DNAs
 	this.finalLayer = this.parent.options.parent.finallayer;
 
@@ -203,7 +201,6 @@ var StrandItem = Backbone.View.extend({
 	    this.remove();
 	    this.superobj.tempLayer.draw();
 	});
-	this.tempLayer.setScale(this.parent.options.parent.scaleFactor);
 	this.tempLayer.add(this.redBox);
 	this.tempLayer.draw();
     },
@@ -278,16 +275,25 @@ var StrandItem = Backbone.View.extend({
         return dcI+Math.min(d,rightD);
     },
 
+    canBreakStrand: function(counter) {
+	if(this.endItemL.prime === 5) {
+	    return this.xEnd-counter > 1 && counter > this.xStart;
+	}
+	else {
+	    return counter-this.xStart > 1 && counter < this.xEnd;
+	}
+    },
+
     breakStrand: function(counter) {
 	this.finalLayer.destroyChildren();
 	this.finalLayer.draw();
 	var strandSet = this.modelStrand.strandSet;
-	if(this.endItemL.prime === 5 && this.xEnd-counter > 1) {
+	if(this.endItemL.prime === 5 && this.xEnd-counter > 1 && counter > this.xStart) {
 	    strandSet.removeStrand(this.xStart,this.xEnd);
 	    strandSet.createStrand(this.xStart,counter);
 	    strandSet.createStrand(counter+1,this.xEnd);
 	}
-	else if(this.endItemL.prime === 3 && counter-this.xStart > 1) {
+	else if(this.endItemL.prime === 3 && counter-this.xStart > 1 && counter < this.xEnd) {
 	    strandSet.removeStrand(this.xStart,this.xEnd);
 	    strandSet.createStrand(this.xStart,counter-1);
 	    strandSet.createStrand(counter,this.xEnd);
@@ -608,5 +614,90 @@ var SkipItem = Backbone.View.extend({
 	this.parent.layer.add(skipCross);
 	this.parent.alterationGroupArray.push(skipCross);
 	this.parent.layer.draw();
+    },
+});
+
+var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is not connected to model or mouse functionalities
+    initialize: function(phItem, y, x1, x2) {
+	this.parent = phItem;
+	this.layer = this.parent.options.parent.templayer;
+	this.panel = this.parent.options.parent.panel;
+	this.divLength = this.parent.options.graphics.divLength;
+	this.blkLength = this.parent.options.graphics.blkLength;
+	this.sqLength = this.parent.options.graphics.sqLength;
+	this.strandColor = "#AA0000";
+	this.yLevel = y;
+	this.xStart = Math.min(x1,x2);
+	this.xEnd = Math.max(x1,x2);
+        this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
+        this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
+        this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
+
+	this.group = new Kinetic.Group();
+	this.layer.add(this.group);
+	if(this.xEnd-this.xStart >= 2) {
+	    this.connection = new Kinetic.Rect({
+		x: this.xStartCoord,
+		y: this.yCoord-1,
+		width: this.xEndCoord-this.xStartCoord,
+		height: 2,
+		fill: this.strandColor,
+		stroke: this.strandColor,
+		strokeWidth: 1
+	    });
+	    if(!this.yLevel) { //5->3
+                this.endP1 = new Kinetic.Polygon({
+		    points: [this.parent.startX+(this.xStart+0.5)*this.sqLength-this.sqLength*0.2,this.yCoord-this.sqLength*0.35,
+			     this.parent.startX+(this.xStart+0.5)*this.sqLength-this.sqLength*0.2,this.yCoord+this.sqLength*0.35,
+			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord+this.sqLength*0.35,
+			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord-this.sqLength*0.35],
+		    fill: this.strandColor,
+		    stroke: "#AA0000",
+		    strokeWidth: 1,
+		});
+		this.endP2 = new Kinetic.Polygon({
+		    points: [this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.3,this.yCoord,
+			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord-this.sqLength*0.5,
+			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord+this.sqLength*0.5],
+		    fill: this.strandColor,
+		    stroke: "#AA0000",
+		    strokeWidth: 1,
+		});
+	    }
+	    else { //3->5
+                this.endP1 = new Kinetic.Polygon({
+		    points: [this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord-this.sqLength*0.35,
+			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord+this.sqLength*0.35,
+			     this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.2,this.yCoord+this.sqLength*0.35,
+			     this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.2,this.yCoord-this.sqLength*0.35],
+		    fill: this.strandColor,
+		    stroke: "#AA0000",
+		    strokeWidth: 1,
+		});
+                this.endP2 = new Kinetic.Polygon({
+		    points: [this.parent.startX+(this.xStart+0.5)*this.sqLength-this.sqLength*0.3,this.yCoord,
+			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord-this.sqLength*0.5,
+			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord+this.sqLength*0.5],
+		    fill: this.strandColor,
+		    stroke: "#AA0000",
+		    strokeWidth: 1,
+		});
+	    }
+	    this.group.add(this.connection);
+	    this.group.add(this.endP1);
+	    this.group.add(this.endP2);
+	    this.group.superobj = this;
+	    this.group.on("mousemove", function(pos) {
+		    this.superobj.parent.group.fire("mousemove");
+	    });
+	    this.group.on("mouseup", function() {
+		this.superobj.parent.group.fire("mouseup");
+	    });
+	}
+	this.layer.draw();
+    },
+
+    remove: function() {
+	this.group.destroyChildren();
     },
 });
