@@ -356,17 +356,8 @@ var PathHelixItem = Backbone.View.extend ({
                 strand,
                 this,
                 strand.baseIdxLow,
-                strand.baseIdxHigh,
-                "EndPointItem",
-                "EndPointItem"
+                strand.baseIdxHigh
                 );
-        /*
-        var stItem = new StrandItem(strand,
-             this, 
-             strand.baseIdxLow, 
-             strand.baseIdxHigh
-        );
-        */
         this.stItemArray.push(stItem);
         console.log(this.stItemArray.length);
     },
@@ -385,6 +376,7 @@ var PathHelixItem = Backbone.View.extend ({
         }
         return false;
     },
+
 });
 
 //the circle next to PathHelixItem

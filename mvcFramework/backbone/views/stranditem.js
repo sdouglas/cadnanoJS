@@ -1,5 +1,5 @@
 var StrandItem = Backbone.View.extend({
-    initialize: function(modelStrand, phItem, xL, xR, endtypeL, endtypeR, layer) { //layer is optional
+    initialize: function(modelStrand, phItem, xL, xR, layer) { //layer is optional
 	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
 	this.layer = layer;
@@ -116,17 +116,17 @@ var StrandItem = Backbone.View.extend({
 	});
 
 	this.layer.add(this.group);
-	if(endtypeL === "EndPointItem") {
-	    this.endItemL = new EndPointItem(this,"L",4-(2*this.yLevel-1),true);
-	}
-	else if(endtypeL === "XoverNode") {
+    if(modelStrand.connection3p()){
 	    this.endItemL = new XoverNode(this,"L",4-(2*this.yLevel-1),true);
-	}
-	if(endtypeR === "EndPointItem") {
-	    this.endItemR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
-	}
-	else if(endtypeR === "XoverNode") {
+    }
+    else{
+	    this.endItemL = new EndPointItem(this,"L",4-(2*this.yLevel-1),true);
+    }
+    if(modelStrand.connection5p()){
 	    this.endItemR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
+	}
+    else{
+	    this.endItemR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
 	}
 	this.layer.draw();
 	if(isScaf) { //Note 001
@@ -283,6 +283,8 @@ var StrandItem = Backbone.View.extend({
     breakStrand: function(counter) {
 	this.finalLayer.destroyChildren();
 	this.finalLayer.draw();
+    console.log(counter);
+    /*
 	if(this.endItemL.prime === 5) {
 	    if(this.xEnd-counter > 1) {
 		var strand1 = new StrandItem(this.parent,this.yLevel,this.xStart,counter,null,"EndPointItem");
@@ -311,6 +313,7 @@ var StrandItem = Backbone.View.extend({
 		return;
 	    }
 	}
+    */
     },
     
     insertBase: function(counter) {

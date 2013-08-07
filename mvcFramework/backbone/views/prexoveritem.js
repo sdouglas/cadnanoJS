@@ -6,12 +6,12 @@ var PreXoverItem = Backbone.View.extend({
 	this.isScaf = 1-isStap; //1 if true, 0 if false
 	this.onLeft = onLeft;
 	
-        this.divLength = this.parent.divLength;
-        this.blkLength = this.parent.blkLength;
-        this.sqLength = this.parent.sqLength;
-	this.layer = this.parent.options.parent.prexoverlayer;
-	this.centerX = this.parent.startX+(this.pos+0.5)*this.sqLength;
-	var clickable;
+    this.divLength = this.parent.divLength;
+    this.blkLength = this.parent.blkLength;
+    this.sqLength = this.parent.sqLength;
+    this.layer = this.parent.options.parent.prexoverlayer;
+    this.centerX = this.parent.startX+(this.pos+0.5)*this.sqLength;
+    var clickable;
 
 	if(this.parent.getStrandItem(this.isScaf,this.pos) && this.cHelixItem.getStrandItem(this.isScaf,this.pos)) {
 	    clickable = true;
@@ -87,7 +87,28 @@ var PreXoverItem = Backbone.View.extend({
     },
 
     createXover: function() { //Note 001; DOES NOT WORK
-	if(this.onLeft) {
+        var strandSet1,strandSet2;
+        if(this.isScaf) strandSet1 = this.parent.options.model.scafStrandSet;
+        else strandSet1 = this.parent.options.model.stapStrandSet;
+        if(this.isScaf) strandSet2 = this.cHelixItem.options.model.scafStrandSet;
+        else strandSet2 = this.cHelixItem.options.model.stapStrandSet;
+        //now get the strand obj based on the position.
+        if((this.onLeft && strandSet1.isDrawn5to3()) || 
+           (!this.onLeft && strandSet2.isDrawn5to3()) 
+        ){ 
+            var strand5p = strandSet1.getStrandAt(this.pos);
+            var strand3p = strandSet2.getStrandAt(this.pos);
+        }
+        else{
+            var strand3p = strandSet1.getStrandAt(this.pos);
+            var strand5p = strandSet2.getStrandAt(this.pos);
+        }
+        console.log(strand5p);
+        console.log(strand3p);
+        var part = strandSet1.part;
+        var pos = this.pos;
+        part.createXover(strand5p,pos,strand3p,pos);
+        /*
 	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
 		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
 		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
@@ -96,14 +117,14 @@ var PreXoverItem = Backbone.View.extend({
 		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
 		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
 	    }
+        */
 	    /*
 	      After merge and "Note 001" is taken care of:
 	      this.parent.leftStrandItem.endItemR.createXover();
 	      this.cHelixItem.leftStrandItem.endItemR.createXover();
 	      (replace leftStrandItem with correct code)
 	    */
-	}
-	else {
+        /*
 	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
 		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
 		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
@@ -112,13 +133,13 @@ var PreXoverItem = Backbone.View.extend({
 		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
 		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
 	    }
+        */
 	    /*
 	      After merge and "Note 001" is taken care of:
 	      this.parent.rightStrandItem.endItemL.createXover();
 	      this.cHelixItem.rightStrandItem.endItemL.createXover();
 	      (replace leftStrandItem with correct code)
 	    */
-	}
     },
 
 });

@@ -125,6 +125,16 @@ var StrandSet = Backbone.Model.extend({
         return false;
     },
 
+    getStrandAt: 
+        function(idx){
+            var len = this.strandList.length;
+            for(var i=0;i<len;i++){
+                var obj = this.strandList[i];
+                if(obj.low() <= idx && obj.high() >= idx)
+                        return obj;
+            }
+        },
+
     canBeResizedTo:
     function(strand, low, high){
         console.log('checking for resizing to positions:' +low + ',' + high+ ' from positions:' + strand.low() + ',' + strand.high());
@@ -239,6 +249,40 @@ var StrandSet = Backbone.Model.extend({
         return ret;
     },
 
+    /**
+     * TODO: check if the connected strands are atleast 1-2 
+     * bases long. 
+     */
+    canSplitStrand:
+    function(strand, idx){
+        var low = strand.low();
+        var high = strand.high();
+        if(idx > low+1 && idx < high-1) return true;
+        if(idx <= low+1) {
+            //check if there is a connecting strand.
+            if(strand.isDrawn5to3()){
+                if(strand.strand5p) return true;
+            }
+            else{
+                if(strand.strand3p) return true;
+            }
+            return false;
+        }
+        //The only case left is if idx >= high-1.
+        if(strand.isDrawn5to3()){
+            if(strand.strand3p) return true;
+        }
+        else{
+            if(strand.strand5p) return true;
+        }
+        return false;
+    },
+
+    splitStrand:
+    function(strand, idx){
+        this.undoStack.execute(new SplitCommand(this,strand,idx));
+    },
+
 });
 
 var CreateStrandCommand = Undo.Command.extend({
@@ -308,6 +352,63 @@ var CreateStrandCommand = Undo.Command.extend({
     },
     execute:
     function(){},
+});
+
+/**
+ * The assumption is that when this command is called,
+ * the strand can be split.
+ */
+var SplitCommand = Undo.Command.extend({
+    constructor:
+    function(strandSet, strand, idx){
+        this.currDoc = strandSet.helix.part.currDoc;
+        this.helixId = strandSet.helix.id;
+        this.scaffold = strandSet.scaffold;
+        this.startIdx = strand.low();
+        this.endIdx = strand.high();
+        this.breakIdx = idx;
+        //Update the endpointitems/xovers.
+        this.redo();
+    },
+    getModel:
+    function(){
+        this.helix = this.currDoc.part().getModelHelix(this.helixId);
+        if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
+        else this.strandSet = this.helix.stapStrandSet;
+        //old strand
+        this.oS = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.endIdx));
+    },
+
+    undo:
+    function(){
+        this.getModel();
+    },
+
+    redo:
+    function(){
+        this.getModel();
+        this.strandSet.createStrand(this.startIdx, this.breakIdx);
+        this.strandSet.createStrand(this.breakIdx+1,this.endIdx);
+        this.strandLeft = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.breakIdx));
+        this.strandRight = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.breakIdx+1,this.endIdx));
+
+        if(this.strandSet.isDrawn5to3()){
+            //left strand 3' end is at idx.
+            //right strand 5' end is at idx+1.
+            //left strand takes 5' end of strand object.
+            this.strandLeft.setConnection5p(this.oS.strand5p);
+            this.strandRight.setConnection3p(this.oS.strand3p);
+        }
+        else{
+            this.strandLeft.setConnection3p(this.oS.strand3p);
+            this.strandRight.setConnection5p(this.oS.strand5p);
+        }
+        this.strandSet.removeStrand(this.startIdx,this.endIdx);
+        //TODO: someone should listen to these signals.
+        this.strandLeft.trigger(cadnanoEvents.strandUpdateSignal);
+        this.strandRight.trigger(cadnanoEvents.strandUpdateSignal);
+    },
+    execute: function(){},
 });
 
 /*
