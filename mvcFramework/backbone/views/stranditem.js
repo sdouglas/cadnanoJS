@@ -19,7 +19,7 @@ var StrandItem = Backbone.View.extend({
     this.modelStrand = modelStrand;
 
     //Start listening to resize events.
-    //this.connectSignalsSlots();
+    this.connectSignalsSlots();
 
 	this.alterationArray = new Array();
 	this.alterationGroupArray = new Array();
@@ -518,6 +518,8 @@ var StrandItem = Backbone.View.extend({
     connectSignalsSlots: function() {
         this.listenTo(this.modelStrand, cadnanoEvents.strandResizedSignal,
 		      this.strandResizedSlot);
+        this.listenTo(this.modelStrand, cadnanoEvents.strandUpdateSignal,
+		      this.strandUpdateSlot);
     },
     getRidOf:
     function(destroy){
@@ -538,6 +540,14 @@ var StrandItem = Backbone.View.extend({
     },
 
     strandResizedSlot: function() {
+    },
+    strandUpdateSlot:
+    function(strand){
+        //This function redraws the strand - it also
+        //changes the color of the strand if passed in
+        //as an argument.
+        //It updates the xoveritem incase an xover is created/deleted.
+        console.log('strandUpdateSlot called');
     },
 });
 

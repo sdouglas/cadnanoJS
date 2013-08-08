@@ -220,12 +220,16 @@ var StrandSet = Backbone.Model.extend({
         if(this.isDrawn5to3()){
             var len = this.strandList.length;
             for(var i=0;i<len;i++){
-                var low = this.strandList[i].low();
-                var high = this.strandList[i].high();
+                var strand = this.strandList[i];
+                var low = strand.low();
+                var high = strand.high();
                 var hnum = this.helix.hID;
-                if(false){
-                    ret[low][0] = 1;
-                    ret[low][1] = 1;
+                //check if there is a crossover. get the
+                //index of the l
+                if(strand.connection5p()){
+                    var strand5p = strand.connection5p();
+                    ret[low][0] = strand5p.helix;
+                    ret[low][1] = strand5p.idx3Prime();
                 }
                 ret[low][2] = hnum;
                 ret[low][3] = low+1;
@@ -237,15 +241,46 @@ var StrandSet = Backbone.Model.extend({
                 }
                 ret[high][0] = hnum;
                 ret[high][1] = high-1;
-                if(false){
-                    ret[low][2] = 1;
-                    ret[low][3] = 1;
+                if(strand.connection3p()){
+                    var strand3p = strand.connection3p();
+                    ret[high][2] = strand3p.helix;
+                    ret[high][3] = strand3p.idx5Prime();
                 }
             }
         }
         else{
+            var len = this.strandList.length;
+            for(var i=0;i<len;i++){
+                var strand = this.strandList[i];
+                var low = strand.low();
+                var high = strand.high();
+                var hnum = this.helix.hID;
+                //check if there is a crossover. get the
+                //drawn from 3 to 5. The lower index will
+                //be connected to a 3p strand, and the higher
+                //index will connect from a 5p strand..
+                if(strand.connection3p()){
+                    var strand3p = strand.connection3p();
+                    ret[low][2] = strand3p.helix;
+                    ret[low][3] = strand3p.idx5Prime();
+                }
+                ret[low][0] = hnum;
+                ret[low][1] = low+1;
+                for(var pos=low+1; pos<high; pos++){
+                    ret[pos][0] = hnum;
+                    ret[pos][1] = pos+1;
+                    ret[pos][2] = hnum;
+                    ret[pos][3] = pos-1;
+                }
+                ret[high][2] = hnum;
+                ret[high][3] = high-1;
+                if(strand.connection5p()){
+                    var strand5p = strand.connection5p();
+                    ret[high][0] = strand5p.helix;
+                    ret[high][1] = strand5p.idx3Prime();
+                }
+            }
         }
-
         return ret;
     },
 
@@ -405,8 +440,8 @@ var SplitCommand = Undo.Command.extend({
         }
         this.strandSet.removeStrand(this.startIdx,this.endIdx);
         //TODO: someone should listen to these signals.
-        this.strandLeft.trigger(cadnanoEvents.strandUpdateSignal);
-        this.strandRight.trigger(cadnanoEvents.strandUpdateSignal);
+        this.strandLeft.trigger(cadnanoEvents.strandUpdateSignal, this.strandLeft);
+        this.strandRight.trigger(cadnanoEvents.strandUpdateSignal, this.strandRight);
     },
     execute: function(){},
 });

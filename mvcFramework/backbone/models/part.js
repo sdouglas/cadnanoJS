@@ -68,7 +68,7 @@ var Part = Backbone.Model.extend({
        //Remove the views.
        this.trigger(cadnanoEvents.partVirtualHelixRemovedSignal,
          helix);
-       //this.trigger(cadnanoEvents.partActiveSliceResizeSignal, 
+       //this.trigger(cadnanoEvents.partActiveSliceResizedSignal, 
        //  helix);
     },
     
@@ -359,12 +359,45 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
             ss5p.splitStrand(strand5p, split5pIdx);
         if(s3pIdx !== strand3p.idx5Prime())
             ss3p.splitStrand(strand3p, split3pIdx);
-        /*
-        strand5p.setConnection5p(strand3p);
-        strand3p.setConnection
-        */
+
+        this.undoStack.execute(
+                new CreateXoverCommand(
+                    this,
+                    strand5p,
+                    s5pIdx,
+                    strand3p,
+                    s3pIdx
+                    ));
     },
 
+});
+
+var CreateXoverCommand = Undo.Command.extend({
+    constructor: function(part, strand5p, s5pIdx, strand3p, s3pIdx){
+        this.part = part;
+        this.redo();
+    },
+    //constructor: function(){},
+    
+    undo:
+    function(){
+        strand5p.setConnection3p(null);
+        strand3p.setConnection5p(null);
+        this.part.setActiveVirtualHelix(strand5p.helix);
+        strand5p.trigger(cadnanoEvents.strandUpdateSignal);
+        strand3p.trigger(cadnanoEvents.strandUpdateSignal);
+    },
+
+    redo:
+    function(){
+        strand5p.setConnection3p(strand3p);
+        strand3p.setConnection5p(strand5p);
+        this.part.setActiveVirtualHelix(strand5p.helix);
+        strand5p.trigger(cadnanoEvents.strandUpdateSignal);
+        strand3p.trigger(cadnanoEvents.strandUpdateSignal);
+    },
+    
+    execute: function(){},
 });
 
 var HoneyCombPart = Part.extend({
