@@ -209,18 +209,18 @@ var StrandItem = Backbone.View.extend({
 	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	//have to watch out for both left and right end in counter adjustment here
 	var diff = this.dragCounter-this.dragCounterInit;
-    this.dragCounter = this.adjustCounter(this.dragCounterInit, this.dragCounter);
-    /*
-	if(this.xStart+diff < 0) {
-	    this.dragCounter = this.dragCounterInit-this.xStart;
-	}
-	else {
-	    var grLength = this.blkLength*this.divLength*this.parent.options.parent.part.getStep();
-	    if(this.xEnd+diff >= grLength) {
-		this.dragCounter = this.dragCounterInit+grLength-1-this.xEnd;
-	    }
-	}
-    */
+	this.dragCounter = this.adjustCounter(this.dragCounterInit, this.dragCounter);
+	/*
+	  if(this.xStart+diff < 0) {
+	      this.dragCounter = this.dragCounterInit-this.xStart;
+	  }
+	  else {
+	      var grLength = this.blkLength*this.divLength*this.parent.options.parent.part.getStep();
+	      if(this.xEnd+diff >= grLength) {
+	          this.dragCounter = this.dragCounterInit+grLength-1-this.xEnd;
+	      }
+	  }
+	*/
 	//same as EndPointItem
 	if(this.dragCounter !== this.pDragCounter) {
 	    this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.sqLength);

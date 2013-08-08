@@ -10,8 +10,9 @@ var DocumentItem = Backbone.View.extend({
         //These keys are to bind a keypress to a function.
         _.bindAll(this);
         $(document).bind('keypress',this.undohere);
-	$("#drawnPanels").bind('mousedown',this.autoresize); //we will check where we are clicking in autoresize
-	//$("#pathView").bind('keypress',this.userzoom);
+	$(document).bind('keydown',this.keydown);
+        $(document).bind('keyup',this.keyup);
+	//$("#drawnPanels").bind('mousedown',this.autoresize); //we will check where we are clicking in autoresize //useless for now
 
         //Rest of init.
         this.currDoc = this.options.currDoc;
@@ -57,6 +58,11 @@ var DocumentItem = Backbone.View.extend({
             params: svParams, 
             who:    Constants.RendererKinetic,
         });
+	var self = this;
+	var sliceCanvas = $(this.sliceView.handler.textLayer.getContext().canvas); //need to use top layer
+	sliceCanvas.attr("tabindex","0"); //without this line canvas cannot get focus
+	sliceCanvas.click(function(ev) {sliceCanvas.focus();});
+	sliceCanvas.keyup(function(ev) {self.sliceZoom(ev);});
 
         //Path View Parameters.
         var jPathView = $('#pathView');
@@ -80,9 +86,10 @@ var DocumentItem = Backbone.View.extend({
             params: pvParams, 
             who:    Constants.RendererKinetic,
         });
-	var canvas = $(this.pathView.pathItemSet.activeslicelayer.getContext().canvas);
-	canvas.attr("tabindex",0);
-	canvas.keydown(function(e) {this.userzoom(e);});
+	var pathCanvas = $(this.pathView.pathItemSet.activeslicelayer.getContext().canvas); //need to use top layer
+	pathCanvas.attr("tabindex","0"); //without this line canvas cannot get focus
+	pathCanvas.click(function(ev) {pathCanvas.focus();});
+	pathCanvas.keyup(function(ev) {self.pathZoom(ev);});
     },
 
     documentClearSelectionsSlot: function(){
@@ -97,6 +104,15 @@ var DocumentItem = Backbone.View.extend({
 
     reset: function(){
         //remove existing views - and recreate everything else.
+    },
+
+    keydown: function(e) {
+	this.currDoc.setKey(e.keyCode);
+	console.log(e.keyCode);
+    },
+
+    keyup: function(e){
+       this.currDoc.setKey(null);
     },
 
     undohere: function(e){
@@ -114,16 +130,74 @@ var DocumentItem = Backbone.View.extend({
         else if (e.charCode === 113){
             this.currDoc.stackStatus();
         }
+        this.currDoc.setKey(e.charCode);
     },
 
-    userzoom: function(e) {
-	console.log(e.keyCode);
-	if(e.keyCode === 43) { //plus sign
-	    this.pathView.pathItemSet.userScale += 0.2;
-	    this.pathView.pathItemSet.zoom();
-	    this.pathView.pathItemSet.render();
+    sliceZoom: function(e) {
+	var zoomArray = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
+	if(e.keyCode === 107) { //plus sign
+	    var zoomLvl;
+	    for(var i=0; i<zoomArray.length; i++) {
+		if(zoomArray[i] === this.sliceView.zoomFactor) {zoomLvl = i; break;}
+	    }
+	    if(zoomLvl !== 12) {
+		zoomLvl += 1;
+		var oldZf = this.sliceView.zoomFactor;
+		this.sliceView.zoomFactor = zoomArray[zoomLvl];
+		this.sliceView.handler.handler.setWidth(this.sliceView.handler.handler.getWidth()*this.sliceView.zoomFactor/oldZf);
+		this.sliceView.handler.handler.setHeight(this.sliceView.handler.handler.getHeight()*this.sliceView.zoomFactor/oldZf);
+		this.sliceView.handler.textLayer.setScale(this.sliceView.zoomFactor);
+		this.sliceView.handler.shapeLayer.setScale(this.sliceView.zoomFactor);
+		this.sliceView.handler.helixLayer.setScale(this.sliceView.zoomFactor);
+		this.sliceView.handler.hoverLayer.setScale(this.sliceView.zoomFactor);
+		this.sliceView.handler.render();
+	    }
 	}
-	else if(e.keyCode === 45) { //minus sign
+	else if(e.keyCode === 109) { //minus sign
+	    var zoomLvl;
+	    for(var i=0; i<zoomArray.length; i++) {
+		if(zoomArray[i] === this.sliceView.zoomFactor) {zoomLvl = i; break;}
+	    }
+	    if(zoomLvl !== 0) {
+		zoomLvl -= 1;
+		var oldZf = this.sliceView.zoomFactor;
+		this.sliceView.zoomFactor = zoomArray[zoomLvl];
+		this.sliceView.handler.handler.setWidth(this.sliceView.handler.handler.getWidth()*this.sliceView.zoomFactor/oldZf);
+		this.sliceView.handler.handler.setHeight(this.sliceView.handler.handler.getHeight()*this.sliceView.zoomFactor/oldZf);
+		this.sliceView.handler.textLayer.setScale(this.sliceView.zoomFactor);
+		this.sliceView.handler.shapeLayer.setScale(this.sliceView.zoomFactor);
+		this.sliceView.handler.helixLayer.setScale(this.sliceView.zoomFactor);
+		this.sliceView.handler.hoverLayer.setScale(this.sliceView.zoomFactor);
+		this.sliceView.handler.render();
+	    }
+	}
+    },
+
+    pathZoom: function(e) {
+	var zoomArray = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
+	if(e.keyCode === 107) { //plus sign
+	    var zoomLvl;
+	    for(var i=0; i<zoomArray.length; i++) {
+		if(zoomArray[i] === this.pathView.pathItemSet.userScale) {zoomLvl = i; break;}
+	    }
+	    if(zoomLvl !== 12) {
+		zoomLvl += 1;
+		this.pathView.pathItemSet.userScale = zoomArray[zoomLvl];
+		this.pathView.pathItemSet.zoom();
+		this.pathView.pathItemSet.render();
+	    }
+	}
+	else if(e.keyCode === 109) { //minus sign
+	    var zoomLvl;
+	    for(var i=0; i<zoomArray.length; i++) {
+		if(zoomArray[i] === this.pathView.pathItemSet.userScale) {zoomLvl = i; break;}
+	    }
+	    if(zoomLvl !== 0) {
+		zoomLvl -= 1;
+		this.pathView.pathItemSet.userScale = zoomArray[zoomLvl];
+		this.pathView.pathItemSet.zoom();
+		this.pathView.pathItemSet.render();
+	    }
 	}
     },
 

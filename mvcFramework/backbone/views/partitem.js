@@ -44,6 +44,7 @@ var PartItem = Backbone.View.extend({
 
 var SlicePartItem = PartItem.extend({
     initialize: function(){
+	this.zoomFactor = 1;
         this.part = this.options.part;
         this._super({
             part:   this.options.part,
@@ -55,6 +56,7 @@ var SlicePartItem = PartItem.extend({
             el: $('#sliceView'),
             part: this.options.part,
             handler: this.handler,
+	    parent: this
         });
         this.setLattice(this.part.generatorFullLattice());
 
@@ -63,6 +65,7 @@ var SlicePartItem = PartItem.extend({
             el: $('#sliceView'),
             part: this.options.part,
             handler: this.handler,
+	    parent: this,
             collection: this.options.part.getVHSet(),
         });
 

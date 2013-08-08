@@ -3,6 +3,7 @@ var VirtualHelixSetItem = Backbone.View.extend({
         this.handler = this.options.handler;
         this.part = this.options.part;
         this.vhItems = new Array();
+	this.partItem = this.options.parent;
     },
     events: {
         "mousemove" : "onMouseMove",
@@ -33,13 +34,12 @@ var VirtualHelixSetItem = Backbone.View.extend({
 
     onMouseMove: function(e){
         //calculate which helix you are on. change colour.
-        var coord = this.part.latticePositionXYToCoord(e.pageX, e.pageY, 1.0);
+        var coord = this.part.latticePositionXYToCoord(e.pageX, e.pageY, this.partItem.zoomFactor);
         if(coord.row === -1 || coord.col === -1) return;
         if(coord.row >= this.part.getRows() || coord.col >= this.part.getCols()) return;
         var id = this.part.getStorageID(coord.row,coord.col);
         var helixModel = this.part.getModelHelix(id);
-        var pos = this.part.latticeCoordToPositionXY(coord.row,
-            coord.col);
+        var pos = this.part.latticeCoordToPositionXY(coord.row,coord.col);
         //change helix colour.
         var params = {
             fill: colours.bluefill,
@@ -59,8 +59,7 @@ var VirtualHelixItem = Backbone.View.extend ({
         this.part = this.options.model.getPart();
         this.row = this.model.getRow();
         this.col = this.options.model.getCol();
-        var pos = this.part.latticeCoordToPositionXY(this.row,
-            this.col);
+        var pos = this.part.latticeCoordToPositionXY(this.row,this.col);
         this.handler = this.options.handler;
         var helixNum = this.options.model.hID;
 

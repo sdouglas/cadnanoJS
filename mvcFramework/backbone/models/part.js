@@ -47,6 +47,10 @@ var Part = Backbone.Model.extend({
         this.currDoc = doc;
     },
 
+    getDoc: function(){
+    	return this.currDoc;
+    },
+
     undoStack: function(){
         return this.currDoc.undostack;
     },
@@ -328,9 +332,7 @@ var HoneyCombPart = Part.extend({
         return null;
     },
 
-    latticeCoordToPositionXY: function(row,column,scaleFactor){
-        if(!scaleFactor) scaleFactor = 1.0;
-
+    latticeCoordToPositionXY: function(row,column){
         var radius = this.radius;
         var xpos = column * radius * this.root3;
         if(this.isOddParity(row,column)){
@@ -338,8 +340,8 @@ var HoneyCombPart = Part.extend({
         }
         else ypos = row*radius*3;
         return ({
-            x:  this.origin+scaleFactor*xpos,
-            y:  this.origin+scaleFactor*ypos
+            x:  this.origin+xpos,
+            y:  this.origin+ypos
         }); 
     },
 
@@ -348,86 +350,88 @@ var HoneyCombPart = Part.extend({
     },
 
     latticePositionXYToCoord: function(xPos, yPos, zoomfactor){
-    var r = this.radius;
-    if(!zoomfactor) zoomfactor = 1.0;
-    //TODO: Temp fix for panel.
-    var panel = {scrollLeft: 0, scrollTop: 0};
-    /*
-      How this function works:
-      Row is easy to determine, but column is not because of the overalapping horizontal region.
-      The two circles closest to the given coords is found and their distance to the given coords is calculated.
-      Then we just take the circle with distance less than r (if it exists).
-    */
-	    var xLeft = Math.floor((xPos-this.origin-45+panel.scrollLeft)/(1.732*r*zoomfactor));
-	    var xRight = Math.ceil((xPos-this.origin-45+panel.scrollLeft)/(1.732*r*zoomfactor));
-	    var y = Math.floor((yPos-this.origin-54+panel.scrollTop+r*zoomfactor)/(3*r*zoomfactor));
-
-	    //left circle
-	    var centerXL = 0;
-	    var centerYL = 0;
-	    var distL = 0;
-	    //if(xLeft >= 0) { //avoids the case when xLeft = -1 but xRight = 0
-            var coordL = this.latticeCoordToPositionXY(y, xLeft, zoomfactor);
-            centerXL = coordL.x;
-            centerYL = coordL.y;
-	    distL = this.dist(
-                xPos-45+panel.scrollLeft,
-		yPos-54+panel.scrollTop,
-		centerXL,
-		centerYL
-	    );
-            //right circle
-	    var centerXR = 0;
-	    var centerYR = 0;
-	    var distR = 0;
-            var coordR = this.latticeCoordToPositionXY(y, xRight, zoomfactor);
-            centerXR = coordR.x;
-            centerYR = coordR.y;
-	    distR = this.dist(
-                xPos-45+panel.scrollLeft,
-		yPos-54+panel.scrollTop,
-		centerXR,
-		centerYR
-            );
-    var coord = {
-	col: 0,
-	row: 0
-    };
-	    if(distL <= r*zoomfactor) { 
+	var r = this.radius;
+	if(!zoomfactor) zoomfactor = 1.0;
+	//TODO: Temp fix for panel.
+	var panel = $("#sliceView")[0];
+	/*
+	  How this function works:
+	  Row is easy to determine, but column is not because of the overalapping horizontal region.
+	  The two circles closest to the given coords is found and their distance to the given coords is calculated.
+	  Then we just take the circle with distance less than r (if it exists).
+	*/
+	var correctedX = (xPos-45+panel.scrollLeft)/zoomfactor;
+	var correctedY = (yPos-54+panel.scrollTop)/zoomfactor;
+	var xLeft = Math.floor((correctedX-this.origin)/(1.732*r));
+	var xRight = Math.ceil((correctedX-this.origin)/(1.732*r));
+	var y = Math.floor((correctedY-this.origin+r)/(3*r));
+	
+	//left circle
+	var centerXL = 0;
+	var centerYL = 0;
+	var distL = 0;
+	//if(xLeft >= 0) { //avoids the case when xLeft = -1 but xRight = 0
+	var coordL = this.latticeCoordToPositionXY(y, xLeft, zoomfactor);
+	centerXL = coordL.x;
+	centerYL = coordL.y;
+	distL = this.dist(
+	    correctedX,
+	    correctedY,
+	    centerXL,
+	    centerYL
+	);
+	//right circle
+	var centerXR = 0;
+	var centerYR = 0;
+	var distR = 0;
+	var coordR = this.latticeCoordToPositionXY(y, xRight, zoomfactor);
+	centerXR = coordR.x;
+	centerYR = coordR.y;
+	distR = this.dist(
+            correctedX,
+	    correctedY,
+	    centerXR,
+	    centerYR
+        );
+	var coord = {
+	    col: 0,
+	    row: 0
+	};
+	if(distL <= r) { 
             //we do not need to compare distL to distR because they cannot both be <= r*zf (or else there should be circle overlap)
             coord.col = xLeft;
             coord.row = y;
-	    }
-	    else if(distR <= r*zoomfactor) {
+	}
+	else if(distR <= r) {
             coord.col = xRight;
             coord.row = y;
-	    }
-	    else {
+	}
+	else {
             coord.col = -1;
             coord.row = -1;
-	    }
-    /*
-	else { //square mode - this part of search function is rather straightforward
-	    var x = Math.floor((xPos-45-r*zoomfactor+panel.scrollLeft)/(2*r*zoomfactor));
-	    var y = Math.floor((yPos-54-r*zoomfactor+panel.scrollTop)/(2*r*zoomfactor));
-	    if(x < 0 || x >= gridWidth || y < 0 || y>= gridHeight) { //outside array boundary, return [-1,-1]
-		result[0] = -1;
-		result[1] = -1;
+	}
+	/*
+	  else { //square mode - this part of search function is rather straightforward
+	  var x = Math.floor((xPos-45-r*zoomfactor+panel.scrollLeft)/(2*r*zoomfactor));
+	  var y = Math.floor((yPos-54-r*zoomfactor+panel.scrollTop)/(2*r*zoomfactor));
+	  if(x < 0 || x >= gridWidth || y < 0 || y>= gridHeight) { //outside array boundary, return [-1,-1]
+	  result[0] = -1;
+	  result[1] = -1;
 		return result;
-	    }
-	    var centerX = circleCenters[x][y][0]*zoomfactor;
-	    var centerY = circleCenters[x][y][1]*zoomfactor;
+		}
+		var centerX = circleCenters[x][y][0]*zoomfactor;
+		var centerY = circleCenters[x][y][1]*zoomfactor;
 	    if(dist(xPos-45+panel.scrollLeft,yPos-54+panel.scrollTop,centerX,centerY) <= r*zoomfactor) {
-		result[0] = x;
-		result[1] = y;
+	    result[0] = x;
+	    result[1] = y;
 	    }
 	    else {
-		result[0] = -1;
-		result[1] = -1;
+	    result[0] = -1;
+	    result[1] = -1;
 	    }
-	}
-    */
-	    return coord;
+	    }
+	*/
+	return coord;
     },
 
     positionToCoord: function(row,column,scaleFactor){

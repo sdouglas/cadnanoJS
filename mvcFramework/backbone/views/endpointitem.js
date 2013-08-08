@@ -60,17 +60,29 @@ var EndPointItem = Backbone.View.extend({
 	var isScaf = this.isScaf;
 	this.shape.on("mousedown", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-        console.log(this.superobj.parent.modelStrand);
-        //recalculate range of movement of this endpointitem.
-        this.superobj.minMaxIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
-        console.log(this.superobj.minMaxIndices);
+	    console.log(this.superobj.parent.modelStrand);
+	    //recalculate range of movement of this endpointitem.
+	    this.superobj.minMaxIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
+	    console.log(this.superobj.minMaxIndices);
 	    /*
 	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
 	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
 	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
 	      further.
 	    */
-	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+	    console.log(this.superobj.phItem.options.parent.part.getDoc().getKey());
+	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18) { //holding ALT = extend
+		console.log("EXTENDING");
+		if(this.superobj.dir === "L") {
+		    this.superobj.counter = this.superobj.minMaxIndices[0];
+		    this.superobj.move();
+		}
+		else {
+		    this.superobj.counter = this.superobj.minMaxIndices[1];
+		    this.superobj.move();
+		}
+	    }
+	    else if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
 	    }
 	});
@@ -89,7 +101,7 @@ var EndPointItem = Backbone.View.extend({
 	this.shape.on("dragend", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
 	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-		this.superobj.selectEnd(pos);
+		this.superobj.selectEnd();
 	    }
 	});
 	this.layer.add(this.shape);
@@ -114,7 +126,7 @@ var EndPointItem = Backbone.View.extend({
 	this.counter = Math.min(
             Math.max(this.minMaxIndices[0],n),
             this.minMaxIndices[1]
-            );
+        );
     },
 
     selectStart: function(pos) {
@@ -151,10 +163,14 @@ var EndPointItem = Backbone.View.extend({
 	}
     },
 
-    selectEnd: function(pos) {
+    selectEnd: function() {
 	//red box has finished its duty, to be deleted
 	this.redBox.remove();
 	this.tempLayer.draw();
+	this.move();
+    },
+
+    move: function() {
 	//redraw shape; wait for all elements to be adjusted to correct location before rendering
 	this.update();
 	//update counter and value in StrandItem
@@ -172,10 +188,9 @@ var EndPointItem = Backbone.View.extend({
 	if(this.dir === "L") {
 	    this.parent.updateAlteration(this.dragInit-this.counter);
 	}
-    //send out the resize signal to the model.
-    this.parent.modelStrand.resize(this.parent.xStart,
-                            this.parent.xEnd);
-         
+	//send out the resize signal to the model.
+	this.parent.modelStrand.resize(this.parent.xStart,
+				       this.parent.xEnd);
 	this.layer.draw();
     },
 

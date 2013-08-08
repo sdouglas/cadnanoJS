@@ -83,49 +83,25 @@ function viewHandlerKinetic(){
         return this.r;
     };
 
-    /*
-    this.addTextToCircle = function(helixNum){
-        //number on the circle
-        var textX;
-        if(helixNum < 10) {textX = this.getX()-this.getR()/4;}
-        else if(helixNum < 100) {textX = this.getX()-this.getR()/2;}
-        else {textX = this.getX()-this.getR()*3/4;}
-        var textY = this.getY()-this.getR()/2;
-        var helixNumText = new Kinetic.Text({
-            x: textX,
-            y: textY,
-            text: helixNum,
-            fontSize: 12,
-            fontFamily: "Calibri",
-            fill: "#000000",
-            align: "CENTER"
-        });
-        //end: number on the circle
-        //helixNumText.setZIndex(Constants.zhigh);
-        this.textLayer.add(helixNumText);
-    };
-    */
-
     this.addTextToCircle = function(helixNum, layer){
 	var myLayer = layer;
 	if(typeof layer === "undefined") {
 	    myLayer = this.textLayer;
 	}
         //number on the circle
-        var textX;
-        if(helixNum < 10) {textX = this.getX()-this.getR()/4;}
-        else if(helixNum < 100) {textX = this.getX()-this.getR()/2;}
-        else {textX = this.getX()-this.getR()*3/4;}
-        var textY = this.getY()-this.getR()/2;
         var helixNumText = new Kinetic.Text({
-            x: textX,
-            y: textY,
+	    x: this.getX(),
+            y: this.getY(),
             text: helixNum,
-            fontSize: 12,
+            fontSize: 16,
             fontFamily: "Calibri",
             fill: "#000000",
             align: "CENTER"
         });
+	helixNumText.setOffset({
+	    x: helixNumText.getWidth()/2,
+	    y: helixNumText.getHeight()/2
+	});
         //end: number on the circle
         myLayer.add(helixNumText);
     };

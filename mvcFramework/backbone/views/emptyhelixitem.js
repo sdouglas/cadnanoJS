@@ -2,8 +2,8 @@ var EmptyHelixSetItem = Backbone.View.extend({
     initialize: function(){
         this.handler = this.options.handler;
         this.part = this.options.part;
-
         this.emptyHelixHash = new Array();
+	this.partItem = this.options.parent;
     },
     
     createEmptyHelix: function(coord){
@@ -31,7 +31,8 @@ var EmptyHelixSetItem = Backbone.View.extend({
     onMouseClick: function(e){
         console.log("clicked the vhsetitem.");
         //Figure out which helix was clicked.
-        var coord = this.part.latticePositionXYToCoord(e.pageX, e.pageY, 1.0);
+	console.log(this.part.currDoc);
+        var coord = this.part.latticePositionXYToCoord(e.pageX, e.pageY, this.partItem.zoomFactor);
         if(coord.row === -1 || coord.col === -1) return;
         if(coord.row >= this.part.getRows() || coord.col >= this.part.getCols()) return;
 
@@ -48,10 +49,18 @@ var EmptyHelixSetItem = Backbone.View.extend({
                     coord.col
                     );
         }
+	else if(this.part.getDoc().getKey() === 16) { //holding SHIFT = staple strand created
+            var idx = this.part.activeBaseIndex();
+            if (!helixModel.stapStrandSet.hasStrandAt(idx-1,idx+1)){
+                console.log('creating staple strand at :' + idx);
+                helixModel.stapStrandSet.createStrand(idx-1,idx+1);
+            }
+	}
         else {
+	    console.log(this.part.getDoc().getKey());
             var idx = this.part.activeBaseIndex();
             if (!helixModel.scafStrandSet.hasStrandAt(idx-1,idx+1)){
-                console.log('creating strand at :' + idx);
+                console.log('creating scaffold strand at :' + idx);
                 helixModel.scafStrandSet.createStrand(idx-1,idx+1);
             }
         }
@@ -68,8 +77,7 @@ var EmptyHelixItem = Backbone.View.extend ({
         this.part = this.options.part;
         this.row = this.options.row;
         this.col = this.options.col;
-        var pos = this.part.latticeCoordToPositionXY(this.row,
-            this.col);
+        var pos = this.part.latticeCoordToPositionXY(this.row,this.col);
         //console.log(this.row + ',' + this.col);
         this.handler = this.options.handler;
 

@@ -7,7 +7,7 @@ var Document = Backbone.Model.extend({
     initialize: function(){
         this.parts = new Array();
         this.undostack = new Undo.Stack();
-	    this.pathTool = "select";
+	this.pathTool = "select";
     },
 
     isSaved: function(){
@@ -63,6 +63,14 @@ var Document = Backbone.Model.extend({
     
     numParts: function(){
         return this.parts.length;
+    },
+
+    setKey: function(key){
+	this.key = key;
+    },
+
+    getKey: function(){
+	return this.key;
     },
 });
 

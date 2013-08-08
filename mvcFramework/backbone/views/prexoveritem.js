@@ -32,6 +32,7 @@ var PreXoverItem = Backbone.View.extend({
 		pt1x = this.centerX+0.5*this.sqLength;
 	    }
 	    this.centerY = this.parent.startY-0.15*this.sqLength;
+	    this.centerY2 = this.centerY+1;
 	    pt2y = this.centerY-0.4*this.sqLength;
 	    textY = pt2y-0.25*this.sqLength;
 	}
@@ -43,6 +44,7 @@ var PreXoverItem = Backbone.View.extend({
 		pt1x = this.centerX+0.5*this.sqLength;
 	    }
 	    this.centerY = this.parent.startY+2.15*this.sqLength;
+	    this.centerY2 = this.centerY-1;
 	    pt2y = this.centerY+0.4*this.sqLength;
 	    textY = pt2y+0.25*this.sqLength;
 	}
@@ -52,7 +54,7 @@ var PreXoverItem = Backbone.View.extend({
 	    strokeWidth: 2
 	});
 	var line2 = new Kinetic.Line({
-	    points: [this.centerX, this.centerY, this.centerX, pt2y],
+	    points: [this.centerX, this.centerY2, this.centerX, pt2y],
 	    stroke: this.colour,
 	    strokeWidth: 2
 	});
@@ -87,6 +89,7 @@ var PreXoverItem = Backbone.View.extend({
     },
 
     createXover: function() {
+	console.log("PreXoverItem clicked "+this.parent.options.model.hID+"::"+this.cHelixItem.options.model.hID);
 	var canCreate = false;
 	if(this.onLeft) {
 	    if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xEnd && this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xEnd) { //both sites are endpoints
@@ -147,7 +150,7 @@ var PreXoverItem = Backbone.View.extend({
 		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
 		    canCreate = true;
 		}
-		else if(this.parent.getStrandItem(canBreakP && canBreakC)) { //no endpoints
+		else if(canBreakP && canBreakC) { //no endpoints
 		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
 		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
 		    canCreate = true;
@@ -164,7 +167,7 @@ var PreXoverItem = Backbone.View.extend({
 		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
 		    canCreate = true;
 		}
-		else if(this.parent.getStrandItem(canBreakP && canBreakC)) { //no endpoints
+		else if(canBreakP && canBreakC) { //no endpoints
 		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
 		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
 		    canCreate = true;

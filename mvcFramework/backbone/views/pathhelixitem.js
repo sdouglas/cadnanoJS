@@ -111,8 +111,10 @@ var PathHelixSetItem = Backbone.View.extend({
         });
 
 	//scaling and drawing
-	this.handler.handler.setWidth((8*dims.sqLength+dims.sqLength*dims.grLength)*this.scaleFactor);
-	this.handler.handler.setHeight((7*dims.sqLength+4*pharray.defined.length*dims.sqLength)*this.scaleFactor);
+	var newWidth = this.graphicsSettings.sqLength*(8+this.part.getStep()*this.graphicsSettings.divLength*this.graphicsSettings.blkLength)*this.scaleFactor;
+	this.handler.handler.setWidth(Math.max(newWidth, innerLayout.state.west.innerWidth));
+	var newHeight = this.graphicsSettings.sqLength*(7+4*this.phItemArray.defined.length)*this.scaleFactor;
+	this.handler.handler.setHeight(Math.max(newHeight, innerLayout.state.west.innerHeight));
 	//no scale factor changes, just redraw backlayer
 	if(this.scaleFactor === this.pScaleFactor) {
 	    this.backlayer.draw();
@@ -131,6 +133,10 @@ var PathHelixSetItem = Backbone.View.extend({
 
     zoom: function() {
 	this.scaleFactor = this.autoScale * this.userScale;
+	var newWidth = this.graphicsSettings.sqLength*(8+this.part.getStep()*this.graphicsSettings.divLength*this.graphicsSettings.blkLength)*this.scaleFactor;
+	this.handler.handler.setWidth(Math.max(newWidth, innerLayout.state.west.innerWidth));
+	var newHeight = this.graphicsSettings.sqLength*(7+4*this.phItemArray.defined.length)*this.scaleFactor;
+	this.handler.handler.setHeight(Math.max(newHeight, innerLayout.state.west.innerHeight));
 	this.backlayer.setScale(this.scaleFactor);
 	this.prexoverlayer.setScale(this.scaleFactor);
 	this.activeslicelayer.setScale(this.scaleFactor);
@@ -172,6 +178,7 @@ var PathHelixSetItem = Backbone.View.extend({
 //the long rectangular base grid
 var PathHelixItem = Backbone.View.extend ({
     initialize: function(){
+	this.panel = this.options.parent.panel;
 	this.layer = this.options.parent.backlayer;
 	this.group = new Kinetic.Group();
 	this.grLength = this.options.graphics.grLength;
@@ -221,14 +228,14 @@ var PathHelixItem = Backbone.View.extend ({
 	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
 		var grLength = this.superobj.grLength;
 		var zf = this.superobj.options.parent.scaleFactor;
-		var yLevel = Math.floor(((pos.y-54)/zf-this.superobj.startY)/this.superobj.sqLength);
-		var strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/zf-this.superobj.startX)/this.superobj.sqLength);
+		var yLevel = Math.floor(((pos.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
+		var strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
 		var strandCounter = strandInitCounter;
 		var strandPCounter = strandCounter;
 		var stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
 		this.on("mousemove", function(pos) {
 		    if(pos.x) { //strandCounter will be NaN if this event is manually fired by stItemImage
-			strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth)/zf-this.superobj.startX)/this.superobj.sqLength);
+			strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
 			strandCounter = adjustCounter(strandCounter);
 		    }
 		    if(strandCounter !== strandPCounter) {
@@ -435,7 +442,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 		tempLayer.draw();
 		dragCirc.superobj = this.superobj;
 		dragCirc.on("mousemove", function(pos) {
-		    dragCirc.setY(dragCirc.getY()+pos.y-pPosY);
+		    dragCirc.setY(dragCirc.getY()+(pos.y-pPosY)/zf);
 		    pPosY = pos.y;
 		    tempLayer.draw();
 		});
