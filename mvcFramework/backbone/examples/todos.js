@@ -24,7 +24,9 @@ $(function(){
     // Toggle the `done` state of this todo item.
     // triggers change event.
     toggle: function() {
-      this.save({done: !this.get("done")});
+        this.set({done: !this.get("done")});
+      //this.save({done: !this.get("done")});
+      this.save();
     }
 
   });

@@ -72,7 +72,7 @@ var Part = Backbone.Model.extend({
        //Remove the views.
        this.trigger(cadnanoEvents.partVirtualHelixRemovedSignal,
          helix);
-       //this.trigger(cadnanoEvents.partActiveSliceResizeSignal, 
+       //this.trigger(cadnanoEvents.partActiveSliceResizedSignal, 
        //  helix);
     },
     
@@ -312,6 +312,103 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
     function(){
         return this.step * this.stepSize;
     },
+
+    /**
+     * pass in two strands, and their corresponding
+     * indices, where the xover can be created.
+     */
+    createXover:
+    function(strand5p, s5pIdx, strand3p, s3pIdx){
+        /**
+         * Two cases.
+         * when both the strands are the same. - later.
+         * When the two strands are different.
+         *
+         */
+        var ss5p = strand5p.strandSet;
+        var ss3p = strand3p.strandSet;
+
+        //Create the xover at the 3' strand.
+        //Check if the xover is at an endpoint.
+        console.log(s3pIdx + ';' + strand3p.idx5Prime());
+        var split3pIdx = s3pIdx;
+        if(ss3p.isDrawn5to3())
+            split3pIdx = s3pIdx-1;
+        if((s3pIdx === strand3p.idx5Prime()) ||
+           (ss3p.canSplitStrand(strand3p,split3pIdx))
+          ){
+                console.log('Can do crossover due to strand3p');
+        }
+        else{
+            console.log('Cannot split strand3p');
+            return;
+        }
+
+        //Create the xover at the 5' strand.
+        //Check if the xover is at an endpoint.
+        console.log(s5pIdx + ';' + strand5p.idx3Prime());
+        var split5pIdx = s5pIdx;
+        if(!ss5p.isDrawn5to3())
+            split5pIdx = s5pIdx-1;
+        if((s5pIdx === strand5p.idx3Prime()) || 
+           (ss5p.canSplitStrand(strand5p,split3pIdx))
+          ){
+              console.log('Can do crossover due to strand3p');
+        }
+        else{
+                console.log('Cannot split strand5p');
+                return;
+        }
+        if(s5pIdx !== strand5p.idx3Prime())
+            ss5p.splitStrand(strand5p, split5pIdx);
+        if(s3pIdx !== strand3p.idx5Prime())
+            ss3p.splitStrand(strand3p, split3pIdx);
+
+        this.undoStack.execute(
+                new CreateXoverCommand(
+                    this,
+                    strand5p,
+                    s5pIdx,
+                    strand3p,
+                    s3pIdx
+                    ));
+    },
+
+});
+
+var CreateXoverCommand = Undo.Command.extend({
+    constructor: function(part, strand5p, s5pIdx, strand3p, s3pIdx){
+        this.part = part;
+        this.s5p = strand5p;
+        this.s3p = strand3p;
+        this.redo();
+    },
+    
+    getModel:
+    function(){
+    },
+
+    undo:
+    function(){
+        this.getModel();
+        this.s5p.setConnection3p(null);
+        this.s3p.setConnection5p(null);
+        this.part.setActiveVirtualHelix(this.s5p.helix);
+        this.s5p.trigger(cadnanoEvents.strandUpdateSignal);
+        this.s3p.trigger(cadnanoEvents.strandUpdateSignal);
+    },
+
+    redo:
+    function(){
+        this.getModel();
+        this.s5p.setConnection3p(this.s3p);
+        this.s3p.setConnection5p(this.s5p);
+        this.part.setActiveVirtualHelix(this.s5p.helix);
+        this.s5p.trigger(cadnanoEvents.strandUpdateSignal);
+        this.s3p.trigger(cadnanoEvents.strandUpdateSignal);
+    },
+    
+    execute: function(){},
 });
 
 var HoneyCombPart = Part.extend({

@@ -134,6 +134,11 @@ function viewHandlerKinetic(){
         this.hoverLayer.draw();
         return circle;
     }
+    
+    this.removeHover = function(){
+        this.hoverLayer.removeChildren();
+        this.hoverLayer.draw();
+    }
 
     this.init();
 };

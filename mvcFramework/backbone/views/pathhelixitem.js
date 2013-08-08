@@ -360,9 +360,7 @@ var PathHelixItem = Backbone.View.extend ({
 	    strand,
 	    this,
 	    strand.baseIdxLow,
-	    strand.baseIdxHigh,
-	    "EndPointItem",
-	    "EndPointItem"
+	    strand.baseIdxHigh
 	);
 	if(stItem.isScaf) {
 	    this.scafItemArray.push(stItem);
@@ -388,6 +386,7 @@ var PathHelixItem = Backbone.View.extend ({
         }
         return false;
     },
+
 });
 
 //the circle next to PathHelixItem

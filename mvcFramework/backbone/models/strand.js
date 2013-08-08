@@ -1,3 +1,10 @@
+/**
+ * Each strand stores a reference to two other strands - which
+ * are the cross over strands at its 3' and 5' ends. 
+ * When a xover is created, three strands need to be updated in the
+ * worst case - i.e. 3 strand objects - strandsets are automatically
+ * updated.
+ */
 var Strand = Backbone.Model.extend({
     initialize: function(){
         this.baseIdxLow = this.get('baseIdxLow');
@@ -8,6 +15,28 @@ var Strand = Backbone.Model.extend({
         this.strand3p = null;
         console.log('Created strand object');
         this.setVars();
+    },
+
+    connection3p:
+    function(){
+        return this.strand3p;
+    },
+
+    connection5p:
+    function(){
+        return this.strand5p;
+    },
+
+    idx5Prime:
+    function(){
+        if(this.isDrawn5to3()) return this.low();
+        return this.high();
+    },
+
+    idx3Prime:
+    function(){
+        if(this.isDrawn5to3()) return this.high();
+        return this.low();
     },
 
     resize: function(lowIdx, highIdx){
@@ -35,16 +64,12 @@ var Strand = Backbone.Model.extend({
     setVars:
         function(){
             if (this.isDrawn5to3()){
-                this.idx5Prime = this.lowIdx;
-                this.idx3Prime = this.highIdx;
                 this.connectionLow = this.connection5p;
                 this.connectionHigh = this.connection3p;
                 this.setConnectionLow = this.setConnection5p;
                 this.setConnectionHigh = this.setConnection3p;
             }
             else {
-                this.idx5Prime = this.highIdx;
-                this.idx3Prime = this.lowIdx;
                 this.connectionLow = this.connection3p;
                 this.connectionHigh = this.connection5p;
                 this.setConnectionLow = this.setConnection3p;
@@ -77,6 +102,15 @@ var Strand = Backbone.Model.extend({
     undoStack:
     function(){
         return this.helix.undoStack;
+    },
+
+    setConnection5p:
+    function(strand){
+        this.strand5p = strand;
+    },
+    setConnection3p:
+    function(strand){
+        this.strand3p = strand;
     },
 });
 

@@ -1,5 +1,5 @@
 var StrandItem = Backbone.View.extend({
-    initialize: function(modelStrand, phItem, xL, xR, endtypeL, endtypeR, layer) { //layer is optional
+    initialize: function(modelStrand, phItem, xL, xR, layer) { //layer is optional
 	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
 	this.layer = layer;
@@ -15,8 +15,8 @@ var StrandItem = Backbone.View.extend({
 	this.xEnd = xR;
 	this.modelStrand = modelStrand;
 
-	//Start listening to resize events.
-	//this.connectSignalsSlots();
+    //Start listening to resize events.
+    this.connectSignalsSlots();
 
 	this.alterationArray = new Array();
 	this.alterationGroupArray = new Array();
@@ -118,17 +118,17 @@ var StrandItem = Backbone.View.extend({
 	});
 
 	this.layer.add(this.group);
-	if(endtypeL === "EndPointItem") {
-	    this.endItemL = new EndPointItem(this,"L",4-(2*this.yLevel-1),true);
-	}
-	else if(endtypeL === "XoverNode") {
+    if(modelStrand.connection3p()){
 	    this.endItemL = new XoverNode(this,"L",4-(2*this.yLevel-1),true);
-	}
-	if(endtypeR === "EndPointItem") {
-	    this.endItemR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
-	}
-	else if(endtypeR === "XoverNode") {
+    }
+    else{
+	    this.endItemL = new EndPointItem(this,"L",4-(2*this.yLevel-1),true);
+    }
+    if(modelStrand.connection5p()){
 	    this.endItemR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
+	}
+    else{
+	    this.endItemR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
 	}
 	this.layer.draw();
     },
@@ -502,6 +502,8 @@ var StrandItem = Backbone.View.extend({
     connectSignalsSlots: function() {
         this.listenTo(this.modelStrand, cadnanoEvents.strandResizedSignal,
 		      this.strandResizedSlot);
+        this.listenTo(this.modelStrand, cadnanoEvents.strandUpdateSignal,
+		      this.strandUpdateSlot);
     },
     getRidOf:
     function(destroy){
@@ -522,6 +524,14 @@ var StrandItem = Backbone.View.extend({
     },
 
     strandResizedSlot: function() {
+    },
+    strandUpdateSlot:
+    function(strand){
+        //This function redraws the strand - it also
+        //changes the color of the strand if passed in
+        //as an argument.
+        //It updates the xoveritem incase an xover is created/deleted.
+        console.log('strandUpdateSlot called');
     },
 });
 

@@ -32,7 +32,6 @@ var StrandSet = Backbone.Model.extend({
 
     removeStrand:
     function(startIdx, endIdx){
-	console.log('in function removeSTrand');
         this.undoStack.execute(new CreateStrandCommand(this,startIdx,
                     endIdx, true));
     },
@@ -126,6 +125,16 @@ var StrandSet = Backbone.Model.extend({
         return false;
     },
 
+    getStrandAt: 
+        function(idx){
+            var len = this.strandList.length;
+            for(var i=0;i<len;i++){
+                var obj = this.strandList[i];
+                if(obj.low() <= idx && obj.high() >= idx)
+                        return obj;
+            }
+        },
+
     canBeResizedTo:
     function(strand, low, high){
         console.log('checking for resizing to positions:' +low + ',' + high+ ' from positions:' + strand.low() + ',' + strand.high());
@@ -185,6 +194,130 @@ var StrandSet = Backbone.Model.extend({
         return true;
     },
 
+    /**
+     * Returns a js object, containing the positions
+     * of each strand in the strand set. Each strandset
+     * contains 0--maxBaseIdx positions. At each position p
+     * there are 4 values v[0] - v[3] stored. 
+     * v[0] = helix number of 5' end of strand at index p-1.
+     * v[1] = position of 5' end of strand at index p-1.
+     * v[2] = helix number of 3' end of strand at index p+1.
+     * v[3] = position of 3' end of strand at index p+1.
+     */
+    getLegacyArray:
+    function(){
+        /**
+         * go through every index from 0 to maxbaseidx.
+         * initialize all to -1.
+         * go through every strand, and for each strand
+         * get its low,high,isdrawn5to3.
+         *
+         */
+        var ret = new Array();
+        for(var i=0;i<this.part.maxBaseIdx();i++){
+            ret[i] = [-1,-1,-1,-1];
+        }
+        if(this.isDrawn5to3()){
+            var len = this.strandList.length;
+            for(var i=0;i<len;i++){
+                var strand = this.strandList[i];
+                var low = strand.low();
+                var high = strand.high();
+                var hnum = this.helix.hID;
+                //check if there is a crossover. get the
+                //index of the l
+                if(strand.connection5p()){
+                    var strand5p = strand.connection5p();
+                    ret[low][0] = strand5p.helix;
+                    ret[low][1] = strand5p.idx3Prime();
+                }
+                ret[low][2] = hnum;
+                ret[low][3] = low+1;
+                for(var pos=low+1; pos<high; pos++){
+                    ret[pos][0] = hnum;
+                    ret[pos][1] = pos-1;
+                    ret[pos][2] = hnum;
+                    ret[pos][3] = pos+1;
+                }
+                ret[high][0] = hnum;
+                ret[high][1] = high-1;
+                if(strand.connection3p()){
+                    var strand3p = strand.connection3p();
+                    ret[high][2] = strand3p.helix;
+                    ret[high][3] = strand3p.idx5Prime();
+                }
+            }
+        }
+        else{
+            var len = this.strandList.length;
+            for(var i=0;i<len;i++){
+                var strand = this.strandList[i];
+                var low = strand.low();
+                var high = strand.high();
+                var hnum = this.helix.hID;
+                //check if there is a crossover. get the
+                //drawn from 3 to 5. The lower index will
+                //be connected to a 3p strand, and the higher
+                //index will connect from a 5p strand..
+                if(strand.connection3p()){
+                    var strand3p = strand.connection3p();
+                    ret[low][2] = strand3p.helix;
+                    ret[low][3] = strand3p.idx5Prime();
+                }
+                ret[low][0] = hnum;
+                ret[low][1] = low+1;
+                for(var pos=low+1; pos<high; pos++){
+                    ret[pos][0] = hnum;
+                    ret[pos][1] = pos+1;
+                    ret[pos][2] = hnum;
+                    ret[pos][3] = pos-1;
+                }
+                ret[high][2] = hnum;
+                ret[high][3] = high-1;
+                if(strand.connection5p()){
+                    var strand5p = strand.connection5p();
+                    ret[high][0] = strand5p.helix;
+                    ret[high][1] = strand5p.idx3Prime();
+                }
+            }
+        }
+        return ret;
+    },
+
+    /**
+     * TODO: check if the connected strands are atleast 1-2 
+     * bases long. 
+     */
+    canSplitStrand:
+    function(strand, idx){
+        var low = strand.low();
+        var high = strand.high();
+        if(idx > low+1 && idx < high-1) return true;
+        if(idx <= low+1) {
+            //check if there is a connecting strand.
+            if(strand.isDrawn5to3()){
+                if(strand.strand5p) return true;
+            }
+            else{
+                if(strand.strand3p) return true;
+            }
+            return false;
+        }
+        //The only case left is if idx >= high-1.
+        if(strand.isDrawn5to3()){
+            if(strand.strand3p) return true;
+        }
+        else{
+            if(strand.strand5p) return true;
+        }
+        return false;
+    },
+
+    splitStrand:
+    function(strand, idx){
+        this.undoStack.execute(new SplitCommand(this,strand,idx));
+    },
+
 });
 
 var CreateStrandCommand = Undo.Command.extend({
@@ -198,14 +331,13 @@ var CreateStrandCommand = Undo.Command.extend({
         this.scaffold = strandSet.scaffold;
         this.startIdx = startIdx;
         this.endIdx = endIdx;
-	console.log('value of isinverse='+isInverse);
-        if(isInverse){
-	    console.log('reversing the create strand command');
+        this.isInverse = isInverse;
+        if(this.isInverse){
             this.redo = this.delStrand;
             this.undo = this.addStrand;
         }
         else{
-	    console.log('reversing the create strand command - not');
+	        console.log('reversing the create strand command - not');
             this.undo = this.delStrand;
             this.redo = this.addStrand;
         }
@@ -220,17 +352,14 @@ var CreateStrandCommand = Undo.Command.extend({
         this.helix = this.currDoc.part().getModelHelix(this.helixId);
         if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
         else this.strandSet = this.helix.stapStrandSet;
-
+        this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.endIdx));
     },
     delStrand: 
     function(){
         //destroy the strand object.
         //The sequence of these statements is important.
-	console.log('DID I CALL DELSTRAND FUN?');
         this.getModel();
-	this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.endIdx));
-        console.log(this.startIdx + ':' + this.endIdx);
-	this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal, this.strand);
+        this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal, this.strand);
         var ret = this.strandSet.removeStrandRefs(this.strand);
         this.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
         this.strand.destroy();
@@ -259,6 +388,63 @@ var CreateStrandCommand = Undo.Command.extend({
     },
     execute:
     function(){},
+});
+
+/**
+ * The assumption is that when this command is called,
+ * the strand can be split.
+ */
+var SplitCommand = Undo.Command.extend({
+    constructor:
+    function(strandSet, strand, idx){
+        this.currDoc = strandSet.helix.part.currDoc;
+        this.helixId = strandSet.helix.id;
+        this.scaffold = strandSet.scaffold;
+        this.startIdx = strand.low();
+        this.endIdx = strand.high();
+        this.breakIdx = idx;
+        //Update the endpointitems/xovers.
+        this.redo();
+    },
+    getModel:
+    function(){
+        this.helix = this.currDoc.part().getModelHelix(this.helixId);
+        if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
+        else this.strandSet = this.helix.stapStrandSet;
+        //old strand
+        this.oS = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.endIdx));
+    },
+
+    undo:
+    function(){
+        this.getModel();
+    },
+
+    redo:
+    function(){
+        this.getModel();
+        this.strandSet.createStrand(this.startIdx, this.breakIdx);
+        this.strandSet.createStrand(this.breakIdx+1,this.endIdx);
+        this.strandLeft = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.breakIdx));
+        this.strandRight = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.breakIdx+1,this.endIdx));
+
+        if(this.strandSet.isDrawn5to3()){
+            //left strand 3' end is at idx.
+            //right strand 5' end is at idx+1.
+            //left strand takes 5' end of strand object.
+            this.strandLeft.setConnection5p(this.oS.strand5p);
+            this.strandRight.setConnection3p(this.oS.strand3p);
+        }
+        else{
+            this.strandLeft.setConnection3p(this.oS.strand3p);
+            this.strandRight.setConnection5p(this.oS.strand5p);
+        }
+        this.strandSet.removeStrand(this.startIdx,this.endIdx);
+        //TODO: someone should listen to these signals.
+        this.strandLeft.trigger(cadnanoEvents.strandUpdateSignal, this.strandLeft);
+        this.strandRight.trigger(cadnanoEvents.strandUpdateSignal, this.strandRight);
+    },
+    execute: function(){},
 });
 
 /*
