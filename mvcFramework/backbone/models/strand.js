@@ -154,6 +154,7 @@ var ResizeCommand = Undo.Command.extend({
         //This signal has been renamed from partStrandChangedSignal
         this.strand.helix.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
             this.strand.strandSet.helix);
+        this.strand.strandSet.trigger(cadnanoEvents.updateSkipInsertItemsSignal);
     },
     redo:
     function(){
@@ -171,6 +172,7 @@ var ResizeCommand = Undo.Command.extend({
         //update the path view.
         this.strand.helix.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
             this.strand.strandSet.helix);
+        this.strand.strandSet.trigger(cadnanoEvents.updateSkipInsertItemsSignal);
     },
     execute:
     function(){},

@@ -70,7 +70,6 @@ var EndPointItem = Backbone.View.extend({
 	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
 	      further.
 	    */
-	    console.log(this.superobj.phItem.options.parent.part.getDoc().getKey());
 	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18) { //holding ALT = extend
 		console.log("EXTENDING");
 		if(this.superobj.dir === "L") {
@@ -185,9 +184,6 @@ var EndPointItem = Backbone.View.extend({
         this.finalLayer.draw();
 	//redrawing the line between two enditems aka strand
 	this.parent.update();
-	if(this.dir === "L") {
-	    this.parent.updateAlteration(this.dragInit-this.counter);
-	}
 	//send out the resize signal to the model.
 	this.parent.modelStrand.resize(this.parent.xStart,
 				       this.parent.xEnd);

@@ -19,9 +19,11 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.handler.handler.add(this.buttonlayer);
 	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
 	this.handler.handler.add(this.strandlayer);
+	this.alterationlayer = new Kinetic.Layer(); //alteration layer: InsertItem, SkipItem
+	this.handler.handler.add(this.alterationlayer);
 	this.finallayer = new Kinetic.Layer(); //final layer: post-sequencing bases
 	this.handler.handler.add(this.finallayer);
-	this.templayer = new Kinetic.Layer();
+	this.templayer = new Kinetic.Layer(); //temporary layer for faster rendering
 	this.handler.handler.add(this.templayer);
 	//some things should be on the top
 	this.activeslicelayer.moveToTop();
@@ -126,6 +128,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	    this.activeslicelayer.draw();
 	    this.buttonlayer.draw();
 	    this.strandlayer.draw();
+	    this.alterationlayer.draw();
 	    this.finallayer.draw();
 	    this.pScaleFactor = this.scaleFactor;
 	}
@@ -142,6 +145,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.activeslicelayer.setScale(this.scaleFactor);
 	this.buttonlayer.setScale(this.scaleFactor);
 	this.strandlayer.setScale(this.scaleFactor);
+	this.alterationlayer.setScale(this.scaleFactor);
 	this.finallayer.setScale(this.scaleFactor);
 	this.templayer.setScale(this.scaleFactor);
     },
@@ -180,7 +184,15 @@ var PathHelixItem = Backbone.View.extend ({
     initialize: function(){
 	this.panel = this.options.parent.panel;
 	this.layer = this.options.parent.backlayer;
-	this.group = new Kinetic.Group();
+	this.group = new Kinetic.Group({
+		draggable: true,
+		dragBoundFunc: function(pos) {
+		    return {
+			x: this.getAbsolutePosition().x,
+			y: this.getAbsolutePosition().y
+		    }
+		}
+	    });
 	this.grLength = this.options.graphics.grLength;
 	this.divLength = this.options.graphics.divLength;
 	this.blkLength = this.options.graphics.blkLength;
@@ -188,9 +200,9 @@ var PathHelixItem = Backbone.View.extend ({
 	this.order = this.options.parent.phItemArray.defined.length;
 	this.scafItemArray = new Array();
 	this.stapItemArray = new Array();
-
 	this.startX = 5*this.sqLength;
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
+        this.alterationArray = new Array();
 
 	//Keeping track of all the strandItems
 	for(var i=0; i<this.grLength; i++) {
@@ -219,21 +231,27 @@ var PathHelixItem = Backbone.View.extend ({
 	this.layer.add(this.group);
 	this.connectSignalsSlots();
 	
+	var stItemImage;
+	var strandInitCounter;
+	var strandCounter;
+	var strandPCounter;
 	//mouse function: dragging on helix = new StrandItem
 	//This is for the pencil object to drag and draw.
 	this.group.superobj = this;
-	this.group.on("mousedown", function(pos) {
+	this.group.on("dragstart", function(posStart) {
 	    this.superobj.options.parent.prexoverlayer.destroyChildren();
 	    this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
 	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
 		var grLength = this.superobj.grLength;
 		var zf = this.superobj.options.parent.scaleFactor;
-		var yLevel = Math.floor(((pos.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
-		var strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
-		var strandCounter = strandInitCounter;
-		var strandPCounter = strandCounter;
-		var stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
-		this.on("mousemove", function(pos) {
+		var yLevel = Math.floor(((posStart.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
+		strandInitCounter = Math.floor(((posStart.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
+		strandCounter = strandInitCounter;
+		strandPCounter = strandCounter;
+		stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
+	    }
+	});
+	this.on("dragmove", function(pos) {
 		    if(pos.x) { //strandCounter will be NaN if this event is manually fired by stItemImage
 			strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
 			strandCounter = adjustCounter(strandCounter);
@@ -248,7 +266,7 @@ var PathHelixItem = Backbone.View.extend ({
 			return Math.min(Math.max(0,n),grLength-1);
 		    }
 		});
-		this.on("mouseup", function() {
+		this.on("dragend", function() {
 		    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
 			stItemImage.remove();
 			this.superobj.options.parent.templayer.draw();
@@ -272,7 +290,7 @@ var PathHelixItem = Backbone.View.extend ({
 		    this.off("mouseup");
 		});
 	    }
-	});
+	//});
     },
 
     getStrandItem: function(isScaf, n, indexMode) {
@@ -296,18 +314,25 @@ var PathHelixItem = Backbone.View.extend ({
 	}
     },
 
-    updateStartY: function() {this.startY = 5*this.sqLength+4*this.order*this.sqLength;},
-    updateStrandY: function() {
+    updateY: function() {
+	var oldY = this.startY;
+	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
 	for(var i=0; i<this.scafItemArray.length; i++) {
 	    this.scafItemArray[i].updateY();
 	}
 	for(var i=0; i<this.stapItemArray.length; i++) {
 	    this.stapItemArray[i].updateY();
 	}
+        for(var i=0; i<this.grLength; i++) {
+	    if(alterationArray[i]) {
+		var group = this.alterationArray[i].skipInsertGroup;
+		group.setY(group.getY()+this.startY-oldY);
+	    }
+        }
     },
 
     redraw: function() {
-	this.updateStartY();
+	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
 	this.grLength = this.blkLength*this.divLength*this.options.parent.part.getStep();
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
@@ -352,6 +377,12 @@ var PathHelixItem = Backbone.View.extend ({
                 cadnanoEvents.strandSetStrandRemovedSignal,
                 this.strandRemovedSlot
                 );
+    	this.listenTo(this.model.scafStrandSet,
+		cadnanoEvents.updateSkipInsertItemsSignal,
+		this.updateSkipInsertItemsSlot);
+    	this.listenTo(this.model.stapStrandSet,
+		cadnanoEvents.updateSkipInsertItemsSignal,
+		this.updateSkipInsertItemsSlot);
     },
 
     strandAddedSlot: function(strand, id) {
@@ -385,6 +416,36 @@ var PathHelixItem = Backbone.View.extend ({
             }
         }
         return false;
+    },
+ 
+    /**
+	Redraw the skip items based on whether or not a
+	strand is present.
+    */
+    updateSkipInsertItemsSlot: function(){
+	for(var i=0; i<this.grLength; i++) {
+	    if(this.alterationArray[i]) { //has insert/skip in the position
+		if(this.getStrandItem(true, i)) { //if scaffold strand exists
+		    if(this.alterationArray[i] instanceof InsertItem) {
+			this.alterationArray[i].scafGroup.triangle.setStroke(this.getStrandItem(true, i).strandColor);
+		    }
+		    this.alterationArray[i].scafGroup.show();
+		}
+		else {
+		    this.alterationArray[i].scafGroup.hide();
+		}
+		if(this.getStrandItem(false, i)) { //if staple strand exists
+		    if(this.alterationArray[i] instanceof InsertItem) {
+			this.alterationArray[i].stapGroup.triangle.setStroke(this.getStrandItem(false, i).strandColor);
+		    }
+		    this.alterationArray[i].stapGroup.show();
+		}
+		else {
+		    this.alterationArray[i].stapGroup.hide();
+		}
+	    }
+	}
+	this.options.parent.alterationlayer.draw();
     },
 
 });

@@ -10,16 +10,12 @@ var StrandItem = Backbone.View.extend({
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;
-	this.strandColor = this.parent.options.parent.paintcolor;
 	this.xStart = xL;
 	this.xEnd = xR;
 	this.modelStrand = modelStrand;
-
-    //Start listening to resize events.
-    this.connectSignalsSlots();
-
-	this.alterationArray = new Array();
-	this.alterationGroupArray = new Array();
+	
+	//Start listening to resize events.
+	this.connectSignalsSlots();
 
 	//see explanation in EndPointItem.js; the implementation of these two classes share many similarities
         this.tempLayer = this.parent.options.parent.templayer;
@@ -46,7 +42,12 @@ var StrandItem = Backbone.View.extend({
 	else {
 	    this.yLevel = 1;
 	}
-	//this.yLevel = this.modelStrand.helix.isOddParity();
+	if(this.isScaf) {
+	    this.strandColor = colours.bluestroke;
+	}
+	else {
+	    this.strandColor = this.generateRandomColor();
+	}
 
 	this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
 	this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
@@ -118,16 +119,16 @@ var StrandItem = Backbone.View.extend({
 	});
 
 	this.layer.add(this.group);
-    if(modelStrand.connection3p()){
+	if(modelStrand.connection3p()) {
 	    this.endItemL = new XoverNode(this,"L",4-(2*this.yLevel-1),true);
-    }
-    else{
+	}
+	else {
 	    this.endItemL = new EndPointItem(this,"L",4-(2*this.yLevel-1),true);
-    }
-    if(modelStrand.connection5p()){
+	}
+	if(modelStrand.connection5p()) {
 	    this.endItemR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
 	}
-    else{
+	else {
 	    this.endItemR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
 	}
 	this.layer.draw();
@@ -159,9 +160,6 @@ var StrandItem = Backbone.View.extend({
 	this.finalLayer.draw();
 	this.connection.setY(this.yCoord-1);
 	this.invisConnection.setY(this.yCoord-this.sqLength/2);
-        for(var i=0; i<this.alterationGroupArray.length; i++) {
-	    this.alterationGroupArray[i].setY(this.alterationGroupArray[i].getY()+diff);
-        }
 	this.endItemL.updateY();
 	this.endItemR.updateY();
     },
@@ -183,8 +181,8 @@ var StrandItem = Backbone.View.extend({
 	this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	this.dragCounter = this.dragCounterInit;
 	this.pDragCounter = this.dragCounter;
-    this.minMaxIndices = this.modelStrand.getLowHighIndices();
-    console.log(this.minMaxIndices);
+	this.minMaxIndices = this.modelStrand.getLowHighIndices();
+	console.log(this.minMaxIndices);
 
 	//red box again
 	this.redBox = new Kinetic.Rect({
@@ -242,14 +240,9 @@ var StrandItem = Backbone.View.extend({
 	this.xStart += diff;
 	this.xEnd += diff;
 	this.update();
-	//moving the inserts and skips
-	for(var i=0; i<this.alterationGroupArray.length; i++) {
-	    this.alterationGroupArray[i].setX(this.alterationGroupArray[i].getX()+diff*this.sqLength);
-	}
-    //send out the resize signal to the model.
-    this.modelStrand.resize(this.xStart,
-         this.xEnd);
-
+	//send out the resize signal to the model.
+	this.modelStrand.resize(this.xStart,
+				this.xEnd);
 	//redraw enditems as well as updating their values
 	this.endItemL.counter += diff;
 	this.endItemL.update();
@@ -301,21 +294,22 @@ var StrandItem = Backbone.View.extend({
     },
 
     insertBase: function(counter) {
-	if(!this.alterationArray[counter-this.xStart]) {
-	    var insert = new InsertItem(this,counter-this.xStart);
+	if(!this.parent.alterationArray[counter]) {
+	    var insert = new InsertItem(this.parent,counter);
 	    this.finalLayer.destroyChildren();
 	    this.finalLayer.draw();
 	}
     },
 
     skipBase: function(counter) {
-	if(!this.alterationArray[counter-this.xStart]) {
-	    var skip = new SkipItem(this,counter-this.xStart);
+	if(!this.parent.alterationArray[counter-this.xStart]) {
+	    var skip = new SkipItem(this,counter);
 	    this.finalLayer.destroyChildren();
 	    this.finalLayer.draw();
 	}
     },
 
+    /*
     updateAlteration: function(n) {
 	var copyArray = new Array();
 	if(n !== 0) {
@@ -333,6 +327,7 @@ var StrandItem = Backbone.View.extend({
 	    this.alterationArray = copyArray;
 	}
     },
+    */
 
     paintStrand: function() {
 	var colour = this.parent.options.parent.paintcolor;
@@ -375,7 +370,7 @@ var StrandItem = Backbone.View.extend({
 	//sequencing goes 5' -> 3'
 	while(seqIndex < seq.length && strandCounter <= strandLen) {
 	    if(this.endItemL.prime === 5) {
-		if(!this.alterationArray[strandCounter]) {
+		if(!this.parent.alterationArray[strandCounter+this.xStart]) {
 		    var text = new Kinetic.Text({
 			x: this.parent.startX+(this.xStart+strandCounter+0.5)*this.sqLength,
 			y: this.yCoord-(2*this.yLevel-1)/4*(this.sqLength+6),
@@ -392,10 +387,10 @@ var StrandItem = Backbone.View.extend({
 		    seqIndex++;
 		    strandCounter++;
 		}
-		else if(this.alterationArray[strandCounter].extraBases === -1) { //skip
+		else if(this.parent.alterationArray[strandCounter+this.xStart] === -1) { //skip
 		    strandCounter++;
 		}
-		else if(this.alterationArray[strandCounter].extraBases >= 1) { //insert
+		else if(this.parent.alterationArray[strandCounter+this.xStart] >= 1) { //insert
 		    //normal base pair comes first
                     var text = new Kinetic.Text({
 			x: this.parent.startX+(this.xStart+strandCounter+0.5)*this.sqLength,
@@ -412,7 +407,7 @@ var StrandItem = Backbone.View.extend({
 		    layer.add(text);
 		    seqIndex++;
 		    //the extras
-		    var additionalBase = this.alterationArray[strandCounter].extraBases;
+		    var additionalBase = this.parent.alterationArray[strandCounter+this.xStart];
 		    var additionalText = new Kinetic.Text({
 			x: this.parent.startX+(this.xStart+strandCounter+0.75)*this.sqLength,
 			y: this.yCoord+(2*this.yLevel-1)/4*(5*this.sqLength),
@@ -434,7 +429,7 @@ var StrandItem = Backbone.View.extend({
 		}
 	    }
 	    else {
-                if(!this.alterationArray[strandLen-strandCounter]) {
+                if(!this.parent.alterationArray[this.xEnd-strandCounter]) {
                     var text = new Kinetic.Text({
 			x: this.parent.startX+(this.xEnd-strandCounter+0.5)*this.sqLength,
 			y: this.yCoord-(2*this.yLevel-1)/4*(this.sqLength+6),
@@ -451,12 +446,12 @@ var StrandItem = Backbone.View.extend({
                     seqIndex++;
                     strandCounter++;
 		}
-                else if(this.alterationArray[strandLen-strandCounter].extraBases === -1) { //skip
+                else if(this.parent.alterationArray[this.xEnd-strandCounter] === -1) { //skip
                     strandCounter++;
 		}
-		else if(this.alterationArray[strandLen-strandCounter].extraBases >= 1) { //insert
+		else if(this.parent.alterationArray[this.xEnd-strandCounter] >= 1) { //insert
 		    //the extras
-		    var additionalBase = this.alterationArray[strandLen-strandCounter].extraBases;
+		    var additionalBase = this.parent.alterationArray[this.xEnd-strandCounter];
 		    var additionalText = new Kinetic.Text({
 			x: this.parent.startX+(this.xEnd-strandCounter+0.75)*this.sqLength,
 			y: this.yCoord+(2*this.yLevel-1)/4*(5*this.sqLength),
@@ -533,66 +528,185 @@ var StrandItem = Backbone.View.extend({
         //It updates the xoveritem incase an xover is created/deleted.
         console.log('strandUpdateSlot called');
     },
+
+    generateRandomColor: function() {
+	//color is generated as HSV then converted to RGB
+	//returns string of form #XXXXXX
+	var colorH = Math.floor(360*Math.random());
+	//var colorS = 0.5+0.5*Math.random();
+	var colorV = 0.6+0.2*Math.random();
+	var colorS = 1;
+
+	var colorC = colorS*colorV;
+	var colorX = colorC*(1-Math.abs((colorH/60)%2-1));
+	var colorRGB = new Array();
+	if(colorH < 60) {colorRGB = [colorC,colorX,0];}
+	else if(colorH < 120) {colorRGB = [colorX,colorC,0];}
+	else if(colorH < 180) {colorRGB = [0,colorC,colorX];}
+	else if(colorH < 240) {colorRGB = [0,colorX,colorC];}
+	else if(colorH < 300) {colorRGB = [colorX,0,colorC];}
+	else {colorRGB = [colorC,0,colorX];}
+	for(var i=0; i<3; i++) {
+	    colorRGB[i] += (colorV-colorC);
+	    colorRGB[i] = Math.floor(255.99*colorRGB[i]);
+	}
+	console.log(colorRGB);
+	var colorArrayHex = new Array();
+	colorArrayHex[0] = (colorRGB[0]).toString(16);
+	if(colorRGB[0] < 16) {colorArrayHex[0] = "0"+colorArrayHex[0];}
+	colorArrayHex[1] = (colorRGB[1]).toString(16);
+	if(colorRGB[1] < 16) {colorArrayHex[1] = "0"+colorArrayHex[1];}
+	colorArrayHex[2] = (colorRGB[2]).toString(16);
+	if(colorRGB[2] < 16) {colorArrayHex[2] = "0"+colorArrayHex[2];}
+	return "#"+colorArrayHex[0]+colorArrayHex[1]+colorArrayHex[2];
+    },
 });
 
 var InsertItem = Backbone.View.extend({
-    initialize: function(strand, loc) {
+    initialize: function(phItem, loc) {
 	this.position = loc;
-        this.parent = strand;
-        this.startX = this.parent.parent.startX;
-        this.yCoord = this.parent.yCoord;
-        this.sqLength = this.parent.sqLength;
-        this.extraBases = 1;
+        this.parent = phItem;
+	this.extraBase = 1;
+	//graphic variables
+	this.sqLength = this.parent.sqLength;
+	this.startX = this.parent.startX;
+        this.yCoordTop = this.parent.startY+0.5*this.sqLength;
+        this.yCoordBot = this.parent.startY+1.5*this.sqLength;
 
+	//top and bottom triangle
+	var triangleTop = new Kinetic.Polygon({
+            points: [this.startX+(this.position+0.7)*this.sqLength, this.yCoordTop-1.5,
+		     this.startX+(this.position+0.3)*this.sqLength, this.yCoordTop-this.sqLength,
+		     this.startX+(this.position+1.1)*this.sqLength, this.yCoordTop-this.sqLength
+		     ],
+	    fill: "transparent",
+	    stroke: "#000000",
+	    strokeWidth: 2
+        });
+	var textTop = new Kinetic.Text({
+	    x: this.startX+(this.position+0.7)*this.sqLength,
+	    y: this.yCoordTop-this.sqLength*2/3,
+	    text: this.extraBase,
+	    fontSize: this.sqLength*0.5,
+	    fontFamily: "Calibri",
+	    fill: "#000000",
+	});
+	textTop.setOffset({x: textTop.getWidth()/2, y: textTop.getHeight()/2});
+	var triangleBot = new Kinetic.Polygon({
+            points: [this.startX+(this.position+0.7)*this.sqLength, this.yCoordBot+1.5,
+		     this.startX+(this.position+0.3)*this.sqLength, this.yCoordBot+this.sqLength,
+		     this.startX+(this.position+1.1)*this.sqLength, this.yCoordBot+this.sqLength
+		     ],
+	    fill: "transparent",
+	    stroke: "#000000",
+	    strokeWidth: 2
+        });
+	var textBot = new Kinetic.Text({
+	    x: this.startX+(this.position+0.7)*this.sqLength,
+	    y: this.yCoordBot+this.sqLength*2/3,
+	    text: this.extraBase,
+	    fontSize: this.sqLength*0.5,
+	    fontFamily: "Calibri",
+	    fill: "#000000",
+	});
+	textBot.setOffset({x: textBot.getWidth()/2, y: textBot.getHeight()/2});
+
+	//grouping
+	this.skipInsertGroup = new Kinetic.Group();
+	this.scafGroup = new Kinetic.Group();
+	this.stapGroup = new Kinetic.Group();
+	this.skipInsertGroup.add(this.scafGroup);
+	this.skipInsertGroup.add(this.stapGroup);
+	if(this.parent.options.model.hID%2) { //odd parity
+	    this.scafGroup.add(triangleBot);
+	    this.scafGroup.add(textBot);
+	    this.stapGroup.add(triangleTop);
+	    this.stapGroup.add(textTop);
+	    this.scafGroup.triangle = triangleBot;
+	    this.scafGroup.text = textBot;
+	    this.stapGroup.triangle = triangleTop;
+	    this.stapGroup.text = textTop;
+	}
+	else { //even parity
+	    this.scafGroup.add(triangleTop);
+	    this.scafGroup.add(textTop);
+	    this.stapGroup.add(triangleBot);
+	    this.stapGroup.add(textBot);
+	    this.scafGroup.triangle = triangleTop;
+	    this.scafGroup.text = textTop;
+	    this.stapGroup.triangle = triangleBot;
+	    this.stapGroup.text = textBot;
+	}
+	this.skipInsertGroup.superobj = this;
+	this.skipInsertGroup.on("click", function() {
+	    var newExtra = prompt("Number of insertions","");
+	    if(newExtra !== null) {
+		var nE = parseInt(newExtra,10);
+		if(nE > 0) {
+		    this.superobj.extraBase = nE;
+		    textTop.setText(nE);
+		    textBot.setText(nE);
+		}
+	    }
+	});
+	this.parent.options.parent.alterationlayer.add(this.skipInsertGroup);
 	this.parent.alterationArray[this.position] = this;
-	var insertArrow = new Kinetic.Group();
-	var counter = this.position+this.parent.xStart;
+	this.parent.updateSkipInsertItemsSlot();
+    },
+
+	/*
+	this.yLevel = this.strand.yLevel;
+        this.yCoord = this.strand.yCoord;
+        this.startX = this.parent.startX;
+        this.sqLength = this.parent.sqLength;
+	this.parent.alterationArray[this.position] = 1;
+	this.skipInsertGroup = new Kinetic.Group();
 	var polypts;
-	if(this.parent.yLevel === 0) {
-	    polypts = [this.startX+(counter+0.7)*this.sqLength, this.yCoord-1.5,
-		       this.startX+(counter+0.3)*this.sqLength, this.yCoord-this.sqLength,
-		       this.startX+(counter+1.1)*this.sqLength, this.yCoord-this.sqLength
+	if(this.yLevel === 0) {
+	    polypts = [this.startX+(this.position+0.7)*this.sqLength, this.yCoord-1.5,
+		       this.startX+(this.position+0.3)*this.sqLength, this.yCoord-this.sqLength,
+		       this.startX+(this.position+1.1)*this.sqLength, this.yCoord-this.sqLength
 		       ];
 	}
 	else {
-	    polypts = [this.startX+(counter+0.7)*this.sqLength, this.yCoord+1.5,
-		       this.startX+(counter+0.3)*this.sqLength, this.yCoord+this.sqLength,
-		       this.startX+(counter+1.1)*this.sqLength, this.yCoord+this.sqLength
+	    polypts = [this.startX+(this.position+0.7)*this.sqLength, this.yCoord+1.5,
+		       this.startX+(this.position+0.3)*this.sqLength, this.yCoord+this.sqLength,
+		       this.startX+(this.position+1.1)*this.sqLength, this.yCoord+this.sqLength
 		       ];
 	}
 	var triangle = new Kinetic.Polygon({
             points: polypts,
 	    fill: "transparent",
-	    stroke: this.parent.strandColor,
+	    stroke: this.strand.strandColor,
 	    strokeWidth: 2
         });
 	var text = new Kinetic.Text({
-	    x: this.startX+(counter+0.7)*this.sqLength,
-	    y: this.yCoord+(2*this.parent.yLevel-1)*this.sqLength*2/3,
-	    text: this.extraBases,
+	    x: this.startX+(this.position+0.7)*this.sqLength,
+	    y: this.yCoord+(2*this.yLevel-1)*this.sqLength*2/3,
+	    text: "1",
 	    fontSize: this.sqLength*0.5,
 	    fontFamily: "Calibri",
 	    fill: "#000000",
 	});
 	text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
-	insertArrow.superobj = this;
-	insertArrow.on("click", function() {
+	this.skipInsertGroup.superobj = this;
+	this.skipInsertGroup.on("click", function() {
 	    var newExtra = prompt("Number of insertions","");
 	    if(newExtra !== null) {
 		var nE = parseInt(newExtra,10);
 		if(nE > 0) {
-		    this.superobj.extraBases = nE;
-		    text.setText(nE);
-		    this.superobj.parent.layer.draw();
+		    this.superobj.parent.alterationArray[this.superobj.position] = nE;
+		    text.setText(nE.toString());
+		    this.superobj.strand.layer.draw();
 		}
 	    }
 	});
-	insertArrow.add(triangle);
-	insertArrow.add(text);
-	this.parent.layer.add(insertArrow);
-	this.parent.alterationGroupArray.push(insertArrow);
-	this.parent.layer.draw();
-    },
+	this.skipInsertGroup.add(triangle);
+	this.skipInsertGroup.add(text);
+	this.strand.layer.add(this.skipInsertGroup);
+	this.strand.layer.draw();
+	this.parent.alterationItemArray.push(this);
+	*/
 });
 
 var SkipItem = Backbone.View.extend({
@@ -698,10 +812,10 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 	    this.group.add(this.endP2);
 	    this.group.superobj = this;
 	    this.group.on("mousemove", function(pos) {
-		    this.superobj.parent.group.fire("mousemove");
+		    this.superobj.parent.group.fire("dragmove");
 	    });
 	    this.group.on("mouseup", function() {
-		this.superobj.parent.group.fire("mouseup");
+		this.superobj.parent.group.fire("dragend");
 	    });
 	}
 	this.layer.draw();

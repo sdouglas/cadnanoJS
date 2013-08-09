@@ -507,6 +507,10 @@ var HoneyCombPart = Part.extend({
             coord.col = -1;
             coord.row = -1;
 	}
+	if(coord.col >= this.getCols() || coord.row >= this.getRows()) {
+            coord.col = -1;
+            coord.row = -1;
+	}
 	/*
 	  else { //square mode - this part of search function is rather straightforward
 	  var x = Math.floor((xPos-45-r*zoomfactor+panel.scrollLeft)/(2*r*zoomfactor));

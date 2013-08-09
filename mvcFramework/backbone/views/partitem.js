@@ -44,6 +44,7 @@ var PartItem = Backbone.View.extend({
 
 var SlicePartItem = PartItem.extend({
     initialize: function(){
+	this.isDragging = false;
 	this.zoomFactor = 1;
         this.part = this.options.part;
         this._super({
@@ -69,6 +70,9 @@ var SlicePartItem = PartItem.extend({
             collection: this.options.part.getVHSet(),
         });
 
+	this.helixInstanceList = new Array();
+	this.dontClickHelix = false;
+
         //Create the text item layer.
         
         //console.log(this.el);
@@ -77,6 +81,39 @@ var SlicePartItem = PartItem.extend({
     
     render: function(){
         this.handler.render();
+    },
+
+    events: {
+	"mousedown" : "onmousedown",
+	"mousemove" : "onmousemove",
+	"mouseup" : "onmouseup"
+    },
+
+    onmousedown: function() {
+	this.helixInstanceList.length = 0;
+	this.isDragging = true;
+    },
+
+    onmousemove: function(e) {
+	if(this.isDragging) {
+	    var latestPos = this.part.latticePositionXYToCoord(e.pageX, e.pageY, this.zoomFactor);
+	    if(latestPos.row === -1) return;
+	    for(var i=0; i<this.helixInstanceList.length; i++) {
+		if(latestPos.row === this.helixInstanceList[i].row && latestPos.col === this.helixInstanceList[i].col) {
+		    return;
+		}
+	    }
+	    this.helixInstanceList.push(latestPos);
+	    this.emptyItemSet.onMouseClick(e); //instancing the helix item
+	}
+    },
+
+    onmouseup: function() {
+	console.log(this.helixInstanceList);
+	if(this.helixInstanceList.length > 0) { //make sure it doesn't interfere with normal clicking
+	    this.dontClickHelix = true; //last helix would also trigger onMouseClick on helix item itself, we don't want double
+	}
+	this.isDragging = false;
     },
 
     setLattice: function(newCoords){

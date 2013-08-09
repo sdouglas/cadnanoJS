@@ -319,7 +319,6 @@ var XoverItem = Backbone.View.extend({
 	var strand3 = this.node3.parent;
 	if(this.node3.dir === "L") {
 	    strand3.xStart += diff;
-	    strand3.updateAlteration(-diff);
 	}
 	else {
 	    strand3.xEnd += diff;
@@ -328,7 +327,6 @@ var XoverItem = Backbone.View.extend({
 	var strand5 = this.node5.parent;
 	if(this.node5.dir === "L") {
 	    strand5.xStart += diff;
-	    strand5.updateAlteration(-diff);
 	}
 	else {
 	    strand5.xEnd += diff;

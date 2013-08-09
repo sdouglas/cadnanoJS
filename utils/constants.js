@@ -32,6 +32,7 @@ var cadnanoEvents = {
     partStrandChangedSignal: 'partStrandChangedSignal',
     strandSetStrandRemovedSignal: 'strandSetStrandRemovedSignal',
     strandUpdateSignal: 'strandUpdateSignal',
+    updateSkipInsertItemsSignal: 'updateSkipInsertItemsSignal',
 };
 
 
