@@ -50,24 +50,6 @@ var PathHelixSetItem = Backbone.View.extend({
 	    parent: this,
 	    graphics: this.graphicsSettings
 	});
-
-	/*
-	this.bgLayer = new Kinetic.Layer({id: "bgLayer"});
-	this.bgRect = new Kinetic.Rect({
-	    x: 0,
-	    y: 0,
-	    width: this.handler.handler.getWidth(),
-	    height: this.handler.handler.getHeight(),
-	    opacity: 0,
-	    id: "bgRect"
-	});
-	this.bgLayer.add(this.bgRect);
-	this.handler.handler.add(this.bgLayer);
-	this.bgLayer.moveToBottom();
-	this.handler.handler.on("mousedown", function(pos) {
-	    //alert("test");
-	});
-	*/
     },
     events: {
         "mousemove" : "onMouseMove",
@@ -231,10 +213,13 @@ var PathHelixItem = Backbone.View.extend ({
 	this.layer.add(this.group);
 	this.connectSignalsSlots();
 	
-	var stItemImage;
+	var self = this;
+	var zf;
+	var yLevel;
 	var strandInitCounter;
 	var strandCounter;
 	var strandPCounter;
+	var stItemImage;
 	//mouse function: dragging on helix = new StrandItem
 	//This is for the pencil object to drag and draw.
 	this.group.superobj = this;
@@ -242,55 +227,58 @@ var PathHelixItem = Backbone.View.extend ({
 	    this.superobj.options.parent.prexoverlayer.destroyChildren();
 	    this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
 	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
-		var grLength = this.superobj.grLength;
-		var zf = this.superobj.options.parent.scaleFactor;
-		var yLevel = Math.floor(((posStart.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
+		zf = this.superobj.options.parent.scaleFactor;
+		yLevel = Math.floor(((posStart.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
 		strandInitCounter = Math.floor(((posStart.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
 		strandCounter = strandInitCounter;
 		strandPCounter = strandCounter;
 		stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
 	    }
 	});
-	this.on("dragmove", function(pos) {
-		    if(pos.x) { //strandCounter will be NaN if this event is manually fired by stItemImage
-			strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
-			strandCounter = adjustCounter(strandCounter);
-		    }
-		    if(strandCounter !== strandPCounter) {
-			stItemImage.remove();
-			stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
-			strandPCounter = strandCounter;
-		    }
-		    function adjustCounter(n) {
-			//TODO: fix it to move only to a specified length - minMaxindices.
-			return Math.min(Math.max(0,n),grLength-1);
-		    }
-		});
-		this.on("dragend", function() {
-		    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
-			stItemImage.remove();
-			this.superobj.options.parent.templayer.draw();
-			//Call model with create strand.
-			//Testing with just scaf strand set.
-			var left = Math.min(strandCounter,strandInitCounter);
-			var right = Math.max(strandCounter,strandInitCounter);
-			var strandSet;
-			if(yLevel^this.superobj.model.isEvenParity()) {
-			    strandSet = this.superobj.options.model.scafStrandSet;
-			}
-			else {
-			    strandSet = this.superobj.options.model.stapStrandSet;
-			}
-			if(!strandSet.hasStrandAt(left,right)) {
-			    console.log('creating strand at :' + left + '::' + right);
-			    strandSet.createStrand(left,right);
-			}
-		    }
-		    this.off("mousemove");
-		    this.off("mouseup");
-		});
+	this.group.on("dragmove", function(pos) {
+	    zf = this.superobj.options.parent.scaleFactor;
+	    strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
+	    strandCounter = adjustCounter(strandCounter);
+	    if(strandCounter !== strandPCounter) {
+		stItemImage.remove();
+		stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
+		strandPCounter = strandCounter;
 	    }
-	//});
+	    function adjustCounter(n) {
+		var strandSet;
+		if(yLevel^self.options.model.isEvenParity()) {
+		    strandSet = self.options.model.scafStrandSet;
+		}
+		else {
+		    strandSet = self.options.model.stapStrandSet;
+		}
+		minMaxIndices = strandSet.getLowHighIndices(stItemImage); //a hack as the param is normally a strand (model object)
+	        //TODO: fix it to move only to a specified length - minMaxindices.
+		return Math.min(Math.max(n,minMaxIndices[0]),minMaxIndices[1]);
+	    }
+	});
+	this.group.on("dragend", function() {
+	    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
+		stItemImage.remove();
+		this.superobj.options.parent.templayer.draw();
+		//Call model with create strand.
+		var left = Math.min(strandCounter,strandInitCounter);
+		var right = Math.max(strandCounter,strandInitCounter);
+		var strandSet;
+		if(yLevel^this.superobj.model.isEvenParity()) {
+		    strandSet = this.superobj.options.model.scafStrandSet;
+		}
+		else {
+		    strandSet = this.superobj.options.model.stapStrandSet;
+		}
+		if(!strandSet.hasStrandAt(left,right)) {
+		    console.log('creating strand at :' + left + '::' + right);
+		    strandSet.createStrand(left,right);
+		}
+	    }
+	    this.off("mousemove");
+	    this.off("mouseup");
+	});
     },
 
     getStrandItem: function(isScaf, n, indexMode) {
@@ -425,6 +413,8 @@ var PathHelixItem = Backbone.View.extend ({
     updateSkipInsertItemsSlot: function(){
 	for(var i=0; i<this.grLength; i++) {
 	    if(this.alterationArray[i]) { //has insert/skip in the position
+		var scafHidden = false;
+		var stapHidden = false;
 		if(this.getStrandItem(true, i)) { //if scaffold strand exists
 		    if(this.alterationArray[i] instanceof InsertItem) {
 			this.alterationArray[i].scafGroup.triangle.setStroke(this.getStrandItem(true, i).strandColor);
@@ -433,6 +423,7 @@ var PathHelixItem = Backbone.View.extend ({
 		}
 		else {
 		    this.alterationArray[i].scafGroup.hide();
+		    scafHidden = true;
 		}
 		if(this.getStrandItem(false, i)) { //if staple strand exists
 		    if(this.alterationArray[i] instanceof InsertItem) {
@@ -442,6 +433,11 @@ var PathHelixItem = Backbone.View.extend ({
 		}
 		else {
 		    this.alterationArray[i].stapGroup.hide();
+		    stapHidden = true;
+		}
+		if(scafHidden && stapHidden) { //remove if neither strand exists
+		    this.alterationArray[i].skipInsertGroup.destroy();
+		    this.alterationArray[i] = undefined;
 		}
 	    }
 	}
@@ -568,8 +564,19 @@ var PathBaseChangeItem = Backbone.View.extend({
 		});
 	    removeBase.on("click",function() {
 		    if(part.getStep() > 0) {
-			part.setStep(part.getStep()-1);
-			parent.redrawBack();			
+			var canShrink = true;
+			var low = baseperblk*(part.getStep()-1);
+			var high = baseperblk*part.getStep();
+			for(var i=0; i<parent.phItemArray.defined.length; i++) {
+			    var vh = parent.phItemArray[parent.phItemArray.defined[i]].options.model;
+			    if(vh.scafStrandSet.hasStrandAt(low,high) || vh.stapStrandSet.hasStrandAt(low,high)) {
+				canShrink = false;
+			    }
+			}
+			if(canShrink) {
+			    part.setStep(part.getStep()-1);
+			    parent.redrawBack();
+			}			
 		    }
 		});
 	    layer.add(removeBase);

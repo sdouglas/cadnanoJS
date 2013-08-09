@@ -55,6 +55,13 @@ var DocumentController = Backbone.View.extend({
 	this.currDoc.pathTool = tool;
     },
 
+    activesliceFirst: function() {
+	this.currDoc.moveSliceItemToFirst();
+    },
+
+    activesliceLast: function() {
+	this.currDoc.moveSliceItemToLast();
+    },
 });
 
 function main(){

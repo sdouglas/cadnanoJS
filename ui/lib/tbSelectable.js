@@ -9,6 +9,7 @@ tbSelectArray[5] = false;
 //this function is called when a checkbox is clicked
 function tbArrayChange(n) {
     tbSelectArray[n] = !tbSelectArray[n];
+    document.getElementById("tb"+n).checked = tbSelectArray[n];
     if(n===2 && tbSelectArray[2]) { //checking handler unchecks endpoint,xover,strand
 	tbSelectArray[3] = false;
 	document.getElementById("tb3").checked = false;

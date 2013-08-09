@@ -108,10 +108,56 @@ var DocumentItem = Backbone.View.extend({
 
     keydown: function(e) {
 	this.currDoc.setKey(e.keyCode);
-	console.log(e.keyCode);
+	//console.log(e.keyCode);
     },
 
     keyup: function(e){
+	if(e.keyCode === 67) { //C
+	    tbArrayChange(0); //enable/disable scaffold selection
+	}
+	else if(e.keyCode === 84) { //T
+	    tbArrayChange(1); //enable/disable staple selection
+	}
+	else if(e.keyCode === 72) { //H
+	    tbArrayChange(2); //enable/disable handler selection
+	}
+	else if(e.keyCode === 69) { //E
+	    tbArrayChange(3); //enable/disable endpoint selection
+	}
+	else if(e.keyCode === 88) { //X
+	    tbArrayChange(4); //enable/disable xover selection
+	}
+	else if(e.keyCode === 68) { //D
+	    tbArrayChange(5); //enable/disable strand selection
+	}
+	else if(e.keyCode === 86) { //V
+	    this.currDoc.pathTool = "select";
+	    document.getElementById("pb0").checked = true;
+	}
+	else if(e.keyCode === 78) { //N
+	    this.currDoc.pathTool = "pencil";
+	    document.getElementById("pb1").checked = true;
+	}
+	else if(e.keyCode === 66) { //B
+	    this.currDoc.pathTool = "break";
+	    document.getElementById("pb2").checked = true;
+	}
+	else if(e.keyCode === 73) { //I
+	    this.currDoc.pathTool = "insert";
+	    document.getElementById("pb3").checked = true;
+	}
+	else if(e.keyCode === 83) { //S
+	    this.currDoc.pathTool = "skip";
+	    document.getElementById("pb4").checked = true;
+	}
+	else if(e.keyCode === 80) { //P
+	    this.currDoc.pathTool = "paint";
+	    document.getElementById("pb5").checked = true;
+	}
+	else if(e.keyCode === 65) { //A
+	    this.currDoc.pathTool = "seq";
+	    document.getElementById("pb6").checked = true;
+	}
        this.currDoc.setKey(null);
     },
 

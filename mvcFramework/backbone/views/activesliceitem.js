@@ -56,15 +56,16 @@ var ActiveSliceItem = Backbone.View.extend({
 		this.superobj.pCounter = this.superobj.counter;
 		this.superobj.update();
 		//throw out signals here
-        //change the model object.
-        this.superobj.options.parent.part.setActiveBaseIndex(this.superobj.counter);
+		//change the model object.
+		this.superobj.options.parent.part.setActiveBaseIndex(this.superobj.counter);
 	    }
 	});
 
+	this.listenTo(this.options.parent.part.currDoc,cadnanoEvents.moveSliceItemToFirstSignal,this.moveSliceItemToFirstSlot);
+	this.listenTo(this.options.parent.part.currDoc,cadnanoEvents.moveSliceItemToLastSignal,this.moveSliceItemToLastSlot);
 	this.group.add(this.rect);
 	this.group.add(this.counterText);
 	this.layer.add(this.group);
-	//console.log(this.options.parent.el.scrollTop); //if one day we need to account for scrolling
     },
 
     update: function() { //puts group in correct location
@@ -72,6 +73,24 @@ var ActiveSliceItem = Backbone.View.extend({
 	this.counterText.setOffset({x: this.counterText.getWidth()/2});
 	this.group.setX((this.counter-this.initcounter)*this.sqLength);
 	this.layer.draw();
+    },
+
+    moveSliceItemToFirstSlot: function() {
+	if(this.options.parent.phItemArray.defined.length > 0) {
+	    this.counter = 0;
+	    this.pCounter = this.counter;
+	    this.update();
+	    this.options.parent.part.setActiveBaseIndex(this.superobj.counter);
+	}
+    },
+
+    moveSliceItemToLastSlot: function() {
+	if(this.options.parent.phItemArray.defined.length > 0) {
+	    this.counter = this.divLength*this.blkLength*this.options.parent.part.getStep()-1;
+	    this.pCounter = this.counter;
+	    this.update();
+	    this.options.parent.part.setActiveBaseIndex(this.superobj.counter);
+	}
     },
 
     updateHeight: function() { //makes the bar span through all PathHelixItem
