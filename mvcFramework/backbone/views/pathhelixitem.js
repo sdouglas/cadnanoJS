@@ -312,7 +312,7 @@ var PathHelixItem = Backbone.View.extend ({
 	    this.stapItemArray[i].updateY();
 	}
         for(var i=0; i<this.grLength; i++) {
-	    if(alterationArray[i]) {
+	    if(this.alterationArray[i]) {
 		var group = this.alterationArray[i].skipInsertGroup;
 		group.setY(group.getY()+this.startY-oldY);
 	    }
@@ -510,8 +510,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 			for(var i=0; i<pharray.defined.length; i++) {
 			    if(pharray[pharray.defined[i]].order >= order && pharray[pharray.defined[i]].order < this.superobj.helixitem.order) {
 				pharray[pharray.defined[i]].order += 1;
-				pharray[pharray.defined[i]].updateStartY();
-				pharray[pharray.defined[i]].updateStrandY();
+				pharray[pharray.defined[i]].updateY();
 			    }
 			}
 			this.superobj.helixitem.order = order;
@@ -521,14 +520,12 @@ var PathHelixHandlerItem = Backbone.View.extend({
 			for(var i=0; i<pharray.defined.length; i++) {
 			    if(pharray[pharray.defined[i]].order < order && pharray[pharray.defined[i]].order > this.superobj.helixitem.order) {
 				pharray[pharray.defined[i]].order -= 1;
-				pharray[pharray.defined[i]].updateStartY();
-				pharray[pharray.defined[i]].updateStrandY();
+				pharray[pharray.defined[i]].updateY();
 			    }
 			}
 			this.superobj.helixitem.order = order-1;
 		    }
-		    this.superobj.helixitem.updateStartY();
-		    this.superobj.helixitem.updateStrandY();
+		    this.superobj.helixitem.updateY();
 		    this.superobj.options.parent.redrawBack();
 		    this.superobj.options.parent.strandlayer.draw();
 		    dragCirc.destroy();
