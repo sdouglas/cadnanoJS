@@ -78,14 +78,17 @@ var EndPointItem = Backbone.View.extend({
 		    this.superobj.move();
 		}
 	    }
-	    else if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-		this.superobj.selectStart(pos);
-	    }
 	});
 	this.shape.on("click", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
 	    if(pathTool === "pencil") {
 		this.superobj.createXover();
+	    }
+	});
+	this.shape.on("dragstart", function(pos) {
+	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+		this.superobj.selectStart(pos);
 	    }
 	});
 	this.shape.on("dragmove", function(pos) {
@@ -126,24 +129,25 @@ var EndPointItem = Backbone.View.extend({
     },
 
     selectStart: function(pos) {
-       this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
-       this.redBox = new Kinetic.Rect({
-	   x: this.centerX-this.sqLength/2,
-	   y: this.centerY-this.sqLength/2,
-	   width: this.sqLength,
-	   height: this.sqLength,
-	   fill: "transparent",
-	   stroke: "#FF0000",
-	   strokeWidth: 2,
-       });
-       this.redBox.superobj = this;
-       this.redBox.on("mouseup", function(pos) {
-           var papa = this.superobj;
-           this.destroy();
-           papa.tempLayer.draw();
-       });
-       this.tempLayer.add(this.redBox);
-       this.tempLayer.draw();
+	this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.redBox = new Kinetic.Rect({
+	    x: this.centerX-this.sqLength/2,
+	    y: this.centerY-this.sqLength/2,
+	    width: this.sqLength,
+	    height: this.sqLength,
+	    fill: "transparent",
+	    stroke: "#FF0000",
+	    strokeWidth: 2,
+	});
+	this.redBox.superobj = this;
+	this.redBox.on("mouseup", function(pos) {
+	    var papa = this.superobj;
+	    this.destroy();
+	    papa.tempLayer.draw();
+	});
+	this.tempLayer.add(this.redBox);
+	this.tempLayer.draw();
+	this.minMaxIndices = this.parent.modelStrand.getLowHighIndices(this.prime);
     },
 
     selectMove: function(pos) {
@@ -155,7 +159,6 @@ var EndPointItem = Backbone.View.extend({
 	    this.redBox.setX(this.redBox.getX()+(this.counter-this.pCounter)*this.sqLength)
 	    this.tempLayer.draw();
 	    this.pCounter = this.counter;
-	    //throw out signals here
 	}
     },
 

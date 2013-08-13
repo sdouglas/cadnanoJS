@@ -338,11 +338,15 @@ var StrandItem = Backbone.View.extend({
 	    show: "clip",
 	    hide: "clip",
 	    buttons: {
-		OK: function() {
-			self.applySeq(window.localStorage.getItem("cadnanoSeq"));
-			$(this).dialog("close");
-		    },
-		Cancel: function() {$(this).dialog("close");}
+		OK:
+		function() {
+		    self.applySeq(window.localStorage.getItem("cadnanoSeq"));
+		    $(newDialog).dialog("close");
+		},
+		Cancel:
+		function() {
+		    $(newDialog).dialog("close");
+		}
 	    }
 	});
 	$(".ui-dialog-titlebar-close", this.parentNode).hide();
@@ -354,7 +358,7 @@ var StrandItem = Backbone.View.extend({
 	var seqIndex = 0;
 	var strandCounter = 0;
 	var strandLen = this.xEnd-this.xStart;
-	this.layer.destroyChildren();
+	this.finalLayer.destroyChildren();
 	//sequencing goes 5' -> 3'
 	while(seqIndex < seq.length && strandCounter <= strandLen) {
 	    if(this.endItemL.prime === 5) { //assign letter to each position left to right

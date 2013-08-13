@@ -667,8 +667,8 @@ var ColorChangeItem = Backbone.View.extend({
 		show: "clip",
 		hide: "clip",
 		buttons: {
-		    OK: function() {update(); $(this).dialog("close")},
-		    Cancel: function() {$(this).dialog("close");}
+		    OK: function() {update(); $(newDialog).dialog("close");},
+		    Cancel: function() {$(newDialog).dialog("close");}
 		}
 	    });
 	    $(".ui-dialog-titlebar-close", this.parentNode).hide();

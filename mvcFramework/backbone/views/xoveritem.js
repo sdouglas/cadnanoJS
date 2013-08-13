@@ -40,9 +40,9 @@ var XoverNode = Backbone.View.extend({
 	else {xStart = this.centerX-this.sqLength/2;}
 	this.hLine = new Kinetic.Rect({
 	    x: xStart,
-	    y: this.centerY-1.5,
+	    y: this.centerY-1,
 	    width: this.sqLength/2,
-	    height: 3,
+	    height: 2,
 	    fill: this.parent.strandColor,
 	    stroke: this.parent.strandColor,
 	    strokeWidth: 1
@@ -53,14 +53,14 @@ var XoverNode = Backbone.View.extend({
 	    this.linkageY = this.centerY-this.sqLength/2;
 	}
 	else {
-	    yStart = this.centerY;
+	    yStart = this.centerY-1;
 	    this.linkageY = this.centerY+this.sqLength/2;
 	}
 	this.vLine = new Kinetic.Rect({
-	    x: this.centerX-1.5,
+	    x: this.centerX-1,
 	    y: yStart,
-	    width: 3,
-	    height: this.sqLength/2,
+	    width: 2,
+	    height: this.sqLength/2+1,
 	    fill: this.parent.strandColor,
 	    stroke: this.parent.strandColor,
 	    strokeWidth: 1
