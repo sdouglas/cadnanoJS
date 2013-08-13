@@ -1,12 +1,12 @@
 var PathHelixSetItem = Backbone.View.extend({
     initialize: function(){
 	//pathTool variables
-	this.pencilendpoint = undefined;
-	this.paintcolor = "#008800";
+	this.pencilendpoint = undefined; //used for pencil
+	this.paintcolor = "#008800"; //used for paint
 	//PathHelixSetItem should contains variables that multiple sub-classes need
         this.handler = this.options.handler;
         this.part = this.options.part;
-	this.panel = this.options.handler.handler.getContainer();
+	this.panel = this.options.handler.handler.getContainer(); //panel is used to account for scrolling
 
 	//path view layers
 	this.backlayer = new Kinetic.Layer(); //background layer: PathHelixItem, PathHelixHandlerItem, PathBaseChangeItem
@@ -19,9 +19,11 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.handler.handler.add(this.buttonlayer);
 	this.strandlayer = new Kinetic.Layer(); //strand layer: StrandItem, EndPointItem, XoverItem
 	this.handler.handler.add(this.strandlayer);
+	this.alterationlayer = new Kinetic.Layer(); //alteration layer: InsertItem, SkipItem
+	this.handler.handler.add(this.alterationlayer);
 	this.finallayer = new Kinetic.Layer(); //final layer: post-sequencing bases
 	this.handler.handler.add(this.finallayer);
-	this.templayer = new Kinetic.Layer();
+	this.templayer = new Kinetic.Layer(); //temporary layer for faster rendering
 	this.handler.handler.add(this.templayer);
 	//some things should be on the top
 	this.activeslicelayer.moveToTop();
@@ -29,50 +31,32 @@ var PathHelixSetItem = Backbone.View.extend({
 	//objects
 	this.phItemArray = new Array(); //stores PathHelixItem
 	this.phItemArray.defined = new Array(); //stores ID of defined PathHelixItem
-	this.graphicsSettings = {
+	this.graphicsSettings = { //only for honeycomb; for square divLength should be 8 and blkLength should be 4
 	    sqLength: 20,
 	    divLength: 7,
 	    blkLength: 3
 	};
 
 	//scale factor
-	this.userScale = 1;
-	this.autoScale = Math.min(1,this.handler.handler.getWidth()/(this.graphicsSettings.sqLength*(8+2*this.graphicsSettings.divLength*this.graphicsSettings.blkLength)));
+	this.userScale = 1; //user can control this with +/- (see documentitem.js)
+	this.autoScale = Math.min(1,innerLayout.state.center.innerWidth/
+				  (this.graphicsSettings.sqLength*(8+2*this.graphicsSettings.divLength*this.graphicsSettings.blkLength))); //adjusted by system
 	this.scaleFactor = this.autoScale * this.userScale;
 	this.pScaleFactor = this.scaleFactor;
 	this.zoom();
 
-	//slidebar
+	//active slice item is the reddish movable bar
 	this.activesliceItem = new ActiveSliceItem({
 	    handler: this.handler,
 	    parent: this,
 	    graphics: this.graphicsSettings
 	});
-
-	/*
-	this.bgLayer = new Kinetic.Layer({id: "bgLayer"});
-	this.bgRect = new Kinetic.Rect({
-	    x: 0,
-	    y: 0,
-	    width: this.handler.handler.getWidth(),
-	    height: this.handler.handler.getHeight(),
-	    opacity: 0,
-	    id: "bgRect"
-	});
-	this.bgLayer.add(this.bgRect);
-	this.handler.handler.add(this.bgLayer);
-	this.bgLayer.moveToBottom();
-	this.handler.handler.on("mousedown", function(pos) {
-	    //alert("test");
-	});
-	*/
     },
     events: {
         "mousemove" : "onMouseMove",
     },
     render: function(){
 	//removing all old shapes before drawing new ones
-	//this.clear();
 	this.buttonlayer.removeChildren();
 	//buttons
 	this.c2Item = new ColorChangeItem({
@@ -86,12 +70,12 @@ var PathHelixSetItem = Backbone.View.extend({
 	//variables that the items created in foreach loop can access
         var h = this.handler;
 	var dims = this.graphicsSettings;
-	dims.grLength = dims.blkLength*dims.divLength*this.part.getStep(); //grLength is only used here because background is immutable
+	dims.grLength = dims.blkLength*dims.divLength*this.part.getStep();
 	var helixset = this;
 	var pharray = this.phItemArray;
 	//for each VirtualHelixItem, we create a path helix and a path helix handler
         this.collection.each(function(vh){
-	    if(pharray[vh.id]) return;
+	    if(pharray[vh.id]) return; //create PathHelixItem only if it is new - increase performance
 	    var phItem = new PathHelixItem({
 		model: vh,
                 handler: h,
@@ -110,42 +94,50 @@ var PathHelixSetItem = Backbone.View.extend({
 	    pharray.defined.push(vh.id);
         });
 
-	//scaling and drawing
-	var newWidth = this.graphicsSettings.sqLength*(8+this.part.getStep()*this.graphicsSettings.divLength*this.graphicsSettings.blkLength)*this.scaleFactor;
-	this.handler.handler.setWidth(Math.max(newWidth, innerLayout.state.west.innerWidth));
-	var newHeight = this.graphicsSettings.sqLength*(7+4*this.phItemArray.defined.length)*this.scaleFactor;
-	this.handler.handler.setHeight(Math.max(newHeight, innerLayout.state.west.innerHeight));
+	//changing stage size
+	this.adjustStageSize();
 	//no scale factor changes, just redraw backlayer
 	if(this.scaleFactor === this.pScaleFactor) {
 	    this.backlayer.draw();
 	}
-	//scale factor changed, have to rescale and redraw EVERY layer
+	//scale factor changed, have to rescale and redraw every layer (except temp which should have nothing on it)
 	else {
-	    this.backlayer.draw();
-	    this.prexoverlayer.draw();
-	    this.activeslicelayer.draw();
-	    this.buttonlayer.draw();
-	    this.strandlayer.draw();
-	    this.finallayer.draw();
-	    this.pScaleFactor = this.scaleFactor;
+	    this.redrawLayers();
 	}
+    },
+
+    redrawLayers: function() {
+        this.backlayer.draw();
+	this.prexoverlayer.draw();
+	this.activeslicelayer.draw();
+	this.buttonlayer.draw();
+	this.strandlayer.draw();
+	this.alterationlayer.draw();
+	this.finallayer.draw();
+	this.pScaleFactor = this.scaleFactor;
+    },
+
+    adjustStageSize: function() {
+	var newWidth = this.graphicsSettings.sqLength*(8+this.part.getStep()*this.graphicsSettings.divLength*this.graphicsSettings.blkLength)*this.scaleFactor;
+	this.handler.handler.setWidth(Math.max(newWidth, innerLayout.state.center.innerWidth));
+	var newHeight = this.graphicsSettings.sqLength*(7+4*this.phItemArray.defined.length)*this.scaleFactor;
+	this.handler.handler.setHeight(Math.max(newHeight, innerLayout.state.center.innerHeight));
     },
 
     zoom: function() {
 	this.scaleFactor = this.autoScale * this.userScale;
-	var newWidth = this.graphicsSettings.sqLength*(8+this.part.getStep()*this.graphicsSettings.divLength*this.graphicsSettings.blkLength)*this.scaleFactor;
-	this.handler.handler.setWidth(Math.max(newWidth, innerLayout.state.west.innerWidth));
-	var newHeight = this.graphicsSettings.sqLength*(7+4*this.phItemArray.defined.length)*this.scaleFactor;
-	this.handler.handler.setHeight(Math.max(newHeight, innerLayout.state.west.innerHeight));
 	this.backlayer.setScale(this.scaleFactor);
 	this.prexoverlayer.setScale(this.scaleFactor);
 	this.activeslicelayer.setScale(this.scaleFactor);
 	this.buttonlayer.setScale(this.scaleFactor);
 	this.strandlayer.setScale(this.scaleFactor);
+	this.alterationlayer.setScale(this.scaleFactor);
 	this.finallayer.setScale(this.scaleFactor);
 	this.templayer.setScale(this.scaleFactor);
+	this.adjustStageSize();
     },
 
+    //redrawing the items in back layer
     redrawBack: function() {
 	this.prexoverlayer.destroyChildren();
 	this.backlayer.destroyChildren();
@@ -184,7 +176,19 @@ var PathHelixItem = Backbone.View.extend ({
     initialize: function(){
 	this.panel = this.options.parent.panel;
 	this.layer = this.options.parent.backlayer;
-	this.group = new Kinetic.Group();
+	//The group will not move even when dragged (because of dragBoundFunc), but we set draggable to true
+	//so that we can use dragstart/dragmove/dragend functions, which are superior to mousedown/mousemove/
+	//mouseup because drag functions work even when the mouse is outside of the object. However, drag
+	//only works with existing objects. (aka you cannot immediately call drag func of a newly-made obj)
+	this.group = new Kinetic.Group({
+	    draggable: true,
+	    dragBoundFunc: function(pos) {
+		return {
+		    x: this.getAbsolutePosition().x,
+		    y: this.getAbsolutePosition().y
+		}
+	    }
+	});
 	this.grLength = this.options.graphics.grLength;
 	this.divLength = this.options.graphics.divLength;
 	this.blkLength = this.options.graphics.blkLength;
@@ -192,11 +196,11 @@ var PathHelixItem = Backbone.View.extend ({
 	this.order = this.options.parent.phItemArray.defined.length;
 	this.scafItemArray = new Array();
 	this.stapItemArray = new Array();
-
 	this.startX = 5*this.sqLength;
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
+        this.alterationArray = new Array(); //stores inserts and skips
 
-	//Keeping track of all the strandItems
+	//drawing each little square
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
 		var rect = new Kinetic.Rect({
@@ -223,95 +227,117 @@ var PathHelixItem = Backbone.View.extend ({
 	this.layer.add(this.group);
 	this.connectSignalsSlots();
 	
+	var self = this;
+	var zf;
+	var yLevel;
+	var strandInitCounter,strandCounter,strandPCounter;
+	var stItemImage;
 	//mouse function: dragging on helix = new StrandItem
 	//This is for the pencil object to drag and draw.
 	this.group.superobj = this;
-	this.group.on("mousedown", function(pos) {
+	this.group.on("mousedown", function() {
 	    this.superobj.options.parent.prexoverlayer.destroyChildren();
 	    this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
+	});
+	this.group.on("dragstart", function(pos) {
 	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
-		var grLength = this.superobj.grLength;
-		var zf = this.superobj.options.parent.scaleFactor;
-		var yLevel = Math.floor(((pos.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
-		var strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
-		var strandCounter = strandInitCounter;
-		var strandPCounter = strandCounter;
-		var stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
-		this.on("mousemove", function(pos) {
-		    if(pos.x) { //strandCounter will be NaN if this event is manually fired by stItemImage
-			strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
-			strandCounter = adjustCounter(strandCounter);
+		zf = this.superobj.options.parent.scaleFactor;
+		yLevel = Math.floor(((pos.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
+		strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
+		strandCounter = strandInitCounter;
+		strandPCounter = strandCounter;
+		stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter); //see stranditem.js for more info on this class
+	    }
+	});
+	this.group.on("dragmove", function(pos) {
+	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
+		zf = this.superobj.options.parent.scaleFactor;
+		strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
+		strandCounter = adjustCounter(strandCounter);
+		if(strandCounter !== strandPCounter) {
+		    stItemImage.remove();
+		    stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
+		    strandPCounter = strandCounter;
+		}
+		function adjustCounter(n) {
+		    var strandSet;
+		    if(yLevel^self.options.model.isEvenParity()) { //^ is xor (exclusive or)
+			strandSet = self.options.model.scafStrandSet;
 		    }
-		    if(strandCounter !== strandPCounter) {
-			stItemImage.remove();
-			stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
-			strandPCounter = strandCounter;
+		    else {
+			strandSet = self.options.model.stapStrandSet;
 		    }
-		    function adjustCounter(n) {
-			//TODO: fix it to move only to a specified length - minMaxindices.
-			return Math.min(Math.max(0,n),grLength-1);
-		    }
-		});
-		this.on("mouseup", function() {
-		    if(Math.abs(strandCounter-strandInitCounter) >= 2) {
-			stItemImage.remove();
-			this.superobj.options.parent.templayer.draw();
-			//Call model with create strand.
-			//Testing with just scaf strand set.
-			var left = Math.min(strandCounter,strandInitCounter);
-			var right = Math.max(strandCounter,strandInitCounter);
-			var strandSet;
-			if(yLevel^this.superobj.model.isEvenParity()) {
-			    strandSet = this.superobj.options.model.scafStrandSet;
-			}
-			else {
-			    strandSet = this.superobj.options.model.stapStrandSet;
-			}
-			if(!strandSet.hasStrandAt(left,right)) {
-			    console.log('creating strand at :' + left + '::' + right);
-			    strandSet.createStrand(left,right);
-			}
-		    }
-		    this.off("mousemove");
-		    this.off("mouseup");
-		});
+		    minMaxIndices = strandSet.getLowHighIndices(stItemImage); //a hack as the param is normally a strand (model object)
+		    return Math.min(Math.max(n,minMaxIndices[0]),minMaxIndices[1]);
+		}
+	    }
+	});
+	this.group.on("dragend", function() {
+	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil" && Math.abs(strandCounter-strandInitCounter) >= 2) { //minimum length limit from cadnano2
+		stItemImage.remove();
+		this.superobj.options.parent.templayer.draw();
+		//Call model with create strand.
+		var left = Math.min(strandCounter,strandInitCounter); //unlike StrandItemImage, you have to specify what is left and what is right for Strand and StrandItem
+		var right = Math.max(strandCounter,strandInitCounter);
+		var strandSet;
+		if(yLevel^this.superobj.model.isEvenParity()) {
+		    strandSet = this.superobj.options.model.scafStrandSet;
+		}
+		else {
+		    strandSet = this.superobj.options.model.stapStrandSet;
+		}
+		if(!strandSet.hasStrandAt(left,right)) {
+		    console.log('creating strand at :' + left + '::' + right);
+		    strandSet.createStrand(left,right);
+		}
 	    }
 	});
     },
 
+    /**
+      @params {isScaf} determines which strand set we will be using
+      @params {n} is the position on PathHelixItem
+      @params {indexMode} returns the index of that strand in item array
+      returns a StrandItem or undefined if no StrandItem is found
+     */
     getStrandItem: function(isScaf, n, indexMode) {
+	var stItemArray;
 	if(isScaf) {
-	    for(var i=0; i<this.scafItemArray.length; i++) {
-		if(this.scafItemArray[i] && this.scafItemArray[i].xStart <= n && this.scafItemArray[i].xEnd >= n) {
-		    if(indexMode) {return i;}
-		    return this.scafItemArray[i];
-		}
-	    }
-	    return undefined;
+	    stItemArray = this.scafItemArray;
 	}
 	else {
-	    for(var i=0; i<this.stapItemArray.length; i++) {
-		if(this.stapItemArray[i] && this.stapItemArray[i].xStart <= n && this.stapItemArray[i].xEnd >= n) {
-		    if(indexMode) {return i;}
-		    return this.stapItemArray[i];
-		}
-	    }
-	    return undefined;
+	    stItemArray = this.stapItemArray;
 	}
+	for(var i=0; i<stItemArray.length; i++) {
+	    if(stItemArray[i] && stItemArray[i].xStart <= n && stItemArray[i].xEnd >= n) {
+		if(indexMode) {return i;}
+		return stItemArray[i];
+	    }
+	}
+	return undefined;
     },
 
-    updateStartY: function() {this.startY = 5*this.sqLength+4*this.order*this.sqLength;},
-    updateStrandY: function() {
+    //updates the Y position of items after moving PathHelixHandlerItem
+    updateY: function() {
+	var oldY = this.startY;
+	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
 	for(var i=0; i<this.scafItemArray.length; i++) {
 	    this.scafItemArray[i].updateY();
 	}
 	for(var i=0; i<this.stapItemArray.length; i++) {
 	    this.stapItemArray[i].updateY();
 	}
+        for(var i=0; i<this.grLength; i++) {
+	    if(this.alterationArray[i]) {
+		var group = this.alterationArray[i].skipInsertGroup;
+		group.setY(group.getY()+this.startY-oldY);
+	    }
+        }
     },
 
+    //redrawing a particular PathHelixItem
     redraw: function() {
-	this.updateStartY();
+	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
 	this.grLength = this.blkLength*this.divLength*this.options.parent.part.getStep();
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
@@ -356,6 +382,12 @@ var PathHelixItem = Backbone.View.extend ({
                 cadnanoEvents.strandSetStrandRemovedSignal,
                 this.strandRemovedSlot
                 );
+    	this.listenTo(this.model.scafStrandSet,
+		cadnanoEvents.updateSkipInsertItemsSignal,
+		this.updateSkipInsertItemsSlot);
+    	this.listenTo(this.model.stapStrandSet,
+		cadnanoEvents.updateSkipInsertItemsSignal,
+		this.updateSkipInsertItemsSlot);
     },
 
     strandAddedSlot: function(strand, id) {
@@ -389,6 +421,45 @@ var PathHelixItem = Backbone.View.extend ({
         }
         return false;
     },
+ 
+    /**
+	Redraw the skip items based on whether or not a
+	strand is present.
+    */
+    updateSkipInsertItemsSlot: function(){
+	for(var i=0; i<this.grLength; i++) {
+	    if(this.alterationArray[i]) { //has insert/skip in the position
+		var scafHidden = false;
+		var stapHidden = false;
+		if(this.getStrandItem(true, i)) { //if scaffold strand exists
+		    if(this.alterationArray[i] instanceof InsertItem) {
+			//change InsertItem's color to match the StrandItem
+			this.alterationArray[i].scafGroup.triangle.setStroke(this.getStrandItem(true, i).strandColor);
+		    }
+		    this.alterationArray[i].scafGroup.show();
+		}
+		else {
+		    this.alterationArray[i].scafGroup.hide();
+		    scafHidden = true;
+		}
+		if(this.getStrandItem(false, i)) { //if staple strand exists
+		    if(this.alterationArray[i] instanceof InsertItem) {
+			this.alterationArray[i].stapGroup.triangle.setStroke(this.getStrandItem(false, i).strandColor);
+		    }
+		    this.alterationArray[i].stapGroup.show();
+		}
+		else {
+		    this.alterationArray[i].stapGroup.hide();
+		    stapHidden = true;
+		}
+		if(scafHidden && stapHidden) { //remove if neither strand exists
+		    this.alterationArray[i].skipInsertGroup.destroy();
+		    this.alterationArray[i] = undefined;
+		}
+	    }
+	}
+	this.options.parent.alterationlayer.draw();
+    },
 
 });
 
@@ -400,7 +471,15 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	this.layer = this.options.parent.backlayer;
 	this.helixitem = this.options.helixitem;
 	this.helixitem.helixhandler = this;
-	this.group = new Kinetic.Group();
+        this.group = new Kinetic.Group({
+	    draggable: true,
+	    dragBoundFunc: function(pos) {
+		return {
+		    x: this.getAbsolutePosition().x,
+		    y: this.getAbsolutePosition().y
+		}
+	    }
+	});
 	var helixNum = this.options.model.hID;
 	var circ = new Kinetic.Circle({
 	    x: 2.5*this.sqLength,
@@ -424,14 +503,18 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	});
         //end: number on the circle
 
+	//mouse functions for handler selection
 	var tempLayer = this.options.parent.templayer;
+	var pPosY; //previous Y position
+	var zf; //zoom factor
+	var dragCirc; //temporary circle to show handler location
 	this.group.superobj = this;
-	this.group.on("mousedown", function(originPos) {
+	this.group.on("mousedown", function(pos) { //reason for mousedown: we want dragCirc to show as soon as we press mouse
 	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
-	    var pPosY = originPos.y;
+	    pPosY = pos.y;
 	    if(pathTool === "select" && tbSelectArray[2]) {
-		var zf = this.superobj.options.parent.scaleFactor;
-		var dragCirc = new Kinetic.Circle({
+		zf = this.superobj.options.parent.scaleFactor;
+		dragCirc = new Kinetic.Circle({
 		    x: circ.getX(),
 		    y: this.superobj.helixitem.startY+this.superobj.sqLength,
 		    radius: circ.getRadius(),
@@ -442,46 +525,52 @@ var PathHelixHandlerItem = Backbone.View.extend({
 		});
 		tempLayer.add(dragCirc);
 		tempLayer.draw();
-		dragCirc.superobj = this.superobj;
-		dragCirc.on("mousemove", function(pos) {
-		    dragCirc.setY(dragCirc.getY()+(pos.y-pPosY)/zf);
-		    pPosY = pos.y;
-		    tempLayer.draw();
-		});
-		dragCirc.on("mouseup", function() {
-		    var order = Math.floor((dragCirc.getY()/dragCirc.superobj.sqLength-2)/4);
-		    order = Math.min(Math.max(0,order),this.superobj.options.parent.phItemArray.defined.length);
-		    if(order-this.superobj.helixitem.order < 0) { //moved upward
-			var pharray = this.superobj.options.parent.phItemArray;
-			for(var i=0; i<pharray.defined.length; i++) {
-			    if(pharray[pharray.defined[i]].order >= order && pharray[pharray.defined[i]].order < this.superobj.helixitem.order) {
-				pharray[pharray.defined[i]].order += 1;
-				pharray[pharray.defined[i]].updateStartY();
-				pharray[pharray.defined[i]].updateStrandY();
-			    }
+	    }
+	});
+	this.group.on("dragmove", function(pos) {
+	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select" && tbSelectArray[2]) {
+		dragCirc.setY(dragCirc.getY()+(pos.y-pPosY)/zf); //move dragCirc by comparing its location to previous location
+		pPosY = pos.y;
+		tempLayer.draw();
+	    }
+	});
+	this.group.on("dragend", function() {
+	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select" && tbSelectArray[2]) {
+		var order = Math.floor((dragCirc.getY()/this.superobj.sqLength-2)/4);
+		order = Math.min(Math.max(0,order),this.superobj.options.parent.phItemArray.defined.length);
+		if(order-this.superobj.helixitem.order < 0) { //handler moved upward
+		    var pharray = this.superobj.options.parent.phItemArray;
+		    for(var i=0; i<pharray.defined.length; i++) {
+			//only helixes between the old and new location needs to be changed
+			if(pharray[pharray.defined[i]].order >= order && pharray[pharray.defined[i]].order < this.superobj.helixitem.order) {
+			    pharray[pharray.defined[i]].order += 1;
+			    pharray[pharray.defined[i]].updateY();
 			}
-			this.superobj.helixitem.order = order;
 		    }
-		    else if(order-this.superobj.helixitem.order > 1) {
-			var pharray = this.superobj.options.parent.phItemArray;
-			for(var i=0; i<pharray.defined.length; i++) {
-			    if(pharray[pharray.defined[i]].order < order && pharray[pharray.defined[i]].order > this.superobj.helixitem.order) {
-				pharray[pharray.defined[i]].order -= 1;
-				pharray[pharray.defined[i]].updateStartY();
-				pharray[pharray.defined[i]].updateStrandY();
-			    }
+		    this.superobj.helixitem.order = order;
+		}
+		else if(order-this.superobj.helixitem.order > 1) { //handler moved downward
+		    var pharray = this.superobj.options.parent.phItemArray;
+		    for(var i=0; i<pharray.defined.length; i++) {
+			//only helixes between the old and new location needs to be changed
+			if(pharray[pharray.defined[i]].order < order && pharray[pharray.defined[i]].order > this.superobj.helixitem.order) {
+			    pharray[pharray.defined[i]].order -= 1;
+			    pharray[pharray.defined[i]].updateY();
 			}
-			this.superobj.helixitem.order = order-1;
 		    }
-		    this.superobj.helixitem.updateStartY();
-		    this.superobj.helixitem.updateStrandY();
-		    this.superobj.options.parent.redrawBack();
-		    this.superobj.options.parent.strandlayer.draw();
-		    dragCirc.destroy();
-		    tempLayer.draw();
-		    this.superobj.options.parent.prexoverlayer.destroyChildren();
-		    this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
-		});
+		    this.superobj.helixitem.order = order-1;
+		}
+		//changing the moved helix
+		this.superobj.helixitem.updateY();
+		this.superobj.options.parent.redrawBack();
+		this.superobj.options.parent.strandlayer.draw();
+		dragCirc.destroy();
+		dragCirc = undefined;
+		tempLayer.draw();
+		this.superobj.options.parent.prexoverlayer.destroyChildren();
+		this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
 	    }
 	});
 	this.group.add(circ);
@@ -502,18 +591,29 @@ var PathBaseChangeItem = Backbone.View.extend({
 	var removeBaseImg = new Image();
 	removeBaseImg.onload = function() {
 	    var removeBase = new Kinetic.Image({
-		    x: 0,
-		    y: 0,
-		    image: removeBaseImg,
-		    width: 30,
-		    height: 30
-		});
+		x: 0,
+		y: 0,
+		image: removeBaseImg,
+		width: 30,
+		height: 30
+	    });
 	    removeBase.on("click",function() {
-		    if(part.getStep() > 0) {
-			part.setStep(part.getStep()-1);
-			parent.redrawBack();			
+		if(part.getStep() > 0) {
+		    var canShrink = true; //cannot shrink if there is a strand in the removed range
+		    var low = baseperblk*(part.getStep()-1);
+		    var high = baseperblk*part.getStep();
+		    for(var i=0; i<parent.phItemArray.defined.length; i++) {
+			var vh = parent.phItemArray[parent.phItemArray.defined[i]].options.model;
+			if(vh.scafStrandSet.hasStrandAt(low,high) || vh.stapStrandSet.hasStrandAt(low,high)) {
+			    canShrink = false;
+			}
 		    }
-		});
+		    if(canShrink) {
+			part.setStep(part.getStep()-1);
+			parent.redrawBack();
+		    }			
+		}
+	    });
 	    layer.add(removeBase);
 	}
 	removeBaseImg.src = "ui/images/remove-bases.svg";
@@ -521,22 +621,22 @@ var PathBaseChangeItem = Backbone.View.extend({
 	var addBaseImg = new Image();
 	addBaseImg.onload = function() {
 	    var addBase = new Kinetic.Image({
-		    x: 30,
-		    y: 0,
-		    image: addBaseImg,
-		    width: 30,
-		    height: 30,
-		});
+		x: 30,
+		y: 0,
+		image: addBaseImg,
+		width: 30,
+		height: 30,
+	    });
 	    addBase.on("click",function() {
-		    var baseIncrease = prompt("Number of bases to add to the existing "+(baseperblk*part.getStep())+" bases (must be a multiple of "+baseperblk+")",baseperblk);
-		    if(baseIncrease !== null) {
-			var baseInc = parseInt(baseIncrease,10);
-			if(baseInc > 0 && baseInc%baseperblk === 0) {
-			    part.setStep(part.getStep()+baseInc/baseperblk);
-			    parent.redrawBack();
-			}
+		var baseIncrease = prompt("Number of bases to add to the existing "+(baseperblk*part.getStep())+" bases (must be a multiple of "+baseperblk+")",baseperblk);
+		if(baseIncrease !== null) {
+		    var baseInc = parseInt(baseIncrease,10); //baseIncrease is a string, not a number
+		    if(baseInc > 0 && baseInc%baseperblk === 0) {
+			part.setStep(part.getStep()+baseInc/baseperblk);
+			parent.redrawBack();
 		    }
-		});
+		}
+	    });
 	    layer.add(addBase);
 	    layer.draw()
 	};
@@ -544,12 +644,11 @@ var PathBaseChangeItem = Backbone.View.extend({
     },
 });
 
-//the box next to arrows. once clicked, webpage will prompt for RGB and set it as the color for next strand.
-//if possible, try to make a pop up page with color picker and send value back to main webpage
+//the box next to arrows; once clicked, a page (cadnanoPaint.html) will pop up with color picker and send value back to main webpage
 var ColorChangeItem = Backbone.View.extend({
     initialize: function() {
 	var layer = this.options.parent.buttonlayer;
-	var rect = new Kinetic.Rect({
+	var rect = new Kinetic.Rect({ //small box next to arrows
 	    x: 65,
 	    y: 5,
 	    width: 20,
@@ -560,7 +659,8 @@ var ColorChangeItem = Backbone.View.extend({
 	});
 	rect.superobj = this;
 	rect.on("click", function(pos) { //someone fix the duplicate dialog bug (it is also in stranditem.js)
-	    window.localStorage.setItem("cadnanoPaint",rect.superobj.options.parent.paintcolor);
+	    //this function makes use of jQuery UI dialog
+	    window.localStorage.setItem("cadnanoPaint",rect.superobj.options.parent.paintcolor); //the other page will load current color into picker
 	    var newDialog = $('<link rel="stylesheet" href="ui/css/jquery-ui/jquery.ui-1.9.2.min.css"><div><iframe src="cadnanoPaint.html" width="195" height="224"></div>');
 	    $(newDialog).dialog({
 		width: 226,
@@ -570,8 +670,8 @@ var ColorChangeItem = Backbone.View.extend({
 		show: "clip",
 		hide: "clip",
 		buttons: {
-		    OK: function() {update(); $(this).dialog("close")},
-		    Cancel: function() {$(this).dialog("close");}
+		    OK: function() {update(); $(newDialog).dialog("close");},
+		    Cancel: function() {$(newDialog).dialog("close");}
 		}
 	    });
 	    $(".ui-dialog-titlebar-close", this.parentNode).hide();

@@ -73,12 +73,10 @@ var EndPointItem = Backbone.View.extend({
 
 	this.shape.superobj = this; //javascript y u no have pointers?!
 	var isScaf = this.isScaf;
-	this.shape.on("mousedown", function(pos) {
+	this.shape.on("mouseup", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-	    console.log(this.superobj.parent.modelStrand);
 	    //recalculate range of movement of this endpointitem.
 	    this.superobj.minMaxIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
-	    console.log(this.superobj.minMaxIndices);
 	    /*
 	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
 	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
@@ -86,8 +84,8 @@ var EndPointItem = Backbone.View.extend({
 	      further.
 	    */
 	    console.log(this.superobj.phItem.options.parent.part.getDoc().getKey());
-	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18) { 
-            //holding ALT = extend
+	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18){ 
+            //holding ALT = extend to furthest possible location (works regardless of path tool)
             console.log("EXTENDING");
             if(this.superobj.dir === "L") {
                 this.superobj.counter = this.superobj.minMaxIndices[0];
@@ -98,15 +96,19 @@ var EndPointItem = Backbone.View.extend({
                 this.superobj.move();
             }
 	    }
-        else if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-            this.superobj.selectStart(pos);
-	    }
 	});
 
 	this.shape.on("click", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
         if(pathTool === "pencil") {
             this.superobj.createXover();
+	    }
+	});
+
+	this.shape.on("dragstart", function(pos) {
+	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+		this.superobj.selectStart(pos);
 	    }
 	});
 
@@ -162,24 +164,25 @@ var EndPointItem = Backbone.View.extend({
     },
 
     selectStart: function(pos) {
-       this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
-       this.redBox = new Kinetic.Rect({
-	   x: this.centerX-this.sqLength/2,
-	   y: this.centerY-this.sqLength/2,
-	   width: this.sqLength,
-	   height: this.sqLength,
-	   fill: "transparent",
-	   stroke: "#FF0000",
-	   strokeWidth: 2,
-       });
-       this.redBox.superobj = this;
-       this.redBox.on("mouseup", function(pos) {
-           var papa = this.superobj;
-           this.destroy();
-           papa.tempLayer.draw();
-       });
-       this.tempLayer.add(this.redBox);
-       this.tempLayer.draw();
+	this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.redBox = new Kinetic.Rect({
+	    x: this.centerX-this.sqLength/2,
+	    y: this.centerY-this.sqLength/2,
+	    width: this.sqLength,
+	    height: this.sqLength,
+	    fill: "transparent",
+	    stroke: "#FF0000",
+	    strokeWidth: 2,
+	});
+	this.redBox.superobj = this;
+	this.redBox.on("mouseup", function(pos) {
+	    var papa = this.superobj;
+	    this.destroy();
+	    papa.tempLayer.draw();
+	});
+	this.tempLayer.add(this.redBox);
+	this.tempLayer.draw();
+	this.minMaxIndices = this.parent.modelStrand.getLowHighIndices(this.prime);
     },
 
     selectMove: function(pos) {
@@ -191,7 +194,6 @@ var EndPointItem = Backbone.View.extend({
 	    this.redBox.setX(this.redBox.getX()+(this.counter-this.pCounter)*this.sqLength)
 	    this.tempLayer.draw();
 	    this.pCounter = this.counter;
-	    //throw out signals here
 	}
     },
 
@@ -214,14 +216,10 @@ var EndPointItem = Backbone.View.extend({
         //remove elements on final layer
         this.finalLayer.destroyChildren();
         this.finalLayer.draw();
-        if(this.dir === "L") {
-            this.parent.updateAlteration(this.dragInit-this.counter);
-        }
+
         //send out the resize signal to the model.
         this.parent.modelStrand.resize(this.parent.xStart,
                 this.parent.xEnd);
-        //redrawing the line between two enditems aka strand
-        //this.layer.draw();
     },
 
     getRidOf:
@@ -232,15 +230,15 @@ var EndPointItem = Backbone.View.extend({
 
     createXover: function() {
 	var helixset = this.phItem.options.parent;
-	if(helixset.pencilendpoint === undefined) {
+	if(helixset.pencilendpoint === undefined) { //clicking the first endpoint only stores its info
 	    helixset.pencilendpoint = this;
-	    var pencilNotifier = helixset.pencilendpoint.shape.clone();
+	    var pencilNotifier = helixset.pencilendpoint.shape.clone(); //a red shape that lies on top of original as indicator
 	    pencilNotifier.off("mousedown");
 	    pencilNotifier.off("click");
 	    pencilNotifier.setFill("#FF0000");
 	    this.tempLayer.add(pencilNotifier);
 	    this.tempLayer.draw();
-	    pencilNotifier.on("click", function() {
+	    pencilNotifier.on("click", function() { //click again = cancel
 		helixset.pencilendpoint.tempLayer.destroyChildren();
 		helixset.pencilendpoint.close();
 		pencilNotifier.destroy();

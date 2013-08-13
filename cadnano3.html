@@ -5,7 +5,7 @@
 
 <!-- EXTERNAL JAVASCRIPT LIBRARIES -->
 <script type="text/javascript" src="includes/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="includes/jquery.ui-1.9.2.js"></script>
+<script type="text/javascript" src="includes/jquery.ui-1.9.2.min.js"></script>
 <script type="text/javascript" src="includes/jquery.layout-1.3.0.min.js"></script>
 <script type="text/javascript" src="includes/kinetic-4.5.4.min.js"></script>
 
@@ -43,79 +43,7 @@
 
 <!-- CSS STYLING -->
 <link type="text/css" rel="stylesheet" href="ui/css/layout-default.css">
-<style type="text/css">
-  /* Split panel aesthetics */
-  .ui-layout-pane {
-    border: 0px;
-    padding: 0;
-  }
-  #pathButtons, #sliceButtons {
-    background: #EEE;
-  }
-  #toolbar {
-    background: #DDD;
-  }
-  /* Buttons: margins, (to be implemented) image checkbox/radio */
-  .hbutton, .vbutton {
-    margin-top: 0px;
-    margin-left: 0px;
-    margin-right: 6px;
-    border: none;
-    background: none;
-    float: left;
-  }
-  .hbutton {
-    margin-bottom: 0px;
-  }
-  .vbutton {
-    margin-bottom: 6px;
-  }
-  input[type=checkbox] {
-    display:none;
-  }
-  input[type=checkbox] + label
-  {
-    border-style: solid;
-    border-width: thin;
-    border-color: #DDD;
-    background: #DDD;
-    height: 40px;
-    width: 32px;
-    display:inline-block;
-    padding: 0 0 0 0px;
-  }
-  input[type=checkbox]:checked + label
-  {
-    border-style: solid;
-    border-width: thin;
-    border-color: #000000;
-    background: #C0C0C0;
-    height: 40px;
-    width: 32px;
-    display:inline-block;
-    padding: 0 0 0 0px;
-  }
-
-  input[type=radio] {
-    display:none;
-  }
-  input[type=radio] + label
-  {
-    background: #EEE;
-    height: 50px;
-    width: 45px;
-    display:inline-block;
-    padding: 0 0 0 0px;
-  }
-  input[type=radio]:checked + label
-  {
-    background: #00FF00;
-    height: 50px;
-    width: 45px;
-    display:inline-block;
-    padding: 0 0 0 0px;
-  }
-</style>
+<link type="text/css" rel="stylesheet" href="ui/css/cadnano.css">
 
 <!-- pane layout -->
 <script>
@@ -183,8 +111,8 @@ $(document).ready(function($) {
 </div>
 <div id="mainWindow">
   <div id="sliceButtons">
-       <button type="button" onclick="" class="vbutton"><img src="ui/images/slice-go-first.png" width="32" height="32"><br>First</br></button>
-    <p><button type="button" onclick="" class="vbutton"><img src="ui/images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
+       <button type="button" onclick="DocControl.activesliceFirst()" class="vbutton"><img src="ui/images/slice-go-first.png" width="32" height="32"><br>First</br></button>
+    <p><button type="button" onclick="DocControl.activesliceLast()" class="vbutton"><img src="ui/images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
     <p><button type="button" onclick="" class="vbutton"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
   </div>
   <div id="pathButtons">
@@ -198,7 +126,7 @@ $(document).ready(function($) {
   </div>
   <div id="drawnPanels">
     <div id="sliceView"> </div>
-    <div id="pathView" tabindex="0"> </div>
+    <div id="pathView"> </div>
   </div>
 </div>
 </body>

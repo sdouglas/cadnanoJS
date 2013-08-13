@@ -71,6 +71,15 @@ var Document = Backbone.Model.extend({
     getKey: function(){
 	return this.key;
     },
+
+    moveSliceItemToFirst: function() {
+	this.trigger(cadnanoEvents.moveSliceItemToFirstSignal);
+    },
+
+    moveSliceItemToLast: function() {
+	this.trigger(cadnanoEvents.moveSliceItemToLastSignal);
+    },
+
 });
 
 var AddPartCommand = new Undo.Command.extend({

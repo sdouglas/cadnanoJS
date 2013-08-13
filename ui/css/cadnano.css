@@ -1,0 +1,80 @@
+  /* Split panel aesthetics */
+  .ui-layout-pane {
+    border: 0px;
+    padding: 0;
+  }
+  #pathButtons, #sliceButtons {
+    background: #EEE;
+  }
+  #toolbar {
+    background: #DDD;
+  }
+
+  /* Buttons: margins, image checkbox/radio */
+  .hbutton, .vbutton {
+    margin-top: 0px;
+    margin-left: 0px;
+    margin-right: 6px;
+    border: none;
+    background: none;
+    float: left;
+  }
+  .hbutton {
+    margin-bottom: 0px;
+  }
+  .vbutton {
+    margin-bottom: 6px;
+  }
+  input[type=checkbox] {
+    display:none;
+  }
+  input[type=checkbox] + label
+  {
+    border-style: solid;
+    border-width: thin;
+    border-color: #DDD;
+    background: #DDD;
+    height: 40px;
+    width: 32px;
+    display:inline-block;
+    padding: 0 0 0 0px;
+  }
+  input[type=checkbox]:checked + label
+  {
+    border-style: solid;
+    border-width: thin;
+    border-color: #000000;
+    background: #C0C0C0;
+    height: 40px;
+    width: 32px;
+    display:inline-block;
+    padding: 0 0 0 0px;
+  }
+
+  input[type=radio] {
+    display:none;
+  }
+  input[type=radio] + label
+  {
+    text-align: center;
+    border-style: solid;
+    border-width: thin;
+    border-color: #EEE;
+    background: #EEE;
+    height: 52.5px;
+    width: 44.5px;
+    display:inline-block;
+    padding: 0 0 0 0px;
+  }
+  input[type=radio]:checked + label
+  {
+    text-align: center;
+    border-style: solid;
+    border-width: thin;
+    border-color: #000000;
+    background: #C0C0C0;
+    height: 52.5px;
+    width: 44.5px;
+    display:inline-block;
+    padding: 0 0 0 0px;
+  }
