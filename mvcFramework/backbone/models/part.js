@@ -89,6 +89,14 @@ var Part = Backbone.Model.extend({
         return this.maxCol;
     },
 
+    getOrigin: function() {
+	return this.origin;
+    },
+
+    getRadius: function() {
+	return this.radius;
+    },
+
     getStorageID: function(row,col){
         return row*this.maxRowsEver+col;
     },

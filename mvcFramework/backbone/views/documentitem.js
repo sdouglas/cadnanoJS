@@ -31,22 +31,25 @@ var DocumentItem = Backbone.View.extend({
         console.log("called documentPartAddedSlot");
 
         //Slice View Parameters.
-        var jSliceView = $('#sliceView');
-        var svWidth = jSliceView.css('width');
-        if('0px' === svWidth || !svWidth) 
-            svWidth = Constants.SliceViewWidth;
-
-        var svHeight = jSliceView.css('height');
-        if('0px' === svHeight || !svHeight) 
-            svHeight = Constants.SliceViewHeight;
-
         //The parseInt converts the string to a number.
         //Kinetic.js doesn't work with 100px, but works with
         //the literal 100.
+        var jSliceView = $('#sliceView');
+	var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius(); //for square change 1.732 to 2
+        var svWidth = jSliceView.css('width');
+        if('0px' === svWidth || !svWidth) 
+            svWidth = Constants.SliceViewWidth;
+	svWidth = Math.max(parseInt(svWidth,10), svMinWidth);
+	var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius(); //for square change 3 to 2
+        var svHeight = jSliceView.css('height');
+        if('0px' === svHeight || !svHeight) 
+            svHeight = Constants.SliceViewHeight;
+	svHeight = Math.max(parseInt(svHeight,10), svMinHeight);
+
         var svParams = {
             container:   'sliceView', 
-            width:  parseInt(svWidth,10), 
-            height: parseInt(svHeight,10),
+            width:  svWidth, 
+            height: svHeight,
         };
         
         //Note: Its important to pass in the "el" element in the constructor
@@ -190,11 +193,12 @@ var DocumentItem = Backbone.View.extend({
 	    }
 	    if(zoomLvl !== 12) {
 		zoomLvl += 1;
-		var oldZf = this.sliceView.zoomFactor;
 		this.sliceView.zoomFactor = zoomArray[zoomLvl];
 		//change the stage's properties
-		this.sliceView.handler.handler.setWidth(this.sliceView.handler.handler.getWidth()*this.sliceView.zoomFactor/oldZf);
-		this.sliceView.handler.handler.setHeight(this.sliceView.handler.handler.getHeight()*this.sliceView.zoomFactor/oldZf);
+		var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius();
+		var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius();
+		this.sliceView.handler.handler.setWidth(Math.max(svMinWidth*this.sliceView.zoomFactor,innerLayout.state.west.innerWidth));
+		this.sliceView.handler.handler.setHeight(Math.max(svMinHeight*this.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
 		//change the layers' scaling factor
 		this.sliceView.handler.textLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.shapeLayer.setScale(this.sliceView.zoomFactor);
@@ -211,10 +215,11 @@ var DocumentItem = Backbone.View.extend({
 	    }
 	    if(zoomLvl !== 0) {
 		zoomLvl -= 1;
-		var oldZf = this.sliceView.zoomFactor;
 		this.sliceView.zoomFactor = zoomArray[zoomLvl];
-		this.sliceView.handler.handler.setWidth(this.sliceView.handler.handler.getWidth()*this.sliceView.zoomFactor/oldZf);
-		this.sliceView.handler.handler.setHeight(this.sliceView.handler.handler.getHeight()*this.sliceView.zoomFactor/oldZf);
+		var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius();
+		var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius();
+		this.sliceView.handler.handler.setWidth(Math.max(svMinWidth*this.sliceView.zoomFactor,innerLayout.state.west.innerWidth));
+		this.sliceView.handler.handler.setHeight(Math.max(svMinHeight*this.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
 		this.sliceView.handler.textLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.shapeLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.helixLayer.setScale(this.sliceView.zoomFactor);
