@@ -362,29 +362,13 @@ var StrandItem = Backbone.View.extend({
         return dcI+Math.min(d,rightD);
     },
 
-    canBreakStrand: function(counter) {
-	if(this.endItemL.prime === 5) {
-	    return this.xEnd-counter > 1 && counter > this.xStart;
-	}
-	else {
-	    return counter-this.xStart > 1 && counter < this.xEnd;
-	}
-    },
-
     breakStrand: function(counter) {
-	this.finalLayer.destroyChildren();
-	this.finalLayer.draw();
-	var strandSet = this.modelStrand.strandSet;
-	if(this.endItemL.prime === 5 && this.xEnd-counter > 1 && counter > this.xStart) {
-	    strandSet.removeStrand(this.xStart,this.xEnd);
-	    strandSet.createStrand(this.xStart,counter);
-	    strandSet.createStrand(counter+1,this.xEnd);
-	}
-	else if(this.endItemL.prime === 3 && counter-this.xStart > 1 && counter < this.xEnd) {
-	    strandSet.removeStrand(this.xStart,this.xEnd);
-	    strandSet.createStrand(this.xStart,counter-1);
-	    strandSet.createStrand(counter,this.xEnd);
-	}
+        var strandSet = this.modelStrand.strandSet;
+        if(strandSet.canSplitStrand(this.modelStrand,counter)){
+            strandSet.splitStrand(this.modelStrand,counter);
+        }
+        this.finalLayer.destroyChildren();
+        this.finalLayer.draw();
     },
 
     insertBase: function(counter) {
