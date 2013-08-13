@@ -19,7 +19,7 @@ var PreXoverItem = Backbone.View.extend({
 	}
 	else {
 	    clickable = false;
-	    this.colour = "#B0B0B0"; //greyish
+	    this.colour = colours.lightergraystroke; //greyish
 	}
 
 	this.group = new Kinetic.Group();

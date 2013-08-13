@@ -2,7 +2,7 @@ var PathHelixSetItem = Backbone.View.extend({
     initialize: function(){
 	//pathTool variables
 	this.pencilendpoint = undefined; //used for pencil
-	this.paintcolor = "#008800"; //used for paint
+	this.paintcolor = colours.bluestroke; //used for paint
 	//PathHelixSetItem should contains variables that multiple sub-classes need
         this.handler = this.options.handler;
         this.part = this.options.part;
@@ -208,8 +208,8 @@ var PathHelixItem = Backbone.View.extend ({
 		    y: this.startY+j*this.sqLength,
 		    width: this.sqLength,
 		    height: this.sqLength,
-		    fill: "#FFFFFF",
-		    stroke: "#DDDDDD",
+		    fill: colours.white,
+		    stroke: colours.lightgraystroke,
 		    strokeWidth: 2,
 		});
 		this.group.add(rect);
@@ -218,7 +218,7 @@ var PathHelixItem = Backbone.View.extend ({
 		var divLineXStart = this.startX+i*this.sqLength;
 		var divLine = new Kinetic.Line({
 		    points: [divLineXStart,this.startY-1,divLineXStart,this.startY+2*this.sqLength+1],
-		    stroke: "#666666",
+		    stroke: colours.graystroke,
 		    strokeWidth: 2
 		});
 		this.group.add(divLine);
@@ -346,8 +346,8 @@ var PathHelixItem = Backbone.View.extend ({
 		    y: this.startY+j*this.sqLength,
 		    width: this.sqLength,
 		    height: this.sqLength,
-		    fill: "#FFFFFF",
-		    stroke: "#DDDDDD",
+		    fill: colours.white,
+		    stroke: colours.lightgraystroke,
 		    strokeWidth: 2,
 		});
 		this.group.add(rect);
@@ -356,7 +356,7 @@ var PathHelixItem = Backbone.View.extend ({
 		var divLineXStart = this.startX+i*this.sqLength;
 		var divLine = new Kinetic.Line({
 		    points: [divLineXStart,this.startY-1,divLineXStart,this.startY+2*this.sqLength+1],
-		    stroke: "#666666",
+		    stroke: colours.graystroke,
 		    strokeWidth: 2
 		});
 		this.group.add(divLine);
@@ -496,7 +496,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	    text: helixNum,
 	    fontSize: this.sqLength,
 	    fontFamily: "Calibri",
-	    fill: "#000000",
+	    fill: colours.black,
 	});
 	helixNumText.setOffset({
 	    x: helixNumText.getWidth()/2
@@ -653,7 +653,7 @@ var ColorChangeItem = Backbone.View.extend({
 	    y: 5,
 	    width: 20,
 	    height: 20,
-	    stroke: "#000000",
+	    stroke: colours.black,
 	    strokeWidth: 1,
 	    fill: this.options.parent.paintcolor
 	});

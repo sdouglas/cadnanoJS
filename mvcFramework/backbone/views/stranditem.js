@@ -94,8 +94,8 @@ var StrandItem = Backbone.View.extend({
             y: this.yCoord-this.sqLength/2,
             width: this.xEndCoord-this.xStartCoord,
             height: this.sqLength,
-            fill: "#FFFFFF",
-            stroke: "#FFFFFF",
+            fill: colours.white,
+            stroke: colours.white,
             strokeWidth: 1,
             opacity: 0
         });
@@ -295,7 +295,7 @@ var StrandItem = Backbone.View.extend({
 	    width: this.sqLength*(this.xEnd-this.xStart+1),
 	    height: this.sqLength,
 	    fill: "transparent",
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2,
 	});
 	this.redBox.superobj = this;
@@ -457,7 +457,7 @@ var StrandItem = Backbone.View.extend({
 			text: seq.charAt(seqIndex),
 			fontSize: this.sqLength*0.4,
 			fontFamily: "Calibri",
-			fill: "#000000",
+			fill: colours.black,
 		    });
 		    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 		    if(this.yLevel === 1) {
@@ -480,7 +480,7 @@ var StrandItem = Backbone.View.extend({
 			    text: seq.charAt(seqIndex),
 			    fontSize: this.sqLength*0.4,
 			    fontFamily: "Calibri",
-			    fill: "#000000",
+			    fill: colours.black,
 			});
 			text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 			if(this.yLevel === 1) {
@@ -495,7 +495,7 @@ var StrandItem = Backbone.View.extend({
 			    text: seq.substring(seqIndex),
 			    fontSize: this.sqLength*0.4,
 			    fontFamily: "Calibri",
-			    fill: "#000000",
+			    fill: colours.black,
 			});
 			if(seqIndex+additionalBase <= seq.length) {
 			    additionalText.setText(seq.substring(seqIndex,seqIndex+additionalBase));
@@ -518,7 +518,7 @@ var StrandItem = Backbone.View.extend({
 			text: seq.charAt(seqIndex),
 			fontSize: this.sqLength*0.4,
 			fontFamily: "Calibri",
-			fill: "#000000",
+			fill: colours.black,
 		    });
                     text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
                     if(this.yLevel === 1) {
@@ -541,7 +541,7 @@ var StrandItem = Backbone.View.extend({
 			    text: seq.substring(seqIndex),
 			    fontSize: this.sqLength*0.4,
 			    fontFamily: "Calibri",
-			    fill: "#000000",
+			    fill: colours.black,
 			});
 			if(seqIndex+additionalBase <= seq.length) {
 			    additionalText.setText(seq.substring(seqIndex,seqIndex+additionalBase));
@@ -560,7 +560,7 @@ var StrandItem = Backbone.View.extend({
 				text: seq.charAt(seqIndex),
 				fontSize: this.sqLength*0.4,
 				fontFamily: "Calibri",
-				fill: "#000000",
+				fill: colours.black,
 			    });
 			    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 			    if(this.yLevel === 1) {
@@ -661,7 +661,7 @@ var InsertItem = Backbone.View.extend({
 		     this.startX+(this.position+1.1)*this.sqLength, this.yCoordTop-this.sqLength
 		     ],
 	    fill: "transparent",
-	    stroke: "#000000",
+	    stroke: colours.black,
 	    strokeWidth: 2
         });
 	var textTop = new Kinetic.Text({
@@ -670,7 +670,7 @@ var InsertItem = Backbone.View.extend({
 	    text: this.extraBase,
 	    fontSize: this.sqLength*0.5,
 	    fontFamily: "Calibri",
-	    fill: "#000000",
+	    fill: colours.black,
 	});
 	textTop.setOffset({x: textTop.getWidth()/2, y: textTop.getHeight()/2});
 	var triangleBot = new Kinetic.Polygon({
@@ -679,7 +679,7 @@ var InsertItem = Backbone.View.extend({
 		     this.startX+(this.position+1.1)*this.sqLength, this.yCoordBot+this.sqLength
 		     ],
 	    fill: "transparent",
-	    stroke: "#000000",
+	    stroke: colours.black,
 	    strokeWidth: 2
         });
 	var textBot = new Kinetic.Text({
@@ -688,7 +688,7 @@ var InsertItem = Backbone.View.extend({
 	    text: this.extraBase,
 	    fontSize: this.sqLength*0.5,
 	    fontFamily: "Calibri",
-	    fill: "#000000",
+	    fill: colours.black,
 	});
 	textBot.setOffset({x: textBot.getWidth()/2, y: textBot.getHeight()/2});
 
@@ -747,25 +747,25 @@ var SkipItem = Backbone.View.extend({
 	var slashT1 = new Kinetic.Line({
             points: [this.startX+this.position*this.sqLength, this.yCoordTop-this.sqLength/2,
 		     this.startX+(this.position+1)*this.sqLength, this.yCoordTop+this.sqLength/2],
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2
         });
 	var slashT2 = new Kinetic.Line({
             points: [this.startX+(this.position+1)*this.sqLength, this.yCoordTop-this.sqLength/2,
 		     this.startX+this.position*this.sqLength, this.yCoordTop+this.sqLength/2],
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2
         });
 	var slashB1 = new Kinetic.Line({
             points: [this.startX+this.position*this.sqLength, this.yCoordBot-this.sqLength/2,
 		     this.startX+(this.position+1)*this.sqLength, this.yCoordBot+this.sqLength/2],
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2
         });
 	var slashB2 = new Kinetic.Line({
             points: [this.startX+(this.position+1)*this.sqLength, this.yCoordBot-this.sqLength/2,
 		     this.startX+this.position*this.sqLength, this.yCoordBot+this.sqLength/2],
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2
         });
 
@@ -802,7 +802,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;
-	this.strandColor = "#AA0000";
+	this.strandColor = colours.darkred;
 	this.yLevel = y;
 	this.xStart = Math.min(x1,x2);
 	this.xEnd = Math.max(x1,x2);
@@ -830,7 +830,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord-this.sqLength*0.35],
 		    fill: this.strandColor,
-		    stroke: "#AA0000",
+		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
 		this.endP2 = new Kinetic.Polygon({
@@ -838,7 +838,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord-this.sqLength*0.5,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord+this.sqLength*0.5],
 		    fill: this.strandColor,
-		    stroke: "#AA0000",
+		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
 	    }
@@ -849,7 +849,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.2,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.2,this.yCoord-this.sqLength*0.35],
 		    fill: this.strandColor,
-		    stroke: "#AA0000",
+		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
                 this.endP2 = new Kinetic.Polygon({
@@ -857,7 +857,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord-this.sqLength*0.5,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord+this.sqLength*0.5],
 		    fill: this.strandColor,
-		    stroke: "#AA0000",
+		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
 	    }

@@ -26,7 +26,7 @@ var ActiveSliceItem = Backbone.View.extend({
 	    width: this.sqLength,
 	    height: 0,
 	    fill: colours.orangefill,
-	    stroke: "#000000",
+	    stroke: colours.black,
 	    strokeWidth: 1,
 	    opacity: 0.6
 	});
@@ -36,7 +36,7 @@ var ActiveSliceItem = Backbone.View.extend({
 	    text: this.counter,
 	    fontSize: 16,
 	    fontFamily: "Calibri",
-	    fill: "#000000",
+	    fill: colours.black,
 	    });
 	this.counterText.setOffset({ //centering the text (note: align center doesn't work)
 	    x: this.counterText.getWidth()/2

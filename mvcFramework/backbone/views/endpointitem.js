@@ -60,7 +60,7 @@ var EndPointItem = Backbone.View.extend({
 	this.shape = new Kinetic.Polygon({
 	    points: polypts,
 	    fill: this.parent.strandColor,
-	    stroke: "#000000",
+	    stroke: colours.black,
 	    strokeWidth: 1,
 	    draggable: true,
 	    dragBoundFunc: function(pos) {
@@ -173,7 +173,7 @@ var EndPointItem = Backbone.View.extend({
 	    width: this.sqLength,
 	    height: this.sqLength,
 	    fill: "transparent",
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2,
 	});
 	this.redBox.superobj = this;
@@ -237,7 +237,7 @@ var EndPointItem = Backbone.View.extend({
 	    var pencilNotifier = helixset.pencilendpoint.shape.clone(); //a red shape that lies on top of original as indicator
 	    pencilNotifier.off("mousedown");
 	    pencilNotifier.off("click");
-	    pencilNotifier.setFill("#FF0000");
+	    pencilNotifier.setFill(colours.red);
 	    this.tempLayer.add(pencilNotifier);
 	    this.tempLayer.draw();
 	    pencilNotifier.on("click", function() { //click again = cancel

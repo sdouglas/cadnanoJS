@@ -225,8 +225,8 @@ var XoverItem = Backbone.View.extend({
 	    y: Math.min(this.node3.centerY,this.node5.centerY)-this.sqLength/2,
 	    width: Math.abs(this.node3.centerX-this.node5.centerX)+this.sqLength,
 	    height: Math.abs(this.node3.centerY-this.node5.centerY)+this.sqLength,
-	    fill: "#FFFFFF",
-	    stroke: "#FFFFFF",
+	    fill: colours.white,
+	    stroke: colours.white,
 	    strokeWidth: 1,
 	    opacity: 0
 	});
@@ -339,7 +339,7 @@ var XoverItem = Backbone.View.extend({
 	    width: this.invisConnection.getWidth(),
 	    height: this.invisConnection.getHeight(),
 	    fill: "transparent",
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2,
 	});
 	this.redBox.superobj = this;
