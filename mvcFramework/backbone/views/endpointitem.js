@@ -16,26 +16,20 @@ var EndPointItem = Backbone.View.extend({
         this.blkLength = this.parent.blkLength;
         this.sqLength = this.parent.sqLength;
 	
-        //counters
-        if(dir === "L") {
-            this.initcounter = this.parent.xStart;
-        }
-        else if(dir === "R") {
-            this.initcounter = this.parent.xEnd;
-        }
-	
-        this.counter = this.initcounter;
-        this.pCounter = this.counter;
-
-        //starting position
-        this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
-        this.centerY = this.parent.yCoord;
-	
         //misc. properties
         this.dir = dir;
         this.prime = type;
         this.yLevel = this.parent.yLevel;
         this.isScaf = this.parent.isScaf;
+	
+        //counters
+    	this.updateCounter();
+        this.initcounter = this.counter;
+        this.pCounter = this.counter;
+
+        //starting position
+        this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
+        this.centerY = this.parent.yCoord;
 	
         //vertices of the shape
         var polypts;
@@ -134,11 +128,23 @@ var EndPointItem = Backbone.View.extend({
 	this.parent.addEndItem(this,dir,skipRedraw); //finally linking this item back to strand
     },
 
-    updateCenterX: function() {this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;},
+    updateCounter: function(){
+        if(this.dir === "L") {
+            this.counter = this.parent.modelStrand.low();
+        }
+        else if(this.dir === "R") {
+            this.counter = this.parent.modelStrand.high();
+        }
+    },
+
+    updateCenterX: function() {
+        this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
+    },
 
     update: function() {
-        this.pCounter = this.counter;
+        this.updateCounter();
         this.updateCenterX();
+        this.pCounter = this.counter;
         this.shape.setX((this.counter-this.initcounter)*this.sqLength);
     },
 

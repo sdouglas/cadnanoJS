@@ -377,6 +377,8 @@ var CreateStrandCommand = Undo.Command.extend({
         this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal, this.strand);
         var ret = this.strandSet.removeStrandRefs(this.strand);
         this.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        this.strandSet.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
+                    this.strandSet.helix);
         this.strand.destroy();
         console.log('received :' + ret + ', to remove strand');
     },

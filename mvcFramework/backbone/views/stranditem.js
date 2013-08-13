@@ -143,9 +143,10 @@ var StrandItem = Backbone.View.extend({
         this.endPointL.show(false);
         this.XoverL.show(false);
         this.XoverR.show(false);
-        console.log(this.modelStrand);
+
         this.endItemL = this.endPointL;
         this.endItemR = this.endPointR; 
+        console.log(this.modelStrand);
 
         if(this.modelStrand.connection3p()) {
             if(this.modelStrand.isDrawn5to3()){
@@ -324,13 +325,6 @@ var StrandItem = Backbone.View.extend({
         //send out the resize signal to the model.
         this.modelStrand.resize(this.xStart,
                 this.xEnd);
-        
-        //The update should be done post the resize signal.
-        //this.update();
-        //this.endItemL.update();
-        //this.endItemR.update();
-        //finally we can redraw the layer...
-        //this.layer.draw();
     },
 
     adjustCounter: function(dcI,dc) {

@@ -39,9 +39,9 @@ var Strand = Backbone.Model.extend({
         return this.low();
     },
 
-    resize: function(lowIdx, highIdx){
+    resize: function(low, high){
         console.log('just resized the strand');
-        var newIdxs = {lowIdx: lowIdx, highIdx: highIdx};
+        var newIdxs = new Array(low,high);
         this.undoStack().execute(new ResizeCommand(newIdxs, this));
     },
 
@@ -82,13 +82,13 @@ var Strand = Backbone.Model.extend({
      */
     idxs:
     function(){
-        return {lowIdx: this.baseIdxLow, highIdx: this.baseIdxHigh};
+        return new Array(this.baseIdxLow, this.baseIdxHigh);
     },
 
     setIdx: function(idx){
         console.log('just set the new indices');
-        this.baseIdxLow = idx.lowIdx;
-        this.baseIdxHigh = idx.highIdx;
+        this.baseIdxLow = idx[0];
+        this.baseIdxHigh = idx[1];
     },
 
     low: function(){
@@ -142,10 +142,10 @@ var ResizeCommand = Undo.Command.extend({
         else this.strandSet = this.helix.stapStrandSet;
         //get the strand object.
         if(useNew) {
-            this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.newIdxs.lowIdx, this.newIdxs.highIdx));
+            this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.newIdxs[0], this.newIdxs[1]));
         }
         else { 
-            this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.oldIdxs.lowIdx, this.oldIdxs.highIdx));
+            this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.oldIdxs[0], this.oldIdxs[1]));
         }
     },
 
@@ -156,7 +156,7 @@ var ResizeCommand = Undo.Command.extend({
         this.strand.setIdx(this.oldIdxs);
 
         this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
-        this.strand.trigger(cadnanoEvents.strandUpdateSignal, this.oldIdxs.lowIdx, this.oldIdxs.highIdx);
+        this.strand.trigger(cadnanoEvents.strandUpdateSignal);
         
         //update the path view.
         //This signal has been renamed from partStrandChangedSignal
@@ -173,7 +173,7 @@ var ResizeCommand = Undo.Command.extend({
 
         this.strand.setIdx(this.newIdxs);
         console.log(this.newIdxs);
-        this.strand.trigger(cadnanoEvents.strandUpdateSignal, this.newIdxs.lowIdx, this.newIdxs.highIdx);
+        this.strand.trigger(cadnanoEvents.strandUpdateSignal);
         this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
 
         //update the path view.
@@ -183,16 +183,3 @@ var ResizeCommand = Undo.Command.extend({
     execute:
     function(){},
 });
-
-/*
-var ResizeCommand = Undo.Command.extend({
-    constructor:
-    function(){},
-    undo:
-    function(){},
-    redo:
-    function(){},
-    execute:
-    function(){},
-});
-*/
