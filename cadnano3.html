@@ -90,39 +90,39 @@ $(document).ready(function($) {
 
 <body>
 <div id="toolbar">
-  <button type="button" onclick="DocControl.newDocument();" class="hbutton"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
-  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-open_32.png" width="32" height="32"><br>Open</br></button>
-  <button type="button" onclick="DocControl.saveDocument();" class="hbutton"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
-  <button type="button" onclick="" class="hbutton"><img src="ui/images/data-svg.png" width="32" height="32"><br>SVG</br></button>
-  <button type="button" onclick="" class="hbutton"><img src="ui/images/export-staples.png" width="32" height="32"><br>Export</br></button>
-  <button type="button" onclick="DocControl.createHoneyCombLattice();" class="hbutton"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
-  <button type="button" onclick="DocControl.createSquareLattice();" class="hbutton"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
-  <button type="button" onclick="" class="hbutton"><img src="ui/images/path-staple.png" width="32" height="32"><br>AutoStaple</br></button>
-  <button type="button" onclick="" class="hbutton"><img src="ui/images/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
-  <div style="position: absolute; top:16px; left: 600px">Selectable:</div>
+  <button title="New" type="button" onclick="DocControl.newDocument();" class="hbutton"><img src="ui/images/data-new_32.png" width="32" height="32"><br>New</br></button>
+  <button title="Open" type="button" onclick="" class="hbutton"><img src="ui/images/data-open_32.png" width="32" height="32"><br>Open</br></button>
+  <button title="Save" type="button" onclick="DocControl.saveDocument();" class="hbutton"><img src="ui/images/data-save_32.png" width="32" height="32"><br>Save</br></button>
+  <button title="SVG" type="button" onclick="" class="hbutton"><img src="ui/images/data-svg.png" width="32" height="32"><br>SVG</br></button>
+  <button title="Export oligos as *.CSV" type="button" onclick="" class="hbutton"><img src="ui/images/export-staples.png" width="32" height="32"><br>Export</br></button>
+  <button title="Click to add new part with honeycomb lattice." type="button" onclick="DocControl.createHoneyCombLattice();" class="hbutton"><img src="ui/images/part-new-honeycomb.png" width="32" height="32"><br>Honeycomb</br></button>
+  <button title="Click to add new part with square lattice." type="button" onclick="DocControl.createSquareLattice();" class="hbutton"><img src="ui/images/part-new-square.png" width="32" height="32"><br>Square</br></button>
+  <button title="Create staple strand complementary to existing scaffold." type="button" onclick="" class="hbutton"><img src="ui/images/path-staple.png" width="32" height="32"><br>AutoStaple</br></button>
+  <button title="Click this button to generate a default set of staples." type="button" onclick="" class="hbutton"><img src="ui/images/path-autobreak.png" width="32" height="32"><br>AutoBreak</br></button>
+  <div title="Selection filters" style="position: absolute; top:16px; left: 600px">Selectable:</div>
   <div style="position: absolute; top:6px; left: 675px">
-    <input type="checkbox" onclick="tbArrayChange(0)" name="selectable" value="0" id="tb0" checked="true"><label for="tb0"><img src="ui/images/part-filter-scaf.png" width="32" height="32"></label>
-    <input type="checkbox" onclick="tbArrayChange(1)" name="selectable" value="1" id="tb1" checked="true"><label for="tb1"><img src="ui/images/part-filter-stap.png" width="32" height="32"></label>
-    <input type="checkbox" onclick="tbArrayChange(2)" name="selectable" value="2" id="tb2"               ><label for="tb2"><img src="ui/images/part-filter-handle.png" width="32" height="32"></label>
-    <input type="checkbox" onclick="tbArrayChange(3)" name="selectable" value="3" id="tb3" checked="true"><label for="tb3"><img src="ui/images/part-filter-endpoint.png" width="32" height="32"></label>
-    <input type="checkbox" onclick="tbArrayChange(4)" name="selectable" value="4" id="tb4" checked="true"><label for="tb4"><img src="ui/images/part-filter-xover.png" width="32" height="32"></label>
-    <input type="checkbox" onclick="tbArrayChange(5)" name="selectable" value="5" id="tb5"               ><label for="tb5"><img src="ui/images/part-filter-strand.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(0)" name="selectable" value="0" id="tb0" checked="true"><label title="s(C)affold" for="tb0"><img src="ui/images/part-filter-scaf.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(1)" name="selectable" value="1" id="tb1" checked="true"><label title="s(T)aple" for="tb1"><img src="ui/images/part-filter-stap.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(2)" name="selectable" value="2" id="tb2"><label title="(H)andles" for="tb2"><img src="ui/images/part-filter-handle.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(3)" name="selectable" value="3" id="tb3" checked="true"><label title="(E)ndpoints" for="tb3"><img src="ui/images/part-filter-endpoint.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(4)" name="selectable" value="4" id="tb4" checked="true"><label title="(X)overs" for="tb4"><img src="ui/images/part-filter-xover.png" width="32" height="32"></label>
+    <input type="checkbox" onclick="tbArrayChange(5)" name="selectable" value="5" id="tb5"><label title="stran(D)s" for="tb5"><img src="ui/images/part-filter-strand.png" width="32" height="32"></label>
   </div>
 </div>
 <div id="mainWindow">
   <div id="sliceButtons">
-       <button type="button" onclick="DocControl.activesliceFirst()" class="vbutton"><img src="ui/images/slice-go-first.png" width="32" height="32"><br>First</br></button>
-    <p><button type="button" onclick="DocControl.activesliceLast()" class="vbutton"><img src="ui/images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
-    <p><button type="button" onclick="" class="vbutton"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
+       <button type="button" title="Move the slice bar to the first position." onclick="DocControl.activesliceFirst()" class="vbutton"><img src="ui/images/slice-go-first.png" width="32" height="32"><br>First</br></button>
+    <p><button type="button" title="Move the slice bar to the last position." onclick="DocControl.activesliceLast()" class="vbutton"><img src="ui/images/slice-go-last.png" width="32" height="32"><br>Last</br></button></p>
+    <p><button type="button" title="Renumber slice helices according to helix ordering in path panel." onclick="" class="vbutton"><img src="ui/images/slice-renumber.png" width="32" height="32"><br>RNum</br></button></p>
   </div>
   <div id="pathButtons">
-       <input type='radio' name='pathButtons' onclick="DocControl.setPathTool('select')" id="pb0" checked="true"/><label for="pb0"><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></label>
-    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('pencil')" id="pb1"               /><label for="pb1"><img src="ui/images/path-force-xover.png" width="32" height="32"><br>Pencil</br></label></p>
-    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('break')"  id="pb2"               /><label for="pb2"><img src="ui/images/path-break_48.png" width="32" height="32"><br>Break</br></label></p>
-    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('insert')" id="pb3"               /><label for="pb3"><img src="ui/images/path-insert_48x48.png" width="32" height="32"><br>Insert</br></label></p>
-    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('skip')"   id="pb4"               /><label for="pb4"><img src="ui/images/path-skip_48x48.png" width="32" height="32"><br>Skip</br></label></p>
-    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('paint')"  id="pb5"               /><label for="pb5"><img src="ui/images/path-paint_48.png" width="32" height="32"><br>Paint</br></label></p>
-    <p><input type='radio' name='pathButtons' onclick="DocControl.setPathTool('seq')"    id="pb6"               /><label for="pb6"><img src="ui/images/path-addseq.png" width="32" height="32"><br>Seq</br></label></p>
+       <input type="radio" name="pathButtons" onclick="DocControl.setPathTool('select')" id="pb0" checked="true"/><label title="Select tool (v)" for="pb0"><img src="ui/images/path-edit_32.png" width="32" height="32"><br>Select</br></label>
+    <p><input type="radio" name="pathButtons" onclick="DocControl.setPathTool('pencil')" id="pb1"/><label title="Pe(n)cil tool" for="pb1"><img src="ui/images/path-force-xover.png" width="32" height="32"><br>Pencil</br></label></p>
+    <p><input type="radio" name="pathButtons" onclick="DocControl.setPathTool('break')" id="pb2"/><label title="(B)reak tool" for="pb2"><img src="ui/images/path-break_48.png" width="32" height="32"><br>Break</br></label></p>
+    <p><input type="radio" name="pathButtons" onclick="DocControl.setPathTool('insert')" id="pb3"/><label title="(I)nsert tool" for="pb3"><img src="ui/images/path-insert_48x48.png" width="32" height="32"><br>Insert</br></label></p>
+    <p><input type="radio" name="pathButtons" onclick="DocControl.setPathTool('skip')" id="pb4"/><label title="(S)kip tool" for="pb4"><img src="ui/images/path-skip_48x48.png" width="32" height="32"><br>Skip</br></label></p>
+    <p><input type="radio" name="pathButtons" onclick="DocControl.setPathTool('paint')" id="pb5"/><label title="(P)aint tool" for="pb5"><img src="ui/images/path-paint_48.png" width="32" height="32"><br>Paint</br></label></p>
+    <p><input type="radio" name="pathButtons" onclick="DocControl.setPathTool('seq')" id="pb6"/><label title="(A)dd sequence tool" for="pb6"><img src="ui/images/path-addseq.png" width="32" height="32"><br>Seq</br></label></p>
   </div>
   <div id="drawnPanels">
     <div id="sliceView"> </div>

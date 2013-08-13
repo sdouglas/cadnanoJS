@@ -99,9 +99,11 @@ var EndPointItem = Backbone.View.extend({
 	});
 
 	this.shape.on("click", function(pos) {
+	    this.superobj.phItem.options.parent.prexoverlayer.destroyChildren();
+	    this.superobj.phItem.options.parent.part.setActiveVirtualHelix(this.superobj.phItem.options.model);
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-        if(pathTool === "pencil") {
-            this.superobj.createXover();
+	    if(pathTool === "pencil") {
+		this.superobj.createXover();
 	    }
 	});
 
@@ -247,6 +249,8 @@ var EndPointItem = Backbone.View.extend({
 	    });
 	}
 	else {
+	    
+	    /*
 	    var nodeAInfo = {
 		strand: helixset.pencilendpoint.parent,
 		dir: helixset.pencilendpoint.dir,
@@ -281,6 +285,7 @@ var EndPointItem = Backbone.View.extend({
 	    else {
 		alert("Crossover can only occur between a 3' and a 5'!");
 	    }
+	    */
 	}
     },
 

@@ -112,6 +112,8 @@ var StrandItem = Backbone.View.extend({
         });
 
         this.group.on("click", function(pos) {
+	    this.superobj.parent.options.parent.prexoverlayer.destroyChildren();
+	    this.superobj.parent.options.parent.part.setActiveVirtualHelix(this.superobj.parent.options.model);
             var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
             var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.parent.options.parent.scaleFactor)/this.superobj.sqLength)-5;
             if(pathTool === "break") {
