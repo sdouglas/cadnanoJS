@@ -338,7 +338,6 @@ var CreateStrandCommand = Undo.Command.extend({
         //helix
         this.currDoc = strandSet.helix.part.currDoc;
         this.helixId = strandSet.helix.id;
-        console.log(this.helixId);
         this.scaffold = strandSet.scaffold;
         this.startIdx = startIdx;
         this.endIdx = endIdx;
@@ -393,7 +392,6 @@ var CreateStrandCommand = Undo.Command.extend({
             strandSet: this.strandSet,
             helix: this.strandSet.helix,
         });
-        console.log(this.startIdx + ',' + this.endIdx + ':' + strand.cid);
         this.strandSet.insert(strand);
         this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal,
                 strand, this.strandSet.helix.hID);

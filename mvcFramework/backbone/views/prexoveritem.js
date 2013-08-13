@@ -90,10 +90,14 @@ var PreXoverItem = Backbone.View.extend({
 
     createXover: function() { //Note 001; DOES NOT WORK
         var strandSet1,strandSet2;
-        if(this.isScaf) strandSet1 = this.parent.options.model.scafStrandSet;
-        else strandSet1 = this.parent.options.model.stapStrandSet;
-        if(this.isScaf) strandSet2 = this.cHelixItem.options.model.scafStrandSet;
-        else strandSet2 = this.cHelixItem.options.model.stapStrandSet;
+        if(this.isScaf) {
+            strandSet1 = this.parent.options.model.scafStrandSet;
+            strandSet2 = this.cHelixItem.options.model.scafStrandSet;
+        }
+        else {
+            strandSet1 = this.parent.options.model.stapStrandSet;
+            strandSet2 = this.cHelixItem.options.model.stapStrandSet;
+        }
         //now get the strand obj based on the position.
         if((this.onLeft && strandSet1.isDrawn5to3()) || 
            (!this.onLeft && strandSet2.isDrawn5to3()) 
@@ -105,125 +109,8 @@ var PreXoverItem = Backbone.View.extend({
             var strand3p = strandSet1.getStrandAt(this.pos);
             var strand5p = strandSet2.getStrandAt(this.pos);
         }
-        console.log(strand5p);
-        console.log(strand3p);
         var part = strandSet1.part;
         var pos = this.pos;
         part.createXover(strand5p,pos,strand3p,pos);
-                 },
-        /*
-	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
-		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
->>>>>>> sudhanshu-aug5
-	    }
-	    else if((this.parent.options.model.hID+this.isScaf)%2) { //parent strand 5->3 (upper helix)
-		var canBreakP = this.parent.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos);
-		var canBreakC = this.cHelixItem.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos+1);
-		if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xEnd && canBreakC) { //parent strand's xover site is an endpoint (but not cStrand's)
-		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
-		    canCreate = true;
-		}
-		else if(this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xEnd && canBreakP) { //complementary strand's site is an endpoint (but not parent's)
-		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		    canCreate = true;
-		}
-		else if(this.parent.getStrandItem(canBreakP && canBreakC)) { //no endpoints
-		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
-		    canCreate = true;
-		}
-	    }
-	    else { //parent strand 3->5 (lower helix)
-		var canBreakP = this.parent.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos+1);
-		var canBreakC = this.cHelixItem.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos);
-		if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xEnd && canBreakC) { //parent strand's xover site is an endpoint (but not cStrand's)
-		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		    canCreate = true;
-		}
-		else if(this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xEnd && canBreakP) { //complementary strand's site is an endpoint (but not parent's)
-		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
-		    canCreate = true;
-		}
-		else if(canBreakP && canBreakC) { //no endpoints
-		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos+1);
-		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		    canCreate = true;
-		}
-	    }
-	    if(canCreate) {
-		this.parent.getStrandItem(this.isScaf,this.pos).endItemR.createXover();
-		this.cHelixItem.getStrandItem(this.isScaf,this.pos).endItemR.createXover();
-		this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
-	    }
-<<<<<<< HEAD
-	}
-	else { //onRight
-	    if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xStart && this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xStart) { //both sites are endpoints
-		canCreate = true;
-	    }
-	    else if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
-		var canBreakP = this.parent.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos-1);
-		var canBreakC = this.cHelixItem.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos);
-		if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xStart && canBreakC) { //parent strand's xover site is an endpoint (but not cStrand's)
-		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		    canCreate = true;
-		}
-		else if(this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xStart && canBreakP) { //complementary strand's site is an endpoint (but not parent's)
-		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
-		    canCreate = true;
-		}
-		else if(canBreakP && canBreakC) { //no endpoints
-		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
-		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		    canCreate = true;
-		}
-=======
-        */
-	    /*
-	      After merge and "Note 001" is taken care of:
-	      this.parent.leftStrandItem.endItemR.createXover();
-	      this.cHelixItem.leftStrandItem.endItemR.createXover();
-	      (replace leftStrandItem with correct code)
-	    */
-        /*
-	    if((this.parent.options.model.hID+this.isScaf)%2) { //top, aka 5->3
-		this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
-		this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
->>>>>>> sudhanshu-aug5
-	    }
-	    else { //bottom, aka 3->5
-		var canBreakP = this.parent.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos);
-		var canBreakC = this.cHelixItem.getStrandItem(this.isScaf,this.pos).canBreakStrand(this.pos-1);
-		if(this.pos === this.parent.getStrandItem(this.isScaf,this.pos).xStart && canBreakC) { //parent strand's xover site is an endpoint (but not cStrand's)
-		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
-		    canCreate = true;
-		}
-		else if(this.pos === this.cHelixItem.getStrandItem(this.isScaf,this.pos).xStart && canBreakP) { //complementary strand's site is an endpoint (but not parent's)
-		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		    canCreate = true;
-		}
-		else if(canBreakP && canBreakC) { //no endpoints
-		    this.parent.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos);
-		    this.cHelixItem.getStrandItem(this.isScaf,this.pos).breakStrand(this.pos-1);
-		    canCreate = true;
-		}
-	    }
-	    if(canCreate) {
-		this.parent.getStrandItem(this.isScaf,this.pos).endItemL.createXover();
-		this.cHelixItem.getStrandItem(this.isScaf,this.pos).endItemL.createXover();
-		this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
-	    }
-<<<<<<< HEAD
-	}
-=======
-        */
-	    /*
-	      After merge and "Note 001" is taken care of:
-	      this.parent.rightStrandItem.endItemL.createXover();
-	      this.cHelixItem.rightStrandItem.endItemL.createXover();
-	      (replace leftStrandItem with correct code)
     },
-	    */
-
 });

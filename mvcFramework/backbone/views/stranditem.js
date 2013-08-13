@@ -139,39 +139,51 @@ var StrandItem = Backbone.View.extend({
     },
 
     drawStrand: function(){
-        this.update();
+        this.endPointR.show(false);
+        this.endPointL.show(false);
+        this.XoverL.show(false);
+        this.XoverR.show(false);
+        console.log(this.modelStrand);
+        this.endItemL = this.endPointL;
+        this.endItemR = this.endPointR; 
 
         if(this.modelStrand.connection3p()) {
             if(this.modelStrand.isDrawn5to3()){
                 this.endItemR = this.XoverR;
-                this.endPointR.show(false);
+                console.log('in l1');
             }
             else{
                 this.endItemL = this.XoverL;
-                this.endPointL.show(false);
+                console.log('in l2');
             }
-        }
-        else {
-            this.endItemL = this.endPointL;
-            this.XoverL.show(false);
         }
 
         if(this.modelStrand.connection5p()){ 
             if(this.modelStrand.isDrawn5to3()){
                 this.endItemL = this.XoverL;
-                this.endPointL.show(false);
+                console.log('in l4');
             }
             else{
                 this.endItemR = this.XoverR;
-                this.endPointR.show(false);
+                console.log('in l5');
             }
         }
-        else{ 
-            this.endItemR = this.endPointR; 
-            this.XoverR.show(false);
-        }
-        this.endItemL.update();
-        this.endItemR.update();
+        console.log('this is strand: ' + this.modelStrand.low() + ':' +
+                this.modelStrand.high());
+        console.log(this.endItemL);
+        console.log(this.endItemR);
+        console.log('now the items in this order: endPointL, endPointR, XoverL, XoverR');
+        console.log(this.endPointL);
+        console.log(this.endPointR);
+        console.log(this.XoverL);
+        console.log(this.XoverR);
+
+        this.update();
+        this.endPointL.update();
+        this.endPointR.update();
+        this.XoverL.update();
+        this.XoverR.update();
+        
         this.endItemL.show(true);
         this.endItemR.show(true);
 	    this.layer.draw();
@@ -565,8 +577,10 @@ var StrandItem = Backbone.View.extend({
     function(destroy){
         //remove strand from layer.
         //remove endpoints from layer.
-        if(this.endItemL) this.endItemL.getRidOf();
-        if(this.endItemR) this.endItemR.getRidOf();
+        if(this.endPointL) this.endPointL.getRidOf();
+        if(this.endPointR) this.endPointR.getRidOf();
+        if(this.XoverL) this.XoverL.getRidOf();
+        if(this.XoverR) this.XoverR.getRidOf();
 
         this.group.removeChildren();
         this.layer.draw();
@@ -586,7 +600,6 @@ var StrandItem = Backbone.View.extend({
         //as an argument.
         //It updates the xoveritem incase an xover is created/deleted.
         console.log('strandUpdateSlot called');
-        console.log(this.modelStrand);
         this.drawStrand();
     },
 });

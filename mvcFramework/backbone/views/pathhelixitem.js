@@ -372,18 +372,19 @@ var PathHelixItem = Backbone.View.extend ({
 	}
     },
 
-    strandRemovedSlot: function(strand) {
-	var stItemArray = this.stapItemArray;
-	if(strand.strandSet.isScaffold()) {
-	    stItemArray = this.scafItemArray;
-	}
+    strandRemovedSlot: 
+    function(strand) {
+        var stItemArray = this.stapItemArray;
+        if(strand.strandSet.isScaffold()) {
+            stItemArray = this.scafItemArray;
+        }
         var len = stItemArray.length;
         console.log(len);
         for(var i=0; i<len; i++){
             if(stItemArray[i].modelStrand === strand){
                 stItemArray[i].getRidOf(true);
                 stItemArray.splice(i,1);
-		return true;
+                return true;
             }
         }
         return false;

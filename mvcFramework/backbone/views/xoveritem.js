@@ -19,14 +19,12 @@ var XoverNode = Backbone.View.extend({
 
 	//counters
 	if(dir === "L") {
-	    this.initcounter = this.parent.xStart;
+        this.initcounter = this.parent.modelStrand.low();
 	}
 	else if(dir === "R") {
-	    this.initcounter = this.parent.xEnd;
+        this.initcounter = this.parent.modelStrand.high();
 	}
-
 	this.counter = this.initcounter;
-	this.pCounter = this.counter;
 
 	//starting position
 	this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;
@@ -75,37 +73,56 @@ var XoverNode = Backbone.View.extend({
 	this.group.add(this.hLine);
 	this.group.add(this.vLine);
 	this.layer.add(this.group);
-	this.parent.addEndItem(this,dir,skipRedraw);
+	//this.parent.addEndItem(this,dir,skipRedraw);
     },
 
-    updateCenterX: function() {this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;},
-    updateLinkageX: function() {this.linkageX = this.centerX;},
+    updateCounter: 
+    function(){
+        if(this.dir === "L") {
+            this.counter = this.parent.modelStrand.low();
+        }
+        else if(this.dir === "R") {
+            this.counter = this.parent.modelStrand.high();
+        }
+    },
+    updateCenterX: function() {
+        this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;
+    },
+    updateLinkageX: function() {
+        this.linkageX = this.centerX;
+    },
 
     update: function() { //only redraws when boo is true
+        this.updateCounter();
         this.updateCenterX();
         this.updateLinkageX();
         this.group.setX((this.counter-this.initcounter)*this.sqLength);
+        console.log(this.counter);
+
+        console.log('did i enter this function: ' + this.prime);
+        //Delete existing xoveritem.
+        if(typeof this.xoveritem !== 'undefined'){
+            this.xoveritem.getRidOf();
+            this.xoveritem = undefined;
+        }
 
         //If this node is 3', then it'll 
-        //Delete existing xoveritem.
         //create a new xover item.
         //Else does nothing.
-        //
         if(this.prime === 3){
-            if(typeof this.xoveritem !== 'undefined'){
-                this.xoveritem.close();
-                this.xoveritem = undefined;
-            }
             //get other XoverNode.
             //Create new xover item.
             var otherStrand = this.parent.modelStrand.connection3p();
             if(!otherStrand) return;
 
             console.log(this.parent.modelStrand);
+            console.log('trying to create xoveritem');
             var phSetItem = this.parent.parent.options.parent;
             var phItem = phSetItem.getPathHelixItem(otherStrand.strandSet.helix.id);
-            var otherStItem = phItem.getStrandItem(otherStrand.strandSet.isScaffold(),
-                    otherStrand.idx5Prime());
+            var otherStItem = phItem.getStrandItem(
+                    otherStrand.strandSet.isScaffold(),
+                    otherStrand.idx5Prime()
+                );
 
             var otherNode;
             if(otherStrand.isDrawn5to3())
@@ -135,7 +152,18 @@ var XoverNode = Backbone.View.extend({
     show: function(flag){
         this.group.setVisible(flag);
     },
+
+    getRidOf: function(){
+                  if(this.xoveritem) this.xoveritem.getRidOf();
+                  this.group.removeChildren();
+                  this.group.destroy();
+                  this.close();
+              },
 });
+
+/**
+ * Creates a crossover between two locations.
+ */
 
 var XoverItem = Backbone.View.extend({
     initialize: function(n1, n2) {
@@ -151,8 +179,7 @@ var XoverItem = Backbone.View.extend({
 	    alert("A strand's endpoints must be a 3\' and a 5\'!");
 	    throw "stop execution";
 	}
-	//this.node3.xoveritem = this;
-	//this.node5.xoveritem = this;
+
 	this.isScaf = this.node3.isScaf; //we don't need to check node5 because the strands must be both scafs or both staps
 	this.helixset = this.node3.parent.parent.options.parent;
 	this.panel = this.helixset.panel;
@@ -383,5 +410,11 @@ var XoverItem = Backbone.View.extend({
 
     show: function(flag){
         this.group.setVisible(flag);
+    },
+
+    getRidOf:
+    function(){
+        this.group.removeChildren();
+        this.close();
     },
 });

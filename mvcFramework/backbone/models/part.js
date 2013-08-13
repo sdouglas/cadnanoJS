@@ -250,9 +250,7 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
      */
     potentialCrossoverList:
     function(vh,idx){
-        console.log(vh);
         var lutsNeighbour = _.zip(this.scafL,this.scafH,this.stapL,this.stapH);
-        console.log(lutsNeighbour);
         var sts = new Array(Constants.Scaffold, Constants.Staple);
 
         var numBases = this.maxBaseIdx();
@@ -280,7 +278,6 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
             var toSS = neighbour.getStrandSets();
             var fromSS = fromStrandSets;
             var quadruplet = _.zip(fromSS, toSS, lut, sts);
-            console.log(quadruplet);
             for(var k=0; k < quadruplet.length; k++){
                 var pts = _.zip(quadruplet[k][2],new Array(true, false));
                 for(var j=0; j<pts.length;j++){
@@ -331,7 +328,6 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
 
         //Create the xover at the 3' strand.
         //Check if the xover is at an endpoint.
-        console.log(s3pIdx + ';' + strand3p.idx5Prime());
         var split3pIdx = s3pIdx;
         if(ss3p.isDrawn5to3())
             split3pIdx = s3pIdx-1;
@@ -347,7 +343,6 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
 
         //Create the xover at the 5' strand.
         //Check if the xover is at an endpoint.
-        console.log(s5pIdx + ';' + strand5p.idx3Prime());
         var split5pIdx = s5pIdx;
         if(!ss5p.isDrawn5to3())
             split5pIdx = s5pIdx-1;
@@ -362,18 +357,20 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
         }
         var ret5p,ret3p;
         var xover5p, xover3p;
-        if(s5pIdx !== strand5p.idx3Prime())
+        if(s5pIdx !== strand5p.idx3Prime()){
             ret5p = ss5p.splitStrand(strand5p, split5pIdx);
+            if(strand5p.isDrawn5to3()) xover5p = ret5p[0];
+            else xover5p = ret5p[1];
+        }
         else xover5p = strand5p;
-        if(s3pIdx !== strand3p.idx5Prime())
+        if(s3pIdx !== strand3p.idx5Prime()){
             ret3p = ss3p.splitStrand(strand3p, split3pIdx);
+            if(strand3p.isDrawn5to3()) xover3p = ret3p[1];
+            else xover3p = ret3p[0];
+        }
         else xover3p = strand3p;
-
-        if(strand5p.isDrawn5to3()) xover5p = ret5p[0];
-        else xover5p = ret5p[1];
-
-        if(strand3p.isDrawn5to3()) xover3p = ret3p[1];
-        else xover3p = ret3p[0];
+        console.log(s5pIdx);
+        console.log(s3pIdx);
 
         this.undoStack().execute(
                 new CreateXoverCommand(
@@ -406,8 +403,9 @@ var CreateXoverCommand = Undo.Command.extend({
         this.s5p.setConnection3p(null);
         this.s3p.setConnection5p(null);
         this.part.setActiveVirtualHelix(this.s5p.helix);
-        this.s5p.trigger(cadnanoEvents.strandUpdateSignal);
+        //order of triggering signals is important.
         this.s3p.trigger(cadnanoEvents.strandUpdateSignal);
+        this.s5p.trigger(cadnanoEvents.strandUpdateSignal);
     },
 
     redo:
@@ -416,8 +414,9 @@ var CreateXoverCommand = Undo.Command.extend({
         this.s5p.setConnection3p(this.s3p);
         this.s3p.setConnection5p(this.s5p);
         this.part.setActiveVirtualHelix(this.s5p.helix);
-        this.s5p.trigger(cadnanoEvents.strandUpdateSignal);
+        //order of triggering signals is important.
         this.s3p.trigger(cadnanoEvents.strandUpdateSignal);
+        this.s5p.trigger(cadnanoEvents.strandUpdateSignal);
     },
 
     execute: function(){},
@@ -565,7 +564,6 @@ var HoneyCombPart = Part.extend({
         if(!vh) return ret;
         var r = vh.row;
         var c = vh.col;
-        console.log(r + ';' + c);
 
         if(vh.isEvenParity()){
             helix = (this.getModelHelix(this.getStorageID(r,c+1)));
@@ -593,7 +591,6 @@ var HoneyCombPart = Part.extend({
             if(helix) ret.push(helix);
             else ret.push(emptyObj);
         }
-        console.log(ret);
         return ret;
     },
 });
