@@ -1,25 +1,25 @@
 var PreXoverItem = Backbone.View.extend({
     initialize: function(phItem, comp, xPos, isStap, onLeft) {
 	this.parent = phItem;
-	this.pos = xPos;
-	this.cHelixItem = comp;
+	this.pos = xPos; //position of the item on PathHelixItem
+	this.cHelixItem = comp; //complementary PathHelixItem (we don't use StrandItem because it can change)
 	this.isScaf = 1-isStap; //1 if true, 0 if false
-	this.onLeft = onLeft;
+	this.onLeft = onLeft; //left and right variations
 	
-    this.divLength = this.parent.divLength;
-    this.blkLength = this.parent.blkLength;
-    this.sqLength = this.parent.sqLength;
-    this.layer = this.parent.options.parent.prexoverlayer;
-    this.centerX = this.parent.startX+(this.pos+0.5)*this.sqLength;
-    var clickable;
-
+	//graphics information
+	this.divLength = this.parent.divLength;
+	this.blkLength = this.parent.blkLength;
+	this.sqLength = this.parent.sqLength;
+	this.layer = this.parent.options.parent.prexoverlayer;
+	this.centerX = this.parent.startX+(this.pos+0.5)*this.sqLength;
+	var clickable; //a PreXoverItem is clickable only if there is a strand at given position of phItem and cHelixItem
 	if(this.parent.getStrandItem(this.isScaf,this.pos) && this.cHelixItem.getStrandItem(this.isScaf,this.pos)) {
 	    clickable = true;
 	    this.colour = colours.bluestroke;
 	}
 	else {
 	    clickable = false;
-	    this.colour = "#B0B0B0";
+	    this.colour = "#B0B0B0"; //greyish
 	}
 
 	this.group = new Kinetic.Group();
@@ -66,6 +66,7 @@ var PreXoverItem = Backbone.View.extend({
 	    fontFamily: "Calibri",
 	    fill: this.colour,
 	});
+	text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 	var invisClicker = new Kinetic.Rect({
 	    x: this.centerX,
 	    y: this.centerY,
@@ -73,7 +74,6 @@ var PreXoverItem = Backbone.View.extend({
 	    height: pt2y-this.centerY,
 	    opacity: 0
 	});
-	text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 	this.group.add(line1);
 	this.group.add(line2);
 	this.group.add(text);
@@ -88,7 +88,7 @@ var PreXoverItem = Backbone.View.extend({
 	});
     },
 
-    createXover: function() { //Note 001; DOES NOT WORK
+    createXover: function() { //in progress
         var strandSet1,strandSet2;
         if(this.isScaf) strandSet1 = this.parent.options.model.scafStrandSet;
         else strandSet1 = this.parent.options.model.stapStrandSet;

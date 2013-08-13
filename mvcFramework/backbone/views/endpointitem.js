@@ -58,20 +58,17 @@ var EndPointItem = Backbone.View.extend({
 	});
 	this.shape.superobj = this; //javascript y u no have pointers?!
 	var isScaf = this.isScaf;
-	this.shape.on("mousedown", function(pos) {
+	this.shape.on("mouseup", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-	    console.log(this.superobj.parent.modelStrand);
 	    //recalculate range of movement of this endpointitem.
 	    this.superobj.minMaxIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
-	    console.log(this.superobj.minMaxIndices);
 	    /*
 	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
 	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
 	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
 	      further.
 	    */
-	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18) { //holding ALT = extend
-		console.log("EXTENDING");
+	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18) { //holding ALT = extend to furthest possible location (works regardless of path tool)
 		if(this.superobj.dir === "L") {
 		    this.superobj.counter = this.superobj.minMaxIndices[0];
 		    this.superobj.move();
@@ -109,7 +106,7 @@ var EndPointItem = Backbone.View.extend({
 
     updateCenterX: function() {this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;},
 
-    update: function() {
+    update: function() { //calls this AFTER changing the counter
 	this.pCounter = this.counter;
 	this.updateCenterX();
 	this.shape.setX((this.counter-this.initcounter)*this.sqLength);
@@ -198,15 +195,15 @@ var EndPointItem = Backbone.View.extend({
 
     createXover: function() {
 	var helixset = this.phItem.options.parent;
-	if(helixset.pencilendpoint === undefined) {
+	if(helixset.pencilendpoint === undefined) { //clicking the first endpoint only stores its info
 	    helixset.pencilendpoint = this;
-	    var pencilNotifier = helixset.pencilendpoint.shape.clone();
+	    var pencilNotifier = helixset.pencilendpoint.shape.clone(); //a red shape that lies on top of original as indicator
 	    pencilNotifier.off("mousedown");
 	    pencilNotifier.off("click");
 	    pencilNotifier.setFill("#FF0000");
 	    this.tempLayer.add(pencilNotifier);
 	    this.tempLayer.draw();
-	    pencilNotifier.on("click", function() {
+	    pencilNotifier.on("click", function() { //click again = cancel
 		helixset.pencilendpoint.tempLayer.destroyChildren();
 		helixset.pencilendpoint.close();
 		pencilNotifier.destroy();

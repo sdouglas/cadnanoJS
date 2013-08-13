@@ -103,7 +103,7 @@ var SlicePartItem = PartItem.extend({
 		    return;
 		}
 	    }
-	    this.helixInstanceList.push(latestPos);
+	    this.helixInstanceList.push(latestPos); //add to list if latestPos is a valid position
 	    this.emptyItemSet.onMouseClick(e); //instancing the helix item
 	}
     },

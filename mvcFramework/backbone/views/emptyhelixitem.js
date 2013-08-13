@@ -29,8 +29,7 @@ var EmptyHelixSetItem = Backbone.View.extend({
     },
 
     onMouseClick: function(e){
-	    console.log(this.partItem.dontClickHelix);
-	if(!this.partItem.dontClickHelix) {
+	if(!this.partItem.dontClickHelix) { //prevents triggering mouse click function two times
 	    console.log("clicked the vhsetitem.");
 	    //Figure out which helix was clicked.
 	    console.log(this.part.currDoc);
@@ -52,14 +51,30 @@ var EmptyHelixSetItem = Backbone.View.extend({
 		var idx = this.part.activeBaseIndex();
 		if (!helixModel.stapStrandSet.hasStrandAt(idx-1,idx+1)){
 		    console.log('creating staple strand at :' + idx);
-		    helixModel.stapStrandSet.createStrand(idx-1,idx+1);
+		    if(idx === 0) { //if active slice item is at far left
+			helixModel.stapStrandSet.createStrand(0,1);
+		    }
+		    else if(idx === 21*this.part.getStep()-1) { //active slice item is at far right; this only works for honeycomb lattice
+			helixModel.stapStrandSet.createStrand(idx-1,idx);
+		    }
+		    else { //normal case
+			helixModel.stapStrandSet.createStrand(idx-1,idx+1);
+		    }
 		}
 	    }
-	    else {
+	    else { //otherwise create scaffold strand
 		var idx = this.part.activeBaseIndex();
 		if (!helixModel.scafStrandSet.hasStrandAt(idx-1,idx+1)){
 		    console.log('creating scaffold strand at :' + idx);
-		    helixModel.scafStrandSet.createStrand(idx-1,idx+1);
+		    if(idx === 0) {
+			helixModel.scafStrandSet.createStrand(0,1);
+		    }
+		    else if(idx === 21*this.part.getStep()-1) { //again, this only works for honeycomb lattice
+			helixModel.scafStrandSet.createStrand(idx-1,idx);
+		    }
+		    else {
+			helixModel.scafStrandSet.createStrand(idx-1,idx+1);
+		    }
 		}
 	    }
 	}

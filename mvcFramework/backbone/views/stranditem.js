@@ -1,6 +1,5 @@
 var StrandItem = Backbone.View.extend({
     initialize: function(modelStrand, phItem, xL, xR, layer) { //layer is optional
-	//I hope you're used to the massive number of property values by now
 	this.parent = phItem;
 	this.layer = layer;
 	if(layer === undefined) { //default value for layer
@@ -42,6 +41,7 @@ var StrandItem = Backbone.View.extend({
 	else {
 	    this.yLevel = 1;
 	}
+	//all scaffold has the same color (unless changed by paint tool)
 	if(this.isScaf) {
 	    this.strandColor = colours.bluestroke;
 	}
@@ -84,7 +84,7 @@ var StrandItem = Backbone.View.extend({
 	});
 	this.group.add(this.invisConnection);
 
-	//for more explanation, visit EndPointItem.js
+	//path view tools
 	var isScaf = this.isScaf;
 	this.group.on("mousedown", function(pos) {
 	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
@@ -170,6 +170,7 @@ var StrandItem = Backbone.View.extend({
 	this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
     },
 
+    //update the Y position
     updateY: function() {
 	var diff = -this.yCoord;
 	this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
@@ -226,17 +227,6 @@ var StrandItem = Backbone.View.extend({
 	//have to watch out for both left and right end in counter adjustment here
 	var diff = this.dragCounter-this.dragCounterInit;
 	this.dragCounter = this.adjustCounter(this.dragCounterInit, this.dragCounter);
-	/*
-	  if(this.xStart+diff < 0) {
-	      this.dragCounter = this.dragCounterInit-this.xStart;
-	  }
-	  else {
-	      var grLength = this.blkLength*this.divLength*this.parent.options.parent.part.getStep();
-	      if(this.xEnd+diff >= grLength) {
-	          this.dragCounter = this.dragCounterInit+grLength-1-this.xEnd;
-	      }
-	  }
-	*/
 	//same as EndPointItem
 	if(this.dragCounter !== this.pDragCounter) {
 	    this.redBox.setX(this.redBox.getX()+(this.dragCounter-this.pDragCounter)*this.sqLength);
@@ -367,8 +357,8 @@ var StrandItem = Backbone.View.extend({
 	this.layer.destroyChildren();
 	//sequencing goes 5' -> 3'
 	while(seqIndex < seq.length && strandCounter <= strandLen) {
-	    if(this.endItemL.prime === 5) {
-		if(!this.parent.alterationArray[strandCounter+this.xStart]) {
+	    if(this.endItemL.prime === 5) { //assign letter to each position left to right
+		if(!this.parent.alterationArray[strandCounter+this.xStart]) { //no inserts or skips
 		    var text = new Kinetic.Text({
 			x: this.parent.startX+(this.xStart+strandCounter+0.5)*this.sqLength,
 			y: this.yCoord-(2*this.yLevel-1)/4*(this.sqLength+6),
@@ -428,7 +418,7 @@ var StrandItem = Backbone.View.extend({
 		    }
 		}
 	    }
-	    else {
+	    else { //right to left
                 if(!this.parent.alterationArray[this.xEnd-strandCounter]) {
                     var text = new Kinetic.Text({
 			x: this.parent.startX+(this.xEnd-strandCounter+0.5)*this.sqLength,
@@ -529,13 +519,12 @@ var StrandItem = Backbone.View.extend({
         //It updates the xoveritem incase an xover is created/deleted.
         console.log('strandUpdateSlot called');
     },
-
+    
+    //returns string of form #XXXXXX
     generateRandomColor: function() {
 	//color is generated as HSV then converted to RGB
-	//returns string of form #XXXXXX
 	var colorH = Math.floor(360*Math.random());
-	//var colorS = 0.5+0.5*Math.random();
-	var colorV = 0.6+0.2*Math.random();
+	var colorV = 0.7+0.3*Math.random();
 	var colorS = 1;
 
 	var colorC = colorS*colorV;
@@ -549,11 +538,11 @@ var StrandItem = Backbone.View.extend({
 	else {colorRGB = [colorC,0,colorX];}
 	for(var i=0; i<3; i++) {
 	    colorRGB[i] += (colorV-colorC);
-	    colorRGB[i] = Math.floor(255.99*colorRGB[i]);
+	    colorRGB[i] = Math.floor(255.99*colorRGB[i]); //final RGB cannot be 256
 	}
 	var colorArrayHex = new Array();
-	colorArrayHex[0] = (colorRGB[0]).toString(16);
-	if(colorRGB[0] < 16) {colorArrayHex[0] = "0"+colorArrayHex[0];}
+	colorArrayHex[0] = (colorRGB[0]).toString(16); //converting to hex
+	if(colorRGB[0] < 16) {colorArrayHex[0] = "0"+colorArrayHex[0];} //every hex should be 2 digits
 	colorArrayHex[1] = (colorRGB[1]).toString(16);
 	if(colorRGB[1] < 16) {colorArrayHex[1] = "0"+colorArrayHex[1];}
 	colorArrayHex[2] = (colorRGB[2]).toString(16);
@@ -562,8 +551,9 @@ var StrandItem = Backbone.View.extend({
     },
 });
 
+//insert extra base pair(s) to a strand to make curved structures; shown as triangles on StrandItem
 var InsertItem = Backbone.View.extend({
-    initialize: function(phItem, loc) {
+    initialize: function(phItem, loc) { //InsertItem has fixed position on PathHelixItem but not on StrandItem
 	this.position = loc;
         this.parent = phItem;
 	this.extraBase = 1;
@@ -647,10 +637,11 @@ var InsertItem = Backbone.View.extend({
 	});
 	this.parent.options.parent.alterationlayer.add(this.skipInsertGroup);
 	this.parent.alterationArray[this.position] = this;
-	this.parent.updateSkipInsertItemsSlot();
+	this.parent.updateSkipInsertItemsSlot(); //redraw skip/insert items
     },
 });
 
+//the counterpart of InsertItem where a base pair will be skipped in sequencing
 var SkipItem = Backbone.View.extend({
     initialize: function(phItem, loc) {
 	this.position = loc;
@@ -741,6 +732,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 		strokeWidth: 1
 	    });
 	    if(!this.yLevel) { //5->3
+		//two endpoint's coordinates are taken from EndPointItem
                 this.endP1 = new Kinetic.Polygon({
 		    points: [this.parent.startX+(this.xStart+0.5)*this.sqLength-this.sqLength*0.2,this.yCoord-this.sqLength*0.35,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength-this.sqLength*0.2,this.yCoord+this.sqLength*0.35,

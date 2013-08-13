@@ -12,7 +12,7 @@ var DocumentItem = Backbone.View.extend({
         $(document).bind('keypress',this.undohere);
 	$(document).bind('keydown',this.keydown);
         $(document).bind('keyup',this.keyup);
-	//$("#drawnPanels").bind('mousedown',this.autoresize); //we will check where we are clicking in autoresize //useless for now
+	$("#drawnPanels").bind('mousedown',this.autoresize); //we will check where we are clicking in autoresize
 
         //Rest of init.
         this.currDoc = this.options.currDoc;
@@ -58,11 +58,12 @@ var DocumentItem = Backbone.View.extend({
             params: svParams, 
             who:    Constants.RendererKinetic,
         });
+	//following 5 lines is for receiving key functions in kinetic canvas, which does not support key events
 	var self = this;
-	var sliceCanvas = $(this.sliceView.handler.textLayer.getContext().canvas); //need to use top layer
-	sliceCanvas.attr("tabindex","0"); //without this line canvas cannot get focus
-	sliceCanvas.click(function(ev) {sliceCanvas.focus();});
-	sliceCanvas.keyup(function(ev) {self.sliceZoom(ev);});
+	var sliceCanvas = $(this.sliceView.handler.textLayer.getContext().canvas); //need to use the topmost layer
+	sliceCanvas.attr("tabindex","0"); //ability to give focus to a canvas
+	sliceCanvas.click(function(ev) {sliceCanvas.focus();}); //setting a mechanism (click) to allow canvas to receive focus
+	sliceCanvas.keyup(function(ev) {self.sliceZoom(ev);}); //finally canvas will respond to key events!
 
         //Path View Parameters.
         var jPathView = $('#pathView');
@@ -86,8 +87,9 @@ var DocumentItem = Backbone.View.extend({
             params: pvParams, 
             who:    Constants.RendererKinetic,
         });
-	var pathCanvas = $(this.pathView.pathItemSet.activeslicelayer.getContext().canvas); //need to use top layer
-	pathCanvas.attr("tabindex","0"); //without this line canvas cannot get focus
+	//receiving key functions for path view canvas
+	var pathCanvas = $(this.pathView.pathItemSet.activeslicelayer.getContext().canvas);
+	pathCanvas.attr("tabindex","0");
 	pathCanvas.click(function(ev) {pathCanvas.focus();});
 	pathCanvas.keyup(function(ev) {self.pathZoom(ev);});
     },
@@ -108,53 +110,52 @@ var DocumentItem = Backbone.View.extend({
 
     keydown: function(e) {
 	this.currDoc.setKey(e.keyCode);
-	//console.log(e.keyCode);
     },
 
     keyup: function(e){
-	if(e.keyCode === 67) { //C
-	    tbArrayChange(0); //enable/disable scaffold selection
+	if(e.keyCode === 67) { //C- enable/disable scaffold selection
+	    tbArrayChange(0); //tbArrayChange defined in ui/lib/tbSelectable.js
 	}
-	else if(e.keyCode === 84) { //T
-	    tbArrayChange(1); //enable/disable staple selection
+	else if(e.keyCode === 84) { //T- enable/disable staple selection
+	    tbArrayChange(1);
 	}
-	else if(e.keyCode === 72) { //H
-	    tbArrayChange(2); //enable/disable handler selection
+	else if(e.keyCode === 72) { //H- enable/disable handler selection
+	    tbArrayChange(2);
 	}
-	else if(e.keyCode === 69) { //E
-	    tbArrayChange(3); //enable/disable endpoint selection
+	else if(e.keyCode === 69) { //E- enable/disable endpoint selection
+	    tbArrayChange(3);
 	}
-	else if(e.keyCode === 88) { //X
-	    tbArrayChange(4); //enable/disable xover selection
+	else if(e.keyCode === 88) { //X- enable/disable xover selection
+	    tbArrayChange(4);
 	}
-	else if(e.keyCode === 68) { //D
-	    tbArrayChange(5); //enable/disable strand selection
+	else if(e.keyCode === 68) { //D- enable/disable strand selection
+	    tbArrayChange(5);
 	}
-	else if(e.keyCode === 86) { //V
+	else if(e.keyCode === 86) { //V- change path tool to select
 	    this.currDoc.pathTool = "select";
-	    document.getElementById("pb0").checked = true;
+	    document.getElementById("pb0").checked = true; //id to radio buttons given in cadnano3.html
 	}
-	else if(e.keyCode === 78) { //N
+	else if(e.keyCode === 78) { //N- change path tool to pencil
 	    this.currDoc.pathTool = "pencil";
 	    document.getElementById("pb1").checked = true;
 	}
-	else if(e.keyCode === 66) { //B
+	else if(e.keyCode === 66) { //B- change path tool to break
 	    this.currDoc.pathTool = "break";
 	    document.getElementById("pb2").checked = true;
 	}
-	else if(e.keyCode === 73) { //I
+	else if(e.keyCode === 73) { //I- change path tool to insert
 	    this.currDoc.pathTool = "insert";
 	    document.getElementById("pb3").checked = true;
 	}
-	else if(e.keyCode === 83) { //S
+	else if(e.keyCode === 83) { //S- change path tool to skip
 	    this.currDoc.pathTool = "skip";
 	    document.getElementById("pb4").checked = true;
 	}
-	else if(e.keyCode === 80) { //P
+	else if(e.keyCode === 80) { //P- change path tool to paint
 	    this.currDoc.pathTool = "paint";
 	    document.getElementById("pb5").checked = true;
 	}
-	else if(e.keyCode === 65) { //A
+	else if(e.keyCode === 65) { //A- change path tool to seq
 	    this.currDoc.pathTool = "seq";
 	    document.getElementById("pb6").checked = true;
 	}
@@ -180,26 +181,30 @@ var DocumentItem = Backbone.View.extend({
     },
 
     sliceZoom: function(e) {
-	var zoomArray = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
-	if(e.keyCode === 107) { //plus sign
+	var zoomArray = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5]; //discrete zooming levels to reduce lag
+	if(e.keyCode === 107) { //plus sign- zoom in
 	    var zoomLvl;
 	    for(var i=0; i<zoomArray.length; i++) {
+		//view only stores the zoom factor so we need to get the corresponding level first
 		if(zoomArray[i] === this.sliceView.zoomFactor) {zoomLvl = i; break;}
 	    }
 	    if(zoomLvl !== 12) {
 		zoomLvl += 1;
 		var oldZf = this.sliceView.zoomFactor;
 		this.sliceView.zoomFactor = zoomArray[zoomLvl];
+		//change the stage's properties
 		this.sliceView.handler.handler.setWidth(this.sliceView.handler.handler.getWidth()*this.sliceView.zoomFactor/oldZf);
 		this.sliceView.handler.handler.setHeight(this.sliceView.handler.handler.getHeight()*this.sliceView.zoomFactor/oldZf);
+		//change the layers' scaling factor
 		this.sliceView.handler.textLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.shapeLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.helixLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.hoverLayer.setScale(this.sliceView.zoomFactor);
+		//redraw every layer; will take up some time
 		this.sliceView.handler.render();
 	    }
 	}
-	else if(e.keyCode === 109) { //minus sign
+	else if(e.keyCode === 109) { //minus sign- zoom out
 	    var zoomLvl;
 	    for(var i=0; i<zoomArray.length; i++) {
 		if(zoomArray[i] === this.sliceView.zoomFactor) {zoomLvl = i; break;}
@@ -229,8 +234,9 @@ var DocumentItem = Backbone.View.extend({
 	    if(zoomLvl !== 12) {
 		zoomLvl += 1;
 		this.pathView.pathItemSet.userScale = zoomArray[zoomLvl];
+		//zoom function changes stage properties and layer scaling factor
 		this.pathView.pathItemSet.zoom();
-		this.pathView.pathItemSet.render();
+		this.pathView.pathItemSet.redrawLayers();
 	    }
 	}
 	else if(e.keyCode === 109) { //minus sign
@@ -242,7 +248,7 @@ var DocumentItem = Backbone.View.extend({
 		zoomLvl -= 1;
 		this.pathView.pathItemSet.userScale = zoomArray[zoomLvl];
 		this.pathView.pathItemSet.zoom();
-		this.pathView.pathItemSet.render();
+		this.pathView.pathItemSet.redrawLayers();
 	    }
 	}
     },
@@ -252,14 +258,19 @@ var DocumentItem = Backbone.View.extend({
 	    var self = this;
 	    var originalPos = pos.pageX;
 	    $("#drawnPanels").on("mouseup", function(pos) { //dragging is essentially mousedown -> mousemove -> mouseup
-		var posDiff = pos.pageX-originalPos;
 		if(self.sliceView instanceof SlicePartItem) { //only change handler properties if it exists
+		    var posDiff = pos.pageX-originalPos;
 		    var sliceHandler = self.sliceView.handler.handler;
-		    self.sliceView.handler.handler.setSize(sliceHandler.getWidth()+posDiff, innerLayout.state.west.innerHeight);
+		    self.sliceView.handler.handler.setWidth(sliceHandler.getWidth()+posDiff*self.sliceView.zoomFactor);
 		    var pathHandler = self.pathView.handler.handler;
-		    if(self.sliceView.vhItemSet.vhItems.length !== 0) {
-			self.pathView.pathItemSet.render(); //let auto-zoom do the rest
-		    }
+		    //innerWidth is not updated yet in this function
+		    self.pathView.pathItemSet.autoScale = Math.min(1,(innerLayout.state.center.innerWidth-posDiff)/
+								   (self.pathView.pathItemSet.graphicsSettings.sqLength*
+								    (8+2*self.pathView.pathItemSet.graphicsSettings.divLength*
+								     self.pathView.pathItemSet.graphicsSettings.blkLength)));
+		    self.pathView.pathItemSet.zoom();
+		    pathHandler.setWidth(Math.max(pathHandler.getWidth(), innerLayout.state.center.innerWidth-posDiff));
+		    self.pathView.pathItemSet.redrawLayers();
 		}
 		$("#drawnPanels").off("mouseup"); //without this line, clicking on path view will trigger the mouseup handler
 	    });
@@ -268,3 +279,25 @@ var DocumentItem = Backbone.View.extend({
     },
 
 });
+
+//resizing browser
+var rtime = new Date(1, 1, 2000, 12,00,00);
+var timeout = false;
+var delta = 200;
+$(window).resize(function() {
+    rtime = new Date();
+    if (timeout === false) {
+	timeout = true;
+	setTimeout(resizeend, delta);
+    }
+});
+
+function resizeend() {
+    if(new Date()-rtime < delta) {
+	setTimeout(resizeend, delta);
+    }
+    else {
+        timeout = false;
+	//innerWidth and innerHeight is already updated by this point
+    }
+}

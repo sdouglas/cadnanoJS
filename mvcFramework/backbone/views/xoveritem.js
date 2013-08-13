@@ -75,14 +75,14 @@ var XoverNode = Backbone.View.extend({
     updateCenterX: function() {this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;},
     updateLinkageX: function() {this.linkageX = this.centerX;},
 
-    update: function() { //only redraws when boo is true
+    update: function() { //updates values after counter is changed
 	this.updateCenterX();
 	this.updateLinkageX();
 	this.group.setX((this.counter-this.initcounter)*this.sqLength);
 	this.xoveritem.update();
     },
 
-    updateY: function() {
+    updateY: function() { //updates Y value; should only be called from StrandItem.updateY()
 	var diff = this.parent.yCoord-this.centerY;
 	this.centerY = this.parent.yCoord;
         if(this.yLevel === 0) {
@@ -132,7 +132,6 @@ var XoverItem = Backbone.View.extend({
 		}
 	    },
 	});
-	//this.group.type = "xover";
 	this.group.superobj = this;
 	this.connection = new Kinetic.Shape({
 	    stroke: this.strandColor,
@@ -165,7 +164,7 @@ var XoverItem = Backbone.View.extend({
 	});
 	this.group.add(this.invisConnection);
 
-	//Warning: pasta and speghetti ahead
+	//path view tools
 	var isScaf = this.isScaf;
         this.group.on("mousedown", function(pos) {
 	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
@@ -193,7 +192,7 @@ var XoverItem = Backbone.View.extend({
 	this.layer.draw();
     },
 
-    update: function() {
+    update: function() { //redraws XoverItem
 	this.connection.remove();
 	this.connection = new Kinetic.Shape({
 	    stroke: this.strandColor,
