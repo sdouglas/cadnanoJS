@@ -56,17 +56,25 @@
   }
   input[type=radio] + label
   {
+    text-align: center;
+    border-style: solid;
+    border-width: thin;
+    border-color: #EEE;
     background: #EEE;
-    height: 50px;
-    width: 45px;
+    height: 52.5px;
+    width: 44.5px;
     display:inline-block;
     padding: 0 0 0 0px;
   }
   input[type=radio]:checked + label
   {
-    background: #00FF00;
-    height: 50px;
-    width: 45px;
+    text-align: center;
+    border-style: solid;
+    border-width: thin;
+    border-color: #000000;
+    background: #C0C0C0;
+    height: 52.5px;
+    width: 44.5px;
     display:inline-block;
     padding: 0 0 0 0px;
   }
