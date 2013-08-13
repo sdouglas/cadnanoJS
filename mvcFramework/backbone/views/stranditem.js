@@ -1,181 +1,234 @@
 var StrandItem = Backbone.View.extend({
-    initialize: function(modelStrand, phItem, xL, xR, layer) { //layer is optional
-	//I hope you're used to the massive number of property values by now
-	this.parent = phItem;
-	this.layer = layer;
-	if(layer === undefined) { //default value for layer
-	    this.layer = this.parent.options.parent.strandlayer;
-	}
-	this.panel = this.parent.options.parent.panel;
-	this.divLength = this.parent.options.graphics.divLength;
-	this.blkLength = this.parent.options.graphics.blkLength;
-	this.sqLength = this.parent.options.graphics.sqLength;
-	this.strandColor = this.parent.options.parent.paintcolor;
-	this.xStart = xL;
-	this.xEnd = xR;
-	this.modelStrand = modelStrand;
+    /**
+     * @param [layer] optional argument.
+     */
+    initialize: function(modelStrand, phItem, layer) { 
+        this.xStart = modelStrand.low();
+        this.xEnd = modelStrand.high();
+        this.modelStrand = modelStrand;
+	    this.parent = phItem;
+	    this.layer = layer;
+	    if(layer === undefined) { //default value for layer
+	        this.layer = this.parent.options.parent.strandlayer;
+	    }
+        //Start listening to resize events.
+        this.connectSignalsSlots();
 
-    //Start listening to resize events.
-    this.connectSignalsSlots();
+        //I hope you're used to the massive number of property values by now
+        this.panel = this.parent.options.parent.panel;
+        this.divLength = this.parent.options.graphics.divLength;
+        this.blkLength = this.parent.options.graphics.blkLength;
+        this.sqLength = this.parent.options.graphics.sqLength;
+        this.strandColor = this.parent.options.parent.paintcolor;
 
-	this.alterationArray = new Array();
-	this.alterationGroupArray = new Array();
+        this.alterationArray = new Array();
+        this.alterationGroupArray = new Array();
 
-	//see explanation in EndPointItem.js; the implementation of these two classes share many similarities
+        //see explanation in EndPointItem.js; 
+        //the implementation of these two classes share many similarities
         this.tempLayer = this.parent.options.parent.templayer;
-	//final layer is for post-sequencing DNAs
-	this.finalLayer = this.parent.options.parent.finallayer;
 
-	this.group = new Kinetic.Group({
-	    draggable: true,
+        //final layer is for post-sequencing DNAs
+        this.finalLayer = this.parent.options.parent.finallayer;
+
+        this.group = new Kinetic.Group({
+            draggable: true,
             dragBoundFunc: function(pos) {
-		return {
-		    x: this.getAbsolutePosition().x,
-		    y: this.getAbsolutePosition().y
-		}
-	    }
+                return {
+                    x: this.getAbsolutePosition().x,
+                    y: this.getAbsolutePosition().y
+                }
+            }
         });
-	this.group.superobj = this;
 
-	this.isScaf = this.modelStrand.strandSet.isScaffold();
-	//0 => drawn higher in the helix.
-	//1 => drawn lower in the helix.
-	if(this.modelStrand.helix.isOddParity()^this.isScaf) {
-	    this.yLevel = 0;
-	}
-	else {
-	    this.yLevel = 1;
-	}
-	//this.yLevel = this.modelStrand.helix.isOddParity();
+        this.group.superobj = this;
 
-	this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
-	this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
-	this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
-	//the visible thin line connecting the two enditems
-	this.connection = new Kinetic.Rect({
-	    x: this.xStartCoord,
-	    y: this.yCoord-1,
-	    width: this.xEndCoord-this.xStartCoord,
-	    height: 2,
-	    fill: this.strandColor,
-	    stroke: this.strandColor,
-	    strokeWidth: 1
-	});
-	this.group.add(this.connection);
-	this.connection.moveToBottom();
-	//invisible rectangle that makes dragging the line much easier
-	this.invisConnection = new Kinetic.Rect({
-	    x: this.xStartCoord,
-	    y: this.yCoord-this.sqLength/2,
-	    width: this.xEndCoord-this.xStartCoord,
-	    height: this.sqLength,
-	    fill: "#FFFFFF",
-	    stroke: "#FFFFFF",
-	    strokeWidth: 1,
-	    opacity: 0
-	});
-	this.group.add(this.invisConnection);
+        this.isScaf = this.modelStrand.strandSet.isScaffold();
+        //0 => drawn higher in the helix.
+        //1 => drawn lower in the helix.
+        if(this.modelStrand.helix.isOddParity()^this.isScaf) {
+            this.yLevel = 0;
+        }
+        else {
+            this.yLevel = 1;
+        }
+        this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
+        this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
+        this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
+        //the visible thin line connecting the two enditems
 
-	//for more explanation, visit EndPointItem.js
-	var isScaf = this.isScaf;
-	this.group.on("mousedown", function(pos) {
-	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-		this.superobj.selectStart(pos);
-	    }
-	});
-	this.group.on("click", function(pos) {
-	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-	    var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.parent.options.parent.scaleFactor)/this.superobj.sqLength)-5;
-	    if(pathTool === "break") {
-		this.superobj.breakStrand(counter);
-	    }
-	    else if(pathTool === "paint") {
-		this.superobj.paintStrand();
-	    }
-	    else if(pathTool === "insert") {
-		this.superobj.insertBase(counter);
-	    }
-	    else if(pathTool === "skip") {
-		this.superobj.skipBase(counter);
-	    }
-	    else if(pathTool === "seq") {
-		this.superobj.openSeqWindow();
-		//applySeq is called when dialog closes
-	    }
-	});
-	this.group.on("dragmove", function(pos) {
-	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-		this.superobj.selectMove(pos);
-	    }
-	});
-	this.group.on("dragend", function(pos) {
-	    var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-		this.superobj.selectEnd();
-	    }
-	});
+        this.connection = new Kinetic.Rect({
+            x: this.xStartCoord,
+            y: this.yCoord-1,
+            width: this.xEndCoord-this.xStartCoord,
+            height: 2,
+            fill: this.strandColor,
+            stroke: this.strandColor,
+            strokeWidth: 1
+        });
+        this.group.add(this.connection);
+        this.connection.moveToBottom();
+        //invisible rectangle that makes dragging the line much easier
 
-	this.layer.add(this.group);
-    if(modelStrand.connection3p()){
-	    this.endItemL = new XoverNode(this,"L",4-(2*this.yLevel-1),true);
-    }
-    else{
-	    this.endItemL = new EndPointItem(this,"L",4-(2*this.yLevel-1),true);
-    }
-    if(modelStrand.connection5p()){
-	    this.endItemR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
-	}
-    else{
-	    this.endItemR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
-	}
-	this.layer.draw();
+        this.invisConnection = new Kinetic.Rect({
+            x: this.xStartCoord,
+            y: this.yCoord-this.sqLength/2,
+            width: this.xEndCoord-this.xStartCoord,
+            height: this.sqLength,
+            fill: "#FFFFFF",
+            stroke: "#FFFFFF",
+            strokeWidth: 1,
+            opacity: 0
+        });
+        this.group.add(this.invisConnection);
+
+        //for more explanation, visit EndPointItem.js
+        var isScaf = this.isScaf;
+        
+        this.group.on("mousedown", function(pos) {
+            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+            if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+                this.superobj.selectStart(pos);
+            }
+        });
+
+        this.group.on("click", function(pos) {
+            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+            var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.parent.options.parent.scaleFactor)/this.superobj.sqLength)-5;
+            if(pathTool === "break") {
+                this.superobj.breakStrand(counter);
+            }
+            else if(pathTool === "paint") {
+                this.superobj.paintStrand();
+            }
+            else if(pathTool === "insert") {
+                this.superobj.insertBase(counter);
+            }
+            else if(pathTool === "skip") {
+                this.superobj.skipBase(counter);
+            }
+            else if(pathTool === "seq") {
+                this.superobj.openSeqWindow();
+                //applySeq is called when dialog closes
+            }
+        });
+
+        this.group.on("dragmove", function(pos) {
+            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+            if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+                this.superobj.selectMove(pos);
+            }
+        });
+
+        this.group.on("dragend", function(pos) {
+            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+            if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+                this.superobj.selectEnd();
+            }
+        });
+
+        this.layer.add(this.group);
+        //Create this.endPointL, this.endPointR, this.XoverL, this.XoverR
+        this.XoverL = new XoverNode(this,"L",4-(2*this.yLevel-1),true);
+        this.endPointL = new EndPointItem(this,"L",4-(2*this.yLevel-1),true);
+        this.XoverR = new XoverNode(this,"R",4+(2*this.yLevel-1),true);
+        this.endPointR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
+
+        //LAST LINE
+        this.drawStrand();
     },
 
-    events:
-    {    
+    drawStrand: function(){
+        this.update();
+
+        if(this.modelStrand.connection3p()) {
+            if(this.modelStrand.isDrawn5to3()){
+                this.endItemR = this.XoverR;
+                this.endPointR.show(false);
+            }
+            else{
+                this.endItemL = this.XoverL;
+                this.endPointL.show(false);
+            }
+        }
+        else {
+            this.endItemL = this.endPointL;
+            this.XoverL.show(false);
+        }
+
+        if(this.modelStrand.connection5p()){ 
+            if(this.modelStrand.isDrawn5to3()){
+                this.endItemL = this.XoverL;
+                this.endPointL.show(false);
+            }
+            else{
+                this.endItemR = this.XoverR;
+                this.endPointR.show(false);
+            }
+        }
+        else{ 
+            this.endItemR = this.endPointR; 
+            this.XoverR.show(false);
+        }
+        this.endItemL.update();
+        this.endItemR.update();
+        this.endItemL.show(true);
+        this.endItemR.show(true);
+	    this.layer.draw();
     },
 
-    updateXStartCoord: function() {this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;},
-    updateXEndCoord: function() {this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;},
+    events: {},
+
+    updateXStartCoord: function() {
+        this.xStart = this.modelStrand.low();
+        this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
+    },
+
+    updateXEndCoord: function() {
+        this.xEnd = this.modelStrand.high();
+        this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
+    },
 
     update: function() {
-	this.updateXStartCoord();
-	this.updateXEndCoord();
-	this.connection.setX(this.xStartCoord);
-	this.connection.setWidth(this.xEndCoord-this.xStartCoord);
-	this.invisConnection.setX(this.xStartCoord);
-	this.invisConnection.setWidth(this.xEndCoord-this.xStartCoord);
-	this.parent.options.parent.prexoverlayer.destroyChildren();
-	this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
+        this.updateXStartCoord();
+        this.updateXEndCoord();
+        this.connection.setX(this.xStartCoord);
+        this.connection.setWidth(this.xEndCoord-this.xStartCoord);
+        this.invisConnection.setX(this.xStartCoord);
+        this.invisConnection.setWidth(this.xEndCoord-this.xStartCoord);
+        this.parent.options.parent.prexoverlayer.destroyChildren();
+        this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
     },
 
     updateY: function() {
-	var diff = -this.yCoord;
-	this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
-	diff += this.yCoord;
-	this.finalLayer.destroyChildren();
-	this.finalLayer.draw();
-	this.connection.setY(this.yCoord-1);
-	this.invisConnection.setY(this.yCoord-this.sqLength/2);
+        var diff = -this.yCoord;
+        this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
+        diff += this.yCoord;
+
+        this.finalLayer.destroyChildren();
+        this.finalLayer.draw();
+        
+        this.connection.setY(this.yCoord-1);
+        this.invisConnection.setY(this.yCoord-this.sqLength/2);
+        
         for(var i=0; i<this.alterationGroupArray.length; i++) {
-	    this.alterationGroupArray[i].setY(this.alterationGroupArray[i].getY()+diff);
+            this.alterationGroupArray[i].setY(this.alterationGroupArray[i].getY()+diff);
         }
-	this.endItemL.updateY();
-	this.endItemR.updateY();
+
+        this.endItemL.updateY();
+        this.endItemR.updateY();
     },
 
     addEndItem: function(ei, dir, skipRedraw) {
-	if(dir === "L") {
-	    this.endItemL = ei;
-	}
-	else {
-	    this.endItemR = ei;
-	}
-	if(!skipRedraw) {
-	    this.layer.draw();
-	}
+        if(dir === "L") {
+            this.endItemL = ei;
+        }
+        else {
+            this.endItemR = ei;
+        }
+        if(!skipRedraw) {
+            this.layer.draw();
+        }
     },
 
     selectStart: function(pos) {
@@ -238,29 +291,34 @@ var StrandItem = Backbone.View.extend({
     },
 
     move: function(diff) { //forced move
-	//redrawing the line
-	this.xStart += diff;
-	this.xEnd += diff;
-	this.update();
-	//moving the inserts and skips
-	for(var i=0; i<this.alterationGroupArray.length; i++) {
-	    this.alterationGroupArray[i].setX(this.alterationGroupArray[i].getX()+diff*this.sqLength);
-	}
-    //send out the resize signal to the model.
-    this.modelStrand.resize(this.xStart,
-         this.xEnd);
+        //redrawing the line
+        this.xStart += diff;
+        this.xEnd += diff;
+        //moving the inserts and skips
+        for(var i=0; i<this.alterationGroupArray.length; i++) {
+            this.alterationGroupArray[i].setX(this.alterationGroupArray[i].getX()+diff*this.sqLength);
+        }
 
-	//redraw enditems as well as updating their values
-	this.endItemL.counter += diff;
-	this.endItemL.update();
-	this.endItemR.counter += diff;
-	this.endItemR.update();
-	//note: if endItemL/R is a XoverNode, its corresponding XoverItem will be automatically updated
-	//remove post-sequencing DNA bases
-	this.finalLayer.destroyChildren();
-	this.finalLayer.draw();
-	//finally we can redraw the layer...
-	this.layer.draw();
+        //redraw enditems as well as updating their values
+        this.endItemL.counter += diff;
+        this.endItemR.counter += diff;
+
+        //note: if endItemL/R is a XoverNode, its corresponding XoverItem will be automatically updated
+
+        //remove post-sequencing DNA bases
+        this.finalLayer.destroyChildren();
+        this.finalLayer.draw();
+
+        //send out the resize signal to the model.
+        this.modelStrand.resize(this.xStart,
+                this.xEnd);
+        
+        //The update should be done post the resize signal.
+        //this.update();
+        //this.endItemL.update();
+        //this.endItemR.update();
+        //finally we can redraw the layer...
+        //this.layer.draw();
     },
 
     adjustCounter: function(dcI,dc) {
@@ -500,8 +558,6 @@ var StrandItem = Backbone.View.extend({
     },
 
     connectSignalsSlots: function() {
-        this.listenTo(this.modelStrand, cadnanoEvents.strandResizedSignal,
-		      this.strandResizedSlot);
         this.listenTo(this.modelStrand, cadnanoEvents.strandUpdateSignal,
 		      this.strandUpdateSlot);
     },
@@ -523,8 +579,6 @@ var StrandItem = Backbone.View.extend({
         //the layer of the parent helix item.
     },
 
-    strandResizedSlot: function() {
-    },
     strandUpdateSlot:
     function(strand){
         //This function redraws the strand - it also
@@ -532,6 +586,8 @@ var StrandItem = Backbone.View.extend({
         //as an argument.
         //It updates the xoveritem incase an xover is created/deleted.
         console.log('strandUpdateSlot called');
+        console.log(this.modelStrand);
+        this.drawStrand();
     },
 });
 

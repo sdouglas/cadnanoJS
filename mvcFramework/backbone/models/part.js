@@ -252,6 +252,7 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
     function(vh,idx){
         console.log(vh);
         var lutsNeighbour = _.zip(this.scafL,this.scafH,this.stapL,this.stapH);
+        console.log(lutsNeighbour);
         var sts = new Array(Constants.Scaffold, Constants.Staple);
 
         var numBases = this.maxBaseIdx();
@@ -359,17 +360,27 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
                 console.log('Cannot split strand5p');
                 return;
         }
+        var ret5p,ret3p;
+        var xover5p, xover3p;
         if(s5pIdx !== strand5p.idx3Prime())
-            ss5p.splitStrand(strand5p, split5pIdx);
+            ret5p = ss5p.splitStrand(strand5p, split5pIdx);
+        else xover5p = strand5p;
         if(s3pIdx !== strand3p.idx5Prime())
-            ss3p.splitStrand(strand3p, split3pIdx);
+            ret3p = ss3p.splitStrand(strand3p, split3pIdx);
+        else xover3p = strand3p;
 
-        this.undoStack.execute(
+        if(strand5p.isDrawn5to3()) xover5p = ret5p[0];
+        else xover5p = ret5p[1];
+
+        if(strand3p.isDrawn5to3()) xover3p = ret3p[1];
+        else xover3p = ret3p[0];
+
+        this.undoStack().execute(
                 new CreateXoverCommand(
                     this,
-                    strand5p,
+                    xover5p,
                     s5pIdx,
-                    strand3p,
+                    xover3p,
                     s3pIdx
                     ));
     },
@@ -383,9 +394,10 @@ var CreateXoverCommand = Undo.Command.extend({
         this.s3p = strand3p;
         this.redo();
     },
-    
+
     getModel:
     function(){
+        console.log('testing CreateXoverCommand');
     },
 
     undo:
@@ -407,7 +419,7 @@ var CreateXoverCommand = Undo.Command.extend({
         this.s5p.trigger(cadnanoEvents.strandUpdateSignal);
         this.s3p.trigger(cadnanoEvents.strandUpdateSignal);
     },
-    
+
     execute: function(){},
 });
 
@@ -541,23 +553,47 @@ var HoneyCombPart = Part.extend({
         return !((row+col)%2);
     },
 
+    /**
+     * The order in which the virtual helix neighbours
+     * are returned is important to the functioning of
+     * part.potentialCrossOverList.
+     */
     getVirtualHelixNeighbours: function(vh){
         var ret = [];
         var helix;
-        if(vh.row % 2){
-            //row-1, col
-            helix = (this.getModelHelix(this.getStorageID(vh.row-1,vh.col)));
+        var emptyObj;
+        if(!vh) return ret;
+        var r = vh.row;
+        var c = vh.col;
+        console.log(r + ';' + c);
+
+        if(vh.isEvenParity()){
+            helix = (this.getModelHelix(this.getStorageID(r,c+1)));
             if(helix) ret.push(helix);
+            else ret.push(emptyObj);
+
+            helix = (this.getModelHelix(this.getStorageID(r-1,c)));
+            if(helix) ret.push(helix);
+            else ret.push(emptyObj);
+
+            helix = (this.getModelHelix(this.getStorageID(r,c-1)));
+            if(helix) ret.push(helix);
+            else ret.push(emptyObj);
         }
         else{
-            //row+1, col
-            helix = (this.getModelHelix(this.getStorageID(vh.row+1,vh.col)));
+            helix = (this.getModelHelix(this.getStorageID(r,c-1)));
             if(helix) ret.push(helix);
+            else ret.push(emptyObj);
+
+            helix = (this.getModelHelix(this.getStorageID(r+1,c)));
+            if(helix) ret.push(helix);
+            else ret.push(emptyObj);
+
+            helix = (this.getModelHelix(this.getStorageID(r,c+1)));
+            if(helix) ret.push(helix);
+            else ret.push(emptyObj);
         }
-        helix = (this.getModelHelix(this.getStorageID(vh.row,vh.col-1)));
-        if(helix) ret.push(helix);
-        helix = (this.getModelHelix(this.getStorageID(vh.row,vh.col+1)));
-        if(helix) ret.push(helix);
+        console.log(ret);
         return ret;
     },
 });

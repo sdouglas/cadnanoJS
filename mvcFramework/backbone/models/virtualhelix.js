@@ -38,8 +38,16 @@ var VirtualHelix = Backbone.Model.extend({
         return this.part;
     },
     
-    hasStrandAt: function(idx){
-        var ret= this.scafStrandSet.hasStrandAt(idx,idx);
+    /**
+     * @param{idx} index at which strand is being searched for.
+     * @param{stap} boolean variable to mention whether to search
+     * in scaffold or staple strand set.
+     * @return {true/false}
+     */
+    hasStrandAt: function(idx, stap){
+        var ret = false;
+        if(stap) ret= this.stapStrandSet.hasStrandAt(idx,idx);
+        else ret= this.scafStrandSet.hasStrandAt(idx,idx);
         //console.log('checking at index:' + idx + ':' + ret);
         return ret;
     },

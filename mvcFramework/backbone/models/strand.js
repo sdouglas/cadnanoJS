@@ -108,9 +108,17 @@ var Strand = Backbone.Model.extend({
     function(strand){
         this.strand5p = strand;
     },
+
     setConnection3p:
     function(strand){
         this.strand3p = strand;
+    },
+
+    hasXoverAt:
+    function(idx){
+        if(this.strand3p && this.idx3Prime() === idx) return true;
+        if(this.strand5p && this.idx5Prime() === idx) return true;
+        return false;
     },
 });
 
@@ -148,7 +156,7 @@ var ResizeCommand = Undo.Command.extend({
         this.strand.setIdx(this.oldIdxs);
 
         this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
-        this.strand.trigger(cadnanoEvents.strandResizedSignal, this.oldIdxs.lowIdx, this.oldIdxs.highIdx);
+        this.strand.trigger(cadnanoEvents.strandUpdateSignal, this.oldIdxs.lowIdx, this.oldIdxs.highIdx);
         
         //update the path view.
         //This signal has been renamed from partStrandChangedSignal
@@ -165,7 +173,7 @@ var ResizeCommand = Undo.Command.extend({
 
         this.strand.setIdx(this.newIdxs);
         console.log(this.newIdxs);
-        this.strand.trigger(cadnanoEvents.strandResizedSignal, this.newIdxs.lowIdx, this.newIdxs.highIdx);
+        this.strand.trigger(cadnanoEvents.strandUpdateSignal, this.newIdxs.lowIdx, this.newIdxs.highIdx);
         this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
 
         //update the path view.

@@ -173,6 +173,10 @@ var PathHelixSetItem = Backbone.View.extend({
         if(this.pbcItem) this.pbcItem.close();
         this.buttonlayer.removeChildren();
     },
+
+    getPathHelixItem: function(id){
+        return this.phItemArray[id];
+    },
 });
 
 //the long rectangular base grid
@@ -358,9 +362,7 @@ var PathHelixItem = Backbone.View.extend ({
         //Create a strand item object.
 	var stItem = new StrandItem(
 	    strand,
-	    this,
-	    strand.baseIdxLow,
-	    strand.baseIdxHigh
+	    this
 	);
 	if(stItem.isScaf) {
 	    this.scafItemArray.push(stItem);

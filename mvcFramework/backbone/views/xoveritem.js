@@ -1,19 +1,22 @@
 //expect a bowl of copy pasta from EndPointItem and StrandItem
 
 var XoverNode = Backbone.View.extend({
-    initialize: function(strand, dir, type, skipRedraw) { //last param is optional
+    initialize: function(strandItem, dir, type, skipRedraw) { //last param is optional
 	//accessing other objects
 	this.xoveritem = undefined;
-	this.parent = strand;
+	this.parent = strandItem;
 	this.phItem = this.parent.parent;
 	this.layer = this.parent.layer;
 	this.panel = this.parent.panel;
+
 	//temporary layer that will be used for fast rendering
 	this.tempLayer = this.phItem.options.parent.templayer;
-	//graphics
+
+    //graphics
 	this.divLength = this.parent.divLength;
 	this.blkLength = this.parent.blkLength;
 	this.sqLength = this.parent.sqLength;
+
 	//counters
 	if(dir === "L") {
 	    this.initcounter = this.parent.xStart;
@@ -21,13 +24,16 @@ var XoverNode = Backbone.View.extend({
 	else if(dir === "R") {
 	    this.initcounter = this.parent.xEnd;
 	}
+
 	this.counter = this.initcounter;
 	this.pCounter = this.counter;
+
 	//starting position
 	this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;
 	this.centerY = this.parent.yCoord;
 	this.linkageX = this.centerX;
 	this.linkageY = 0; //will be initialized later
+
 	//misc. properties
 	this.dir = dir;
 	this.yLevel = this.parent.yLevel;
@@ -76,10 +82,41 @@ var XoverNode = Backbone.View.extend({
     updateLinkageX: function() {this.linkageX = this.centerX;},
 
     update: function() { //only redraws when boo is true
-	this.updateCenterX();
-	this.updateLinkageX();
-	this.group.setX((this.counter-this.initcounter)*this.sqLength);
-	this.xoveritem.update();
+        this.updateCenterX();
+        this.updateLinkageX();
+        this.group.setX((this.counter-this.initcounter)*this.sqLength);
+
+        //If this node is 3', then it'll 
+        //Delete existing xoveritem.
+        //create a new xover item.
+        //Else does nothing.
+        //
+        if(this.prime === 3){
+            if(typeof this.xoveritem !== 'undefined'){
+                this.xoveritem.close();
+                this.xoveritem = undefined;
+            }
+            //get other XoverNode.
+            //Create new xover item.
+            var otherStrand = this.parent.modelStrand.connection3p();
+            if(!otherStrand) return;
+
+            console.log(this.parent.modelStrand);
+            var phSetItem = this.parent.parent.options.parent;
+            var phItem = phSetItem.getPathHelixItem(otherStrand.strandSet.helix.id);
+            var otherStItem = phItem.getStrandItem(otherStrand.strandSet.isScaffold(),
+                    otherStrand.idx5Prime());
+
+            var otherNode;
+            if(otherStrand.isDrawn5to3())
+                otherNode = otherStItem.endItemL;
+            else
+                otherNode = otherStItem.endItemR;
+            console.log(this);
+            console.log(otherNode);
+
+            this.xoveritem = new XoverItem(this, otherNode);
+        }
     },
 
     updateY: function() {
@@ -93,6 +130,10 @@ var XoverNode = Backbone.View.extend({
         }
 	this.group.setY(this.group.getY()+diff);
 	this.xoveritem.update();
+    },
+
+    show: function(flag){
+        this.group.setVisible(flag);
     },
 });
 
@@ -110,8 +151,8 @@ var XoverItem = Backbone.View.extend({
 	    alert("A strand's endpoints must be a 3\' and a 5\'!");
 	    throw "stop execution";
 	}
-	this.node3.xoveritem = this;
-	this.node5.xoveritem = this;
+	//this.node3.xoveritem = this;
+	//this.node5.xoveritem = this;
 	this.isScaf = this.node3.isScaf; //we don't need to check node5 because the strands must be both scafs or both staps
 	this.helixset = this.node3.parent.parent.options.parent;
 	this.panel = this.helixset.panel;
@@ -338,5 +379,9 @@ var XoverItem = Backbone.View.extend({
 
         this.finalLayer.destroyChildren();
         this.finalLayer.draw();
+    },
+
+    show: function(flag){
+        this.group.setVisible(flag);
     },
 });

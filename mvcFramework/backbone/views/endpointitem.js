@@ -1,48 +1,68 @@
 var EndPointItem = Backbone.View.extend({
-    initialize: function(strandItem, dir, type, skipRedraw) { //last param is optional
-	//accessing other objects
-	this.parent = strandItem;
-	this.phItem = this.parent.parent;
-	this.layer = this.parent.layer;
-	this.finalLayer = this.phItem.options.parent.finallayer;
-	this.panel = this.parent.panel;
-	//temporary layer that will be used for fast rendering
-	this.tempLayer = this.phItem.options.parent.templayer;
-	//graphics
-	this.divLength = this.parent.divLength;
-	this.blkLength = this.parent.blkLength;
-	this.sqLength = this.parent.sqLength;
-	//counters
-	if(dir === "L") {
-	    this.initcounter = this.parent.xStart;
-	}
-	else if(dir === "R") {
-	    this.initcounter = this.parent.xEnd;
-	}
-	this.counter = this.initcounter;
-	this.pCounter = this.counter;
-	//starting position
-	this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
-	this.centerY = this.parent.yCoord;
-	//misc. properties
-	this.dir = dir;
-	this.prime = type;
-	this.yLevel = this.parent.yLevel;
-	this.isScaf = this.parent.isScaf;
-	//vertices of the shape
-	var polypts;
-	if(this.prime === 3) { //3' end: triangle
-	    polypts = [this.centerX-(2*this.yLevel-1)*this.sqLength*0.3,this.centerY,
-		       this.centerX+(2*this.yLevel-1)*this.sqLength*0.5,this.centerY-this.sqLength*0.5,
-		       this.centerX+(2*this.yLevel-1)*this.sqLength*0.5,this.centerY+this.sqLength*0.5];
-	}
-	else if(this.prime === 5) { //5' end: square
-	    //reason I didn't use Kinetic.Rect: its getX() works differently and shows the shape at wrong position
-	    polypts = [this.centerX-this.sqLength*0.2-this.sqLength*this.yLevel*0.3,this.centerY-this.sqLength*0.35,
-		       this.centerX-this.sqLength*0.2-this.sqLength*this.yLevel*0.3,this.centerY+this.sqLength*0.35,
-		       this.centerX+this.sqLength*0.5-this.sqLength*this.yLevel*0.3,this.centerY+this.sqLength*0.35,
-		       this.centerX+this.sqLength*0.5-this.sqLength*this.yLevel*0.3,this.centerY-this.sqLength*0.35];
-	}
+    initialize: 
+    function(strandItem, dir, type, skipRedraw) { //last param is optional
+        //accessing other objects
+        this.parent = strandItem;
+        this.phItem = this.parent.parent;
+        this.layer = this.parent.layer;
+        this.finalLayer = this.phItem.options.parent.finallayer;
+        this.panel = this.parent.panel;
+
+        //temporary layer that will be used for fast rendering
+        this.tempLayer = this.phItem.options.parent.templayer;
+
+        //graphics
+        this.divLength = this.parent.divLength;
+        this.blkLength = this.parent.blkLength;
+        this.sqLength = this.parent.sqLength;
+	
+        //counters
+        if(dir === "L") {
+            this.initcounter = this.parent.xStart;
+        }
+        else if(dir === "R") {
+            this.initcounter = this.parent.xEnd;
+        }
+	
+        this.counter = this.initcounter;
+        this.pCounter = this.counter;
+
+        //starting position
+        this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
+        this.centerY = this.parent.yCoord;
+	
+        //misc. properties
+        this.dir = dir;
+        this.prime = type;
+        this.yLevel = this.parent.yLevel;
+        this.isScaf = this.parent.isScaf;
+	
+        //vertices of the shape
+        var polypts;
+        if(this.prime === 3) { //3' end: triangle
+            polypts = [
+                this.centerX-(2*this.yLevel-1)*this.sqLength*0.3,
+                this.centerY,
+                this.centerX+(2*this.yLevel-1)*this.sqLength*0.5,
+                this.centerY-this.sqLength*0.5,
+                this.centerX+(2*this.yLevel-1)*this.sqLength*0.5,
+                this.centerY+this.sqLength*0.5
+            ];
+        }
+        else if(this.prime === 5) { //5' end: square
+            //reason I didn't use Kinetic.Rect: its getX() works differently and shows the shape at wrong position
+            polypts = [
+                this.centerX-this.sqLength*0.2-this.sqLength*this.yLevel*0.3,
+                this.centerY-this.sqLength*0.35,
+                this.centerX-this.sqLength*0.2-this.sqLength*this.yLevel*0.3,
+                this.centerY+this.sqLength*0.35,
+                this.centerX+this.sqLength*0.5-this.sqLength*this.yLevel*0.3,
+                this.centerY+this.sqLength*0.35,
+                this.centerX+this.sqLength*0.5-this.sqLength*this.yLevel*0.3,
+                this.centerY-this.sqLength*0.35
+            ];
+        }
+
 	this.shape = new Kinetic.Polygon({
 	    points: polypts,
 	    fill: this.parent.strandColor,
@@ -56,6 +76,7 @@ var EndPointItem = Backbone.View.extend({
 		}
 	    }
 	});
+
 	this.shape.superobj = this; //javascript y u no have pointers?!
 	var isScaf = this.isScaf;
 	this.shape.on("mousedown", function(pos) {
@@ -71,49 +92,54 @@ var EndPointItem = Backbone.View.extend({
 	      further.
 	    */
 	    console.log(this.superobj.phItem.options.parent.part.getDoc().getKey());
-	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18) { //holding ALT = extend
-		console.log("EXTENDING");
-		if(this.superobj.dir === "L") {
-		    this.superobj.counter = this.superobj.minMaxIndices[0];
-		    this.superobj.move();
-		}
-		else {
-		    this.superobj.counter = this.superobj.minMaxIndices[1];
-		    this.superobj.move();
-		}
+	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18) { 
+            //holding ALT = extend
+            console.log("EXTENDING");
+            if(this.superobj.dir === "L") {
+                this.superobj.counter = this.superobj.minMaxIndices[0];
+                this.superobj.move();
+            }
+            else {
+                this.superobj.counter = this.superobj.minMaxIndices[1];
+                this.superobj.move();
+            }
 	    }
-	    else if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-		this.superobj.selectStart(pos);
+        else if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+            this.superobj.selectStart(pos);
 	    }
 	});
+
 	this.shape.on("click", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-	    if(pathTool === "pencil") {
-		this.superobj.createXover();
+        if(pathTool === "pencil") {
+            this.superobj.createXover();
 	    }
 	});
+
 	this.shape.on("dragmove", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-		this.superobj.selectMove(pos);
+        if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+            this.superobj.selectMove(pos);
 	    }
 	});
+
 	this.shape.on("dragend", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
-		this.superobj.selectEnd();
+        if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+            this.superobj.selectEnd();
 	    }
 	});
-	this.layer.add(this.shape);
+	
+    this.layer.add(this.shape);
 	this.parent.addEndItem(this,dir,skipRedraw); //finally linking this item back to strand
     },
 
     updateCenterX: function() {this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;},
 
     update: function() {
-	this.pCounter = this.counter;
-	this.updateCenterX();
-	this.shape.setX((this.counter-this.initcounter)*this.sqLength);
+        this.pCounter = this.counter;
+        this.updateCenterX();
+        this.shape.setX((this.counter-this.initcounter)*this.sqLength);
     },
 
     updateY: function() {
@@ -164,34 +190,32 @@ var EndPointItem = Backbone.View.extend({
     },
 
     selectEnd: function() {
-	//red box has finished its duty, to be deleted
-	this.redBox.remove();
-	this.tempLayer.draw();
-	this.move();
+        //red box has finished its duty, to be deleted
+        this.redBox.remove();
+        this.tempLayer.draw();
+        this.move();
     },
 
     move: function() {
-	//redraw shape; wait for all elements to be adjusted to correct location before rendering
-	this.update();
-	//update counter and value in StrandItem
-	if(this.dir === "L") {
-	    this.parent.xStart = this.counter;
-	}
-	else {
-	    this.parent.xEnd = this.counter;
-	}
-	//remove elements on final layer
+        //redraw shape; wait for all elements to be adjusted to correct location before rendering
+        //update counter and value in StrandItem
+        if(this.dir === "L") {
+            this.parent.xStart = this.counter;
+        }
+        else {
+            this.parent.xEnd = this.counter;
+        }
+        //remove elements on final layer
         this.finalLayer.destroyChildren();
         this.finalLayer.draw();
-	//redrawing the line between two enditems aka strand
-	this.parent.update();
-	if(this.dir === "L") {
-	    this.parent.updateAlteration(this.dragInit-this.counter);
-	}
-	//send out the resize signal to the model.
-	this.parent.modelStrand.resize(this.parent.xStart,
-				       this.parent.xEnd);
-	this.layer.draw();
+        if(this.dir === "L") {
+            this.parent.updateAlteration(this.dragInit-this.counter);
+        }
+        //send out the resize signal to the model.
+        this.parent.modelStrand.resize(this.parent.xStart,
+                this.parent.xEnd);
+        //redrawing the line between two enditems aka strand
+        //this.layer.draw();
     },
 
     getRidOf:
@@ -254,5 +278,9 @@ var EndPointItem = Backbone.View.extend({
 		alert("Crossover can only occur between a 3' and a 5'!");
 	    }
 	}
+    },
+
+    show: function(flag){
+        this.shape.setVisible(flag);
     },
 });

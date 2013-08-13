@@ -40,7 +40,6 @@ var Document = Backbone.Model.extend({
     
     addPart: function(modelPart,modelDoc){
         this.undostack.execute(new AddPartCommand(modelPart, modelDoc));
-        //trigger an event?
     },
     
     undo: function(){

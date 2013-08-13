@@ -108,7 +108,6 @@ var StrandSet = Backbone.Model.extend({
 
     hasStrandAt: function(low,high,excludeStrand){
         var len = this.strandList.length;
-        console.log(this.strandList);
         for(var i=0;i<len;i++){
             var obj = this.strandList[i];
             if(excludeStrand){
@@ -191,6 +190,8 @@ var StrandSet = Backbone.Model.extend({
 
     hasNoStrandAtOrNoXover:
     function(index){
+        var strand = this.getStrandAt(index);
+        if(strand && strand.hasXoverAt(index)) return false;
         return true;
     },
 
@@ -228,8 +229,10 @@ var StrandSet = Backbone.Model.extend({
                 //index of the l
                 if(strand.connection5p()){
                     var strand5p = strand.connection5p();
-                    ret[low][0] = strand5p.helix;
+                    ret[low][0] = strand5p.helix.hID;
                     ret[low][1] = strand5p.idx3Prime();
+                    console.log('strand has 3p 5to3 conn:' + ret[low][0]
+                            + ',' + ret[low][1]);
                 }
                 ret[low][2] = hnum;
                 ret[low][3] = low+1;
@@ -243,8 +246,10 @@ var StrandSet = Backbone.Model.extend({
                 ret[high][1] = high-1;
                 if(strand.connection3p()){
                     var strand3p = strand.connection3p();
-                    ret[high][2] = strand3p.helix;
+                    ret[high][2] = strand3p.helix.hID;
                     ret[high][3] = strand3p.idx5Prime();
+                    console.log('strand has 3p 5to3 conn:' + ret[high][2]
+                            + ',' + ret[high][3]);
                 }
             }
         }
@@ -261,8 +266,10 @@ var StrandSet = Backbone.Model.extend({
                 //index will connect from a 5p strand..
                 if(strand.connection3p()){
                     var strand3p = strand.connection3p();
-                    ret[low][2] = strand3p.helix;
+                    ret[low][2] = strand3p.helix.hID;
                     ret[low][3] = strand3p.idx5Prime();
+                    console.log('strand has 3p conn:' + ret[low][2]
+                            + ',' + ret[low][3]);
                 }
                 ret[low][0] = hnum;
                 ret[low][1] = low+1;
@@ -276,8 +283,10 @@ var StrandSet = Backbone.Model.extend({
                 ret[high][3] = high-1;
                 if(strand.connection5p()){
                     var strand5p = strand.connection5p();
-                    ret[high][0] = strand5p.helix;
+                    ret[high][0] = strand5p.helix.hID;
                     ret[high][1] = strand5p.idx3Prime();
+                    console.log('strand has 5p conn:' + ret[high][0]
+                            + ',' + ret[high][1]);
                 }
             }
         }
@@ -315,7 +324,9 @@ var StrandSet = Backbone.Model.extend({
 
     splitStrand:
     function(strand, idx){
-        this.undoStack.execute(new SplitCommand(this,strand,idx));
+        var cmd;
+        this.undoStack.execute(cmd = new SplitCommand(this,strand,idx));
+        return cmd.ret();
     },
 
 });
@@ -343,6 +354,11 @@ var CreateStrandCommand = Undo.Command.extend({
         }
         this.redo();
     },
+    ret:
+    function(){
+        return cmd.ret();
+    },
+
     getModel:
     function(){
         //get the helix from the helixid - since that doesn't change
@@ -443,6 +459,10 @@ var SplitCommand = Undo.Command.extend({
         //TODO: someone should listen to these signals.
         this.strandLeft.trigger(cadnanoEvents.strandUpdateSignal, this.strandLeft);
         this.strandRight.trigger(cadnanoEvents.strandUpdateSignal, this.strandRight);
+    },
+
+    ret: function(){
+        return new Array(this.strandLeft, this.strandRight);
     },
     execute: function(){},
 });
