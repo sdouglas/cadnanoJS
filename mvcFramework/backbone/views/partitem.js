@@ -193,6 +193,10 @@ var PathPartItem = PartItem.extend({
 		      );
     },
 
+    events: {
+	"mousedown" : "onmousedown",
+    },
+
     partVirtualHelixAddedSlot: function(virtualHelix){
 	this.pathItemSet.render();
 	this.pathItemSet.activesliceItem.updateHeight();
@@ -256,6 +260,28 @@ var PathPartItem = PartItem.extend({
 	    slicebar.update();
 	}
 	this.pathItemSet.render();
+    },
+
+    onmousedown: function() {
+	/*
+	var itemArray = this.pathItemSet.selectedItems;
+	var itemArrayLength = itemArray.length;
+	for(var i=0; i<itemArrayLength; i++) {
+	    itemArray[i].itemDeselected();
+	}
+	this.pathItemSet.selectedItems.length = 0;
+
+	var itemArrayTemp = this.pathItemSet.selectedItemsTemp;
+	var itemArrayTempLength = itemArrayTemp.length;
+	for(var i=0; i<itemArrayTempLength; i++) {
+	    itemArrayTemp[i].itemSelected();
+	}
+	this.pathItemSet.selectedItemsTemp.length = 0;
+
+	if(itemArrayLength !== itemArrayTempLength) {
+	    this.pathItemSet.strandlayer.draw();
+	}
+	*/
     },
 
 });

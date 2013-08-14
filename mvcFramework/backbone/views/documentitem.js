@@ -168,6 +168,9 @@ var DocumentItem = Backbone.View.extend({
 	    this.currDoc.pathTool = "seq";
 	    document.getElementById("pb6").checked = true;
 	}
+	else if(e.keyCode === 90) { //Z- testing purpose
+	    this.pathView.pathItemSet.removeHelix(this.pathView.pathItemSet.phItemArray.defined[0]);
+	}
        this.currDoc.setKey(null);
     },
 
@@ -200,17 +203,17 @@ var DocumentItem = Backbone.View.extend({
 	    if(zoomLvl !== 12) {
 		zoomLvl += 1;
 		this.sliceView.zoomFactor = zoomArray[zoomLvl];
-		//change the stage's properties
-		var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius();
-		var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius();
-		this.sliceView.handler.handler.setWidth(Math.max(svMinWidth*this.sliceView.zoomFactor,innerLayout.state.west.innerWidth));
-		this.sliceView.handler.handler.setHeight(Math.max(svMinHeight*this.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
 		//change the layers' scaling factor
 		this.sliceView.handler.textLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.shapeLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.helixLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.hoverLayer.setScale(this.sliceView.zoomFactor);
-		this.sliceView.handler.render();
+		//change the stage's properties
+		var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius();
+		var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius();
+		this.sliceView.handler.handler.setSize(Math.max(svMinWidth*this.sliceView.zoomFactor,innerLayout.state.west.innerWidth),
+							Math.max(svMinHeight*this.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
+		//stage is automatically redrawn when we change its size, so no need to call render
 	    }
 	}
 	else if(e.keyCode === 109) { //minus sign- zoom out
@@ -221,15 +224,14 @@ var DocumentItem = Backbone.View.extend({
 	    if(zoomLvl !== 0) {
 		zoomLvl -= 1;
 		this.sliceView.zoomFactor = zoomArray[zoomLvl];
-		var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius();
-		var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius();
-		this.sliceView.handler.handler.setWidth(Math.max(svMinWidth*this.sliceView.zoomFactor,innerLayout.state.west.innerWidth));
-		this.sliceView.handler.handler.setHeight(Math.max(svMinHeight*this.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
 		this.sliceView.handler.textLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.shapeLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.helixLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.hoverLayer.setScale(this.sliceView.zoomFactor);
-		this.sliceView.handler.render();
+		var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius();
+		var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius();
+		this.sliceView.handler.handler.setSize(Math.max(svMinWidth*this.sliceView.zoomFactor,innerLayout.state.west.innerWidth),
+							Math.max(svMinHeight*this.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
 	    }
 	}
     },
@@ -276,7 +278,7 @@ var DocumentItem = Backbone.View.extend({
 		    var pvGraphics = self.pathView.pathItemSet.graphicsSettings;
 		    var pvMinWidth = pvGraphics.sqLength*(8+self.currDoc.part().getStep()*pvGraphics.divLength*pvGraphics.blkLength);
 		    self.pathView.pathItemSet.autoScale = Math.min(1,(innerLayout.state.center.innerWidth-posDiff)/pvMinWidth);
-		    self.pathView.pathItemSet.zoom();
+		    self.pathView.pathItemSet.zoom(true);
 		    pathHandler.setWidth(Math.max(pvMinWidth*self.pathView.pathItemSet.scaleFactor, innerLayout.state.center.innerWidth-posDiff));
 		}
 		$("#drawnPanels").off("mouseup"); //without this line, clicking on path view will trigger the mouseup handler
@@ -299,17 +301,17 @@ var DocumentItem = Backbone.View.extend({
 		    //slice view
 		    var svMinWidth = self.currDoc.part().getOrigin()+1.732*self.currDoc.part().getCols()*self.currDoc.part().getRadius();
 		    var svMinHeight = self.currDoc.part().getOrigin()+3*self.currDoc.part().getRows()*self.currDoc.part().getRadius();
-		    self.sliceView.handler.handler.setWidth(Math.max(svMinWidth*self.sliceView.zoomFactor,innerLayout.state.west.innerWidth));
-		    self.sliceView.handler.handler.setHeight(Math.max(svMinHeight*self.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
+		    self.sliceView.handler.handler.setSize(Math.max(svMinWidth*self.sliceView.zoomFactor,innerLayout.state.west.innerWidth),
+							   Math.max(svMinHeight*self.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
 		    //path view
 		    var pathHandler = self.pathView.handler.handler;
 		    var pvGraphics = self.pathView.pathItemSet.graphicsSettings;
 		    var pvMinWidth = pvGraphics.sqLength*(8+self.currDoc.part().getStep()*pvGraphics.divLength*pvGraphics.blkLength);
 		    var pvMinHeight = pvGraphics.sqLength*(7+4*self.pathView.pathItemSet.phItemArray.defined.length);
 		    self.pathView.pathItemSet.autoScale = Math.min(1,innerLayout.state.center.innerWidth/pvMinWidth);
-		    self.pathView.pathItemSet.zoom();
-		    pathHandler.setWidth(Math.max(pvMinWidth*self.pathView.pathItemSet.scaleFactor, innerLayout.state.center.innerWidth));
-		    pathHandler.setHeight(Math.max(pvMinHeight*self.pathView.pathItemSet.scaleFactor, innerLayout.state.center.innerHeight));
+		    self.pathView.pathItemSet.zoom(true);
+		    pathHandler.setSize(Math.max(pvMinWidth*self.pathView.pathItemSet.scaleFactor, innerLayout.state.center.innerWidth),
+					 Math.max(pvMinHeight*self.pathView.pathItemSet.scaleFactor, innerLayout.state.center.innerHeight));
 		}
 	    }
 	};

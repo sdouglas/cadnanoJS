@@ -14,15 +14,10 @@ var StrandItem = Backbone.View.extend({
         //Start listening to resize events.
         this.connectSignalsSlots();
 
-        //I hope you're used to the massive number of property values by now
         this.panel = this.parent.options.parent.panel;
         this.divLength = this.parent.options.graphics.divLength;
         this.blkLength = this.parent.options.graphics.blkLength;
         this.sqLength = this.parent.options.graphics.sqLength;
-        this.strandColor = this.parent.options.parent.paintcolor;
-
-        this.alterationArray = new Array();
-        this.alterationGroupArray = new Array();
 
         //see explanation in EndPointItem.js; 
         //the implementation of these two classes share many similarities
@@ -55,10 +50,10 @@ var StrandItem = Backbone.View.extend({
 
         //all scaffold has the same color (unless changed by paint tool)
         if(this.isScaf) {
-            this.strandColor = colours.bluestroke;
+            this.itemColor = colours.bluestroke;
         }
         else {
-            this.strandColor = this.generateRandomColor();
+            this.itemColor = this.generateRandomColor();
         }
 
         this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
@@ -71,8 +66,8 @@ var StrandItem = Backbone.View.extend({
             y: this.yCoord-1,
             width: this.xEndCoord-this.xStartCoord,
             height: 2,
-            fill: this.strandColor,
-            stroke: this.strandColor,
+            fill: this.itemColor,
+            stroke: this.itemColor,
             strokeWidth: 1
         });
 
@@ -208,7 +203,7 @@ var StrandItem = Backbone.View.extend({
         
         this.endItemL.show(true);
         this.endItemR.show(true);
-	    this.layer.draw();
+	this.layer.draw();
     },
 
     events: {},
@@ -259,10 +254,6 @@ var StrandItem = Backbone.View.extend({
         this.connection.setY(this.yCoord-1);
         this.invisConnection.setY(this.yCoord-this.sqLength/2);
         
-        for(var i=0; i<this.alterationGroupArray.length; i++) {
-            this.alterationGroupArray[i].setY(this.alterationGroupArray[i].getY()+diff);
-        }
-
         //TODO: update all 4 objects.
         this.endItemL.updateY();
         this.endItemR.updateY();
@@ -332,10 +323,6 @@ var StrandItem = Backbone.View.extend({
         //redrawing the line
         this.xStart += diff;
         this.xEnd += diff;
-        //moving the inserts and skips
-        for(var i=0; i<this.alterationGroupArray.length; i++) {
-            this.alterationGroupArray[i].setX(this.alterationGroupArray[i].getX()+diff*this.sqLength);
-        }
 
         //redraw enditems as well as updating their values
         this.endItemL.counter += diff;
@@ -407,7 +394,7 @@ var StrandItem = Backbone.View.extend({
 
     paintStrand: function() {
 	var colour = this.parent.options.parent.paintcolor;
-	this.strandColor = colour;
+	this.itemColor = colour;
 	this.connection.setFill(colour);
 	this.connection.setStroke(colour);
 	//rest of recursion goes in here
@@ -802,7 +789,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;
-	this.strandColor = colours.darkred;
+	this.itemColor = colours.darkred;
 	this.yLevel = y;
 	this.xStart = Math.min(x1,x2);
 	this.xEnd = Math.max(x1,x2);
@@ -818,8 +805,8 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 		y: this.yCoord-1,
 		width: this.xEndCoord-this.xStartCoord,
 		height: 2,
-		fill: this.strandColor,
-		stroke: this.strandColor,
+		fill: this.itemColor,
+		stroke: this.itemColor,
 		strokeWidth: 1
 	    });
 	    if(!this.yLevel) { //5->3
@@ -829,7 +816,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength-this.sqLength*0.2,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord-this.sqLength*0.35],
-		    fill: this.strandColor,
+		    fill: this.itemColor,
 		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
@@ -837,7 +824,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 		    points: [this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.3,this.yCoord,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord-this.sqLength*0.5,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord+this.sqLength*0.5],
-		    fill: this.strandColor,
+		    fill: this.itemColor,
 		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
@@ -848,7 +835,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.2,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.2,this.yCoord-this.sqLength*0.35],
-		    fill: this.strandColor,
+		    fill: this.itemColor,
 		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
@@ -856,7 +843,7 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 		    points: [this.parent.startX+(this.xStart+0.5)*this.sqLength-this.sqLength*0.3,this.yCoord,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord-this.sqLength*0.5,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord+this.sqLength*0.5],
-		    fill: this.strandColor,
+		    fill: this.itemColor,
 		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});

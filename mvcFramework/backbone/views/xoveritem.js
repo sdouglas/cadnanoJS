@@ -47,8 +47,8 @@ var XoverNode = Backbone.View.extend({
 	    y: this.centerY-1,
 	    width: this.sqLength/2,
 	    height: 2,
-	    fill: this.parent.strandColor,
-	    stroke: this.parent.strandColor,
+	    fill: this.parent.itemColor,
+	    stroke: this.parent.itemColor,
 	    strokeWidth: 1
 	});
 	var yStart;
@@ -65,8 +65,8 @@ var XoverNode = Backbone.View.extend({
 	    y: yStart,
 	    width: 2,
 	    height: this.sqLength/2+1,
-	    fill: this.parent.strandColor,
-	    stroke: this.parent.strandColor,
+	    fill: this.parent.itemColor,
+	    stroke: this.parent.itemColor,
 	    strokeWidth: 1
 	});
 
@@ -97,7 +97,6 @@ var XoverNode = Backbone.View.extend({
         this.updateCenterX();
         this.updateLinkageX();
         this.group.setX((this.counter-this.initcounter)*this.sqLength);
-        console.log(this.counter);
 
         console.log('did i enter this function: ' + this.prime);
         //Delete existing xoveritem.
@@ -185,7 +184,7 @@ var XoverItem = Backbone.View.extend({
 	this.panel = this.helixset.panel;
 	this.layer = this.node3.parent.layer;
 	this.finalLayer = this.helixset.finallayer;
-        this.strandColor = this.node3.parent.strandColor;
+        this.itemColor = this.node3.parent.itemColor;
 	this.divLength = this.helixset.graphicsSettings.divLength;
 	this.blkLength = this.helixset.graphicsSettings.blkLength;
 	this.sqLength = this.helixset.graphicsSettings.sqLength;
@@ -202,7 +201,7 @@ var XoverItem = Backbone.View.extend({
 	});
 	this.group.superobj = this;
 	this.connection = new Kinetic.Shape({
-	    stroke: this.strandColor,
+	    stroke: this.itemColor,
 	    strokeWidth: 3
 	});
 	this.connection.superobj = this;
@@ -263,7 +262,7 @@ var XoverItem = Backbone.View.extend({
     update: function() { //redraws XoverItem
 	this.connection.remove();
 	this.connection = new Kinetic.Shape({
-	    stroke: this.strandColor,
+	    stroke: this.itemColor,
 	    strokeWidth: 3
 	});
 	this.connection.superobj = this;
@@ -279,6 +278,7 @@ var XoverItem = Backbone.View.extend({
 	    context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
 	    canvas.stroke(this);
 	});
+	console.log(this.invisConnection);
 	this.group.add(this.connection);
 	this.invisConnection.setX(Math.min(this.node3.centerX,this.node5.centerX)-this.sqLength/2);
 	this.invisConnection.setY(Math.min(this.node3.centerY,this.node5.centerY)-this.sqLength/2);
@@ -377,29 +377,18 @@ var XoverItem = Backbone.View.extend({
 	this.redBox.remove();
 	this.tempLayer.draw();
 
-	this.node3.counter += diff;
-	this.node3.update();
-	this.node5.counter += diff;
-	this.node5.update();
-	this.update();
-
-	var strand3 = this.node3.parent;
-	if(this.node3.dir === "L") {
-	    strand3.xStart += diff;
-	}
-	else {
-	    strand3.xEnd += diff;
-	}
-	strand3.update();
-	var strand5 = this.node5.parent;
 	if(this.node5.dir === "L") {
-	    strand5.xStart += diff;
+	    this.node5.parent.modelStrand.resize(this.node5.counter+diff, this.node5.parent.modelStrand.high());
 	}
 	else {
-	    strand5.xEnd += diff;
+	    this.node5.parent.modelStrand.resize(this.node5.parent.modelStrand.low(), this.node5.counter+diff);
 	}
-	strand5.update();
-	this.layer.draw();
+	if(this.node3.dir === "L") {
+	    this.node3.parent.modelStrand.resize(this.node3.counter+diff, this.node3.parent.modelStrand.high());
+	}
+	else {
+	    this.node3.parent.modelStrand.resize(this.node3.parent.modelStrand.low(), this.node3.counter+diff);
+	}
 
         this.finalLayer.destroyChildren();
         this.finalLayer.draw();
@@ -411,7 +400,7 @@ var XoverItem = Backbone.View.extend({
 
     getRidOf:
     function(){
-        this.group.removeChildren();
+        this.group.destroyChildren();
         this.close();
     },
 });

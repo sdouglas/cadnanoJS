@@ -1,6 +1,8 @@
 var PathHelixSetItem = Backbone.View.extend({
     initialize: function(){
 	//pathTool variables
+	this.selectedItems = new Array();
+	this.selectedItemsTemp = new Array();
 	this.pencilendpoint = undefined; //used for pencil
 	this.paintcolor = colours.bluestroke; //used for paint
 	//PathHelixSetItem should contains variables that multiple sub-classes need
@@ -50,14 +52,6 @@ var PathHelixSetItem = Backbone.View.extend({
 	    parent: this,
 	    graphics: this.graphicsSettings
 	});
-    },
-    events: {
-        "mousemove" : "onMouseMove",
-    },
-    render: function(){
-	//removing all old shapes before drawing new ones
-	this.buttonlayer.removeChildren();
-	//buttons
 	this.c2Item = new ColorChangeItem({
 	    parent: this,
 	});
@@ -66,6 +60,21 @@ var PathHelixSetItem = Backbone.View.extend({
 	    parent: this,
 	    graphics: this.graphicsSettings
 	});
+	this.buttonlayer.hide();
+	this.activeslicelayer.hide();
+    },
+    events: {
+        "mousemove" : "onMouseMove",
+    },
+    render: function(){
+	if(!this.collection.length) { //no virtual helix
+	    this.buttonlayer.hide();
+	    this.activeslicelayer.hide();
+	}
+	else {
+	    this.buttonlayer.show();
+	    this.activeslicelayer.show();
+	}
 	//variables that the items created in foreach loop can access
         var h = this.handler;
 	var dims = this.graphicsSettings;
@@ -98,6 +107,27 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.backlayer.draw();
     },
 
+    removeHelix: function(id) {
+	var idx;
+	if(this.phItemArray[id]) { //can't remove an nonexistent item
+	    var order = this.phItemArray[id].order;
+	    for(var i=0; i<this.phItemArray.defined.length; i++) {
+		var phItem = this.phItemArray[this.phItemArray.defined[i]];
+		if(phItem.order > order) {
+		    phItem.order -= 1; //everything after the deleted helix needs to be shifted up
+		    phItem.updateY();
+		}
+		else if(phItem.order === order) {
+		    idx = i;
+		}
+	    }
+	    this.phItemArray[id].group.destroy();
+	    this.phItemArray[id] = undefined;
+	    this.phItemArray.defined.splice(idx,1);
+	    this.redrawBack();
+	}
+    },
+
     //redraw every layer, now obsolete
     redrawLayers: function() {
         this.backlayer.draw();
@@ -111,12 +141,12 @@ var PathHelixSetItem = Backbone.View.extend({
 
     adjustStageSize: function() {
 	var newWidth = this.graphicsSettings.sqLength*(8+this.part.getStep()*this.graphicsSettings.divLength*this.graphicsSettings.blkLength)*this.scaleFactor;
-	this.handler.handler.setWidth(Math.max(newWidth, innerLayout.state.center.innerWidth));
 	var newHeight = this.graphicsSettings.sqLength*(7+4*this.phItemArray.defined.length)*this.scaleFactor;
-	this.handler.handler.setHeight(Math.max(newHeight, innerLayout.state.center.innerHeight));
+	this.handler.handler.setSize(Math.max(newWidth, innerLayout.state.center.innerWidth),
+				     Math.max(newHeight, innerLayout.state.center.innerHeight));
     },
 
-    zoom: function() {
+    zoom: function(skipAdjustment) {
 	this.scaleFactor = this.autoScale * this.userScale;
 	this.backlayer.setScale(this.scaleFactor);
 	this.prexoverlayer.setScale(this.scaleFactor);
@@ -126,7 +156,9 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.alterationlayer.setScale(this.scaleFactor);
 	this.finallayer.setScale(this.scaleFactor);
 	this.templayer.setScale(this.scaleFactor);
-	this.adjustStageSize();
+	if(!skipAdjustment) {
+	    this.adjustStageSize();
+	}
     },
 
     //redrawing the items in back layer
@@ -426,7 +458,7 @@ var PathHelixItem = Backbone.View.extend ({
 		if(this.getStrandItem(true, i)) { //if scaffold strand exists
 		    if(this.alterationArray[i] instanceof InsertItem) {
 			//change InsertItem's color to match the StrandItem
-			this.alterationArray[i].scafGroup.triangle.setStroke(this.getStrandItem(true, i).strandColor);
+			this.alterationArray[i].scafGroup.triangle.setStroke(this.getStrandItem(true, i).itemColor);
 		    }
 		    this.alterationArray[i].scafGroup.show();
 		}
@@ -436,7 +468,7 @@ var PathHelixItem = Backbone.View.extend ({
 		}
 		if(this.getStrandItem(false, i)) { //if staple strand exists
 		    if(this.alterationArray[i] instanceof InsertItem) {
-			this.alterationArray[i].stapGroup.triangle.setStroke(this.getStrandItem(false, i).strandColor);
+			this.alterationArray[i].stapGroup.triangle.setStroke(this.getStrandItem(false, i).itemColor);
 		    }
 		    this.alterationArray[i].stapGroup.show();
 		}

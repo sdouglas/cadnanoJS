@@ -15,13 +15,15 @@ var EndPointItem = Backbone.View.extend({
         this.divLength = this.parent.divLength;
         this.blkLength = this.parent.blkLength;
         this.sqLength = this.parent.sqLength;
+	this.itemColor = this.parent.itemColor;
 	
         //misc. properties
         this.dir = dir;
         this.prime = type;
         this.yLevel = this.parent.yLevel;
         this.isScaf = this.parent.isScaf;
-	
+	this.selectedIndex = -1;	
+
         //counters
     	this.updateCounter();
         this.initcounter = this.counter;
@@ -59,7 +61,7 @@ var EndPointItem = Backbone.View.extend({
 
 	this.shape = new Kinetic.Polygon({
 	    points: polypts,
-	    fill: this.parent.strandColor,
+	    fill: this.itemColor,
 	    stroke: colours.black,
 	    strokeWidth: 1,
 	    draggable: true,
@@ -73,31 +75,7 @@ var EndPointItem = Backbone.View.extend({
 
 	this.shape.superobj = this; //javascript y u no have pointers?!
 	var isScaf = this.isScaf;
-	this.shape.on("mouseup", function(pos) {
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-	    //recalculate range of movement of this endpointitem.
-	    this.superobj.minMaxIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
-	    /*
-	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
-	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
-	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
-	      further.
-	    */
-	    console.log(this.superobj.phItem.options.parent.part.getDoc().getKey());
-	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18){ 
-            //holding ALT = extend to furthest possible location (works regardless of path tool)
-            console.log("EXTENDING");
-            if(this.superobj.dir === "L") {
-                this.superobj.counter = this.superobj.minMaxIndices[0];
-                this.superobj.move();
-            }
-            else {
-                this.superobj.counter = this.superobj.minMaxIndices[1];
-                this.superobj.move();
-            }
-	    }
-	});
-
+	
 	this.shape.on("click", function(pos) {
 	    this.superobj.phItem.options.parent.prexoverlayer.destroyChildren();
 	    this.superobj.phItem.options.parent.part.setActiveVirtualHelix(this.superobj.phItem.options.model);
@@ -107,10 +85,32 @@ var EndPointItem = Backbone.View.extend({
 	    }
 	});
 
-	this.shape.on("dragstart", function(pos) {
+	this.shape.on("mousedown", function(pos) {
+	    //recalculate range of movement of this endpointitem.
+	    this.superobj.minMaxIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
+	    /*
+	      Since there are so many shapes on strandlayer, it is preferred to redraw the layer as few times as possible. For this reason, the layer is only refreshed when
+	      the dragging is done. But this means the group should not move while dragging, and we need some other shapes to show where the group is. The red box is drawn
+	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
+	      further.
+	    */
+	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18){ 
+		//holding ALT = extend to furthest possible location (works regardless of path tool)
+		if(this.superobj.dir === "L") {
+		    this.superobj.counter = this.superobj.minMaxIndices[0];
+		    this.superobj.move();
+		}
+		else {
+		    this.superobj.counter = this.superobj.minMaxIndices[1];
+		    this.superobj.move();
+		}
+		return;
+	    }
+
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
 	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
+		//this.superobj.itemSelectedP1();
 	    }
 	});
 
@@ -206,6 +206,24 @@ var EndPointItem = Backbone.View.extend({
         this.move();
     },
 
+    /*
+    itemSelectedP1: function() {
+	this.phItem.options.parent.selectedItemsTemp.push(this);
+    },
+
+    itemSelected: function() {
+	this.shape.setFill(colours.red);
+	this.selectedIndex = this.phItem.options.parent.selectedItems.length;
+	this.phItem.options.parent.selectedItems.push(this);
+    },
+
+    itemDeselected: function() {
+	this.shape.setFill(this.itemColor);
+	this.phItem.options.parent.selectedItems[this.selectedIndex] = undefined;
+	this.selectedIndex = -1;
+    },
+    */
+
     move: function() {
         //redraw shape; wait for all elements to be adjusted to correct location before rendering
         //update counter and value in StrandItem
@@ -249,43 +267,17 @@ var EndPointItem = Backbone.View.extend({
 	    });
 	}
 	else {
-	    
-	    /*
-	    var nodeAInfo = {
-		strand: helixset.pencilendpoint.parent,
-		dir: helixset.pencilendpoint.dir,
-		type: helixset.pencilendpoint.prime
-	    };
-	    var nodeBInfo = {
-		strand: this.parent,
-		dir: this.dir,
-		type: this.prime
-	    };
-	    if(nodeAInfo.type + nodeBInfo.type === 8) {
-		if(!(nodeAInfo.strand.isScaf^nodeBInfo.strand.isScaf)) {
-		    helixset.pencilendpoint.tempLayer.destroyChildren();
-		    helixset.pencilendpoint.close();
-		    helixset.pencilendpoint.shape.destroy();
-		    helixset.pencilendpoint.tempLayer.draw();
-		    helixset.pencilendpoint = undefined;
-		    this.close();
-		    this.shape.destroy();
-		    this.shape = undefined; //check if this line is actually needed
-		    var nodeA = new XoverNode(nodeAInfo.strand, nodeAInfo.dir, nodeAInfo.type);
-		    var nodeB = new XoverNode(nodeBInfo.strand, nodeBInfo.dir, nodeBInfo.type);
-		    var xover = new XoverItem(nodeA,nodeB); //initialization comes with a redrawn strandlayer
-		    this.finalLayer.destroyChildren();
-		    this.finalLayer.draw();
-		    return;
-		}
-		else {
-		    alert("A scaffold cannot xover with a staple!");
-		}
+	    if(this.prime === 5) {
+		this.phItem.options.parent.part.createXover(helixset.pencilendpoint.parent.modelStrand,helixset.pencilendpoint.counter,
+							    this.parent.modelStrand,this.counter);
 	    }
 	    else {
-		alert("Crossover can only occur between a 3' and a 5'!");
+		this.phItem.options.parent.part.createXover(this.parent.modelStrand,this.counter,
+							    helixset.pencilendpoint.parent.modelStrand,helixset.pencilendpoint.counter);
 	    }
-	    */
+	    this.tempLayer.destroyChildren();
+	    this.tempLayer.draw();
+	    helixset.pencilendpoint = undefined;
 	}
     },
 
