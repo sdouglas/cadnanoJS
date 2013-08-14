@@ -17,6 +17,8 @@ var StrandSet = Backbone.Model.extend({
      * Triggers a signal that updates the path view.
      * @param {startIdx} This is the strand starting position.
      * @param {endIdx} This is the strand ending position.  
+     * @param {onStack} Boolean variable specifying whether command
+     * should be put on the undo stack.
      * TODO 
      * 1. Staple/Scaffold strand - this is based on 
      * which strand set it belongs to.
@@ -25,15 +27,25 @@ var StrandSet = Backbone.Model.extend({
      */
 
     createStrand:
-    function(startIdx, endIdx){
-        this.undoStack.execute(new CreateStrandCommand(this,startIdx,
+    function(startIdx, endIdx, onStack){
+        var cmd;
+        onStack = typeof onStack !== 'undefined' ? onStack : true;
+        if(onStack)
+            this.undoStack.execute(cmd = new CreateStrandCommand(this,startIdx,
 						       endIdx, false));
+        else 
+            cmd = new CreateStrandCommand(this,startIdx, endIdx, false);
+        return cmd.ret();
     },
 
     removeStrand:
-    function(startIdx, endIdx){
-        this.undoStack.execute(new CreateStrandCommand(this,startIdx,
-                    endIdx, true));
+    function(startIdx, endIdx, onStack){
+        onStack = typeof onStack !== 'undefined' ? onStack : true;
+        if(onStack)
+            this.undoStack.execute(new CreateStrandCommand(this,startIdx,
+						       endIdx, true));
+        else 
+            var cmd = new CreateStrandCommand(this,startIdx, endIdx, true);
     },
 
     /**
@@ -323,9 +335,13 @@ var StrandSet = Backbone.Model.extend({
     },
 
     splitStrand:
-    function(strand, idx){
+    function(strand, idx, onStack){
+        onStack = typeof onStack !== 'undefined' ? onStack : true;
         var cmd;
-        this.undoStack.execute(cmd = new SplitCommand(this,strand,idx));
+        if(onStack)
+            this.undoStack.execute(cmd = new SplitCommand(this,strand,idx));
+        else
+            cmd = new SplitCommand(this,strand,idx);
         return cmd.ret();
     },
 
@@ -353,9 +369,10 @@ var CreateStrandCommand = Undo.Command.extend({
         }
         this.redo();
     },
+
     ret:
     function(){
-        return cmd.ret();
+        if(this.strand) return this.strand;
     },
 
     getModel:
@@ -367,13 +384,19 @@ var CreateStrandCommand = Undo.Command.extend({
         this.helix = this.currDoc.part().getModelHelix(this.helixId);
         if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
         else this.strandSet = this.helix.stapStrandSet;
+        console.log(this.strandSet);
+
         this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.endIdx));
+        console.log(this.startIdx+':'+this.endIdx);
     },
+
     delStrand: 
     function(){
+        console.log('in delstrand of createstrandcommand');
         //destroy the strand object.
         //The sequence of these statements is important.
         this.getModel();
+        console.log(this.strand);
         this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal, this.strand);
         var ret = this.strandSet.removeStrandRefs(this.strand);
         this.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
@@ -385,7 +408,7 @@ var CreateStrandCommand = Undo.Command.extend({
     },
     addStrand:
     function(){
-        console.log('calling redo for strandset');
+        console.log('in addstrand of createstrandcommand');
         this.getModel();
         //Create a strand object.
         //And add it to the strand list.
@@ -396,6 +419,7 @@ var CreateStrandCommand = Undo.Command.extend({
             helix: this.strandSet.helix,
         });
         this.strandSet.insert(strand);
+        this.strand = strand;
         this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal,
                 strand, this.strandSet.helix.hID);
         this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
@@ -434,36 +458,58 @@ var SplitCommand = Undo.Command.extend({
 
     undo:
     function(){
+        console.log('in undo of Splitcommand');
         this.getModel();
+        this.strandL = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.breakIdx));
+        this.strandR = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.breakIdx+1,this.endIdx));
+
+        var lS = this.strandL;
+        var rS = this.strandR;
+
+        this.strand = this.strandSet.createStrand(this.startIdx, this.endIdx, false);
+        if(this.strandSet.isDrawn5to3()){
+            this.strand.setConnection5p(lS.strand5p);
+            this.strand.setConnection3p(rS.strand3p);
+        }
+        else{
+            this.strand.setConnection5p(rS.strand5p);
+            this.strand.setConnection3p(lS.strand3p);
+        }
+
+        //TODO: create another version of removeStrand
+        //that accepts strand directly as input.
+        this.strandSet.removeStrand(this.startIdx, this.breakIdx, false);
+        this.strandSet.removeStrand(this.breakIdx+1, this.endIdx, false);
     },
 
     redo:
     function(){
+        console.log('in redo of Splitcommand');
         this.getModel();
-        this.strandSet.createStrand(this.startIdx, this.breakIdx);
-        this.strandSet.createStrand(this.breakIdx+1,this.endIdx);
-        this.strandLeft = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.startIdx,this.breakIdx));
-        this.strandRight = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.breakIdx+1,this.endIdx));
+        this.strandL = this.strandSet.createStrand(
+                this.startIdx, this.breakIdx, false);
+        this.strandR = this.strandSet.createStrand(
+                this.breakIdx+1,this.endIdx, false);
 
         if(this.strandSet.isDrawn5to3()){
             //left strand 3' end is at idx.
             //right strand 5' end is at idx+1.
             //left strand takes 5' end of strand object.
-            this.strandLeft.setConnection5p(this.oS.strand5p);
-            this.strandRight.setConnection3p(this.oS.strand3p);
+            this.strandL.setConnection5p(this.oS.strand5p);
+            this.strandR.setConnection3p(this.oS.strand3p);
         }
         else{
-            this.strandLeft.setConnection3p(this.oS.strand3p);
-            this.strandRight.setConnection5p(this.oS.strand5p);
+            this.strandL.setConnection3p(this.oS.strand3p);
+            this.strandR.setConnection5p(this.oS.strand5p);
         }
-        this.strandSet.removeStrand(this.startIdx,this.endIdx);
+        this.strandSet.removeStrand(this.startIdx,this.endIdx, false);
         //TODO: someone should listen to these signals.
-        this.strandLeft.trigger(cadnanoEvents.strandUpdateSignal, this.strandLeft);
-        this.strandRight.trigger(cadnanoEvents.strandUpdateSignal, this.strandRight);
+        this.strandL.trigger(cadnanoEvents.strandUpdateSignal);
+        this.strandR.trigger(cadnanoEvents.strandUpdateSignal);
     },
 
     ret: function(){
-        return new Array(this.strandLeft, this.strandRight);
+        return new Array(this.strandL, this.strandR);
     },
     execute: function(){},
 });
