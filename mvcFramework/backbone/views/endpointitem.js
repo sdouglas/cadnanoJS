@@ -100,9 +100,9 @@ var EndPointItem = Backbone.View.extend({
 
 	this.shape.on("click", function(pos) {
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-        if(pathTool === "pencil") {
+        if(pathTool === "pencil"){
             this.superobj.createXover();
-	    }
+        }
 	});
 
 	this.shape.on("dragstart", function(pos) {
@@ -228,60 +228,63 @@ var EndPointItem = Backbone.View.extend({
         this.close();
     },
 
-    createXover: function() {
-	var helixset = this.phItem.options.parent;
-	if(helixset.pencilendpoint === undefined) { //clicking the first endpoint only stores its info
-	    helixset.pencilendpoint = this;
-	    var pencilNotifier = helixset.pencilendpoint.shape.clone(); //a red shape that lies on top of original as indicator
-	    pencilNotifier.off("mousedown");
-	    pencilNotifier.off("click");
-	    pencilNotifier.setFill("#FF0000");
-	    this.tempLayer.add(pencilNotifier);
-	    this.tempLayer.draw();
-	    pencilNotifier.on("click", function() { //click again = cancel
-		helixset.pencilendpoint.tempLayer.destroyChildren();
-		helixset.pencilendpoint.close();
-		pencilNotifier.destroy();
-		helixset.pencilendpoint.tempLayer.draw();
-		helixset.pencilendpoint = undefined;
-	    });
-	}
-	else {
-	    var nodeAInfo = {
-		strand: helixset.pencilendpoint.parent,
-		dir: helixset.pencilendpoint.dir,
-		type: helixset.pencilendpoint.prime
-	    };
-	    var nodeBInfo = {
-		strand: this.parent,
-		dir: this.dir,
-		type: this.prime
-	    };
-	    if(nodeAInfo.type + nodeBInfo.type === 8) {
-		if(!(nodeAInfo.strand.isScaf^nodeBInfo.strand.isScaf)) {
-		    helixset.pencilendpoint.tempLayer.destroyChildren();
-		    helixset.pencilendpoint.close();
-		    helixset.pencilendpoint.shape.destroy();
-		    helixset.pencilendpoint.tempLayer.draw();
-		    helixset.pencilendpoint = undefined;
-		    this.close();
-		    this.shape.destroy();
-		    this.shape = undefined; //check if this line is actually needed
-		    var nodeA = new XoverNode(nodeAInfo.strand, nodeAInfo.dir, nodeAInfo.type);
-		    var nodeB = new XoverNode(nodeBInfo.strand, nodeBInfo.dir, nodeBInfo.type);
-		    var xover = new XoverItem(nodeA,nodeB); //initialization comes with a redrawn strandlayer
-		    this.finalLayer.destroyChildren();
-		    this.finalLayer.draw();
-		    return;
-		}
-		else {
-		    alert("A scaffold cannot xover with a staple!");
-		}
-	    }
-	    else {
-		alert("Crossover can only occur between a 3' and a 5'!");
-	    }
-	}
+    createXover: 
+    function() {
+        console.log('attemping to create xover');
+        var helixset = this.phItem.options.parent;
+        if(helixset.pencilendpoint === undefined) {
+            console.log('in 3 prime function');
+            //clicking the first endpoint only stores its info
+            helixset.pencilendpoint = this;
+            if(this.prime !== 3)
+                return;
+
+            //a red shape that lies on top of original as indicator
+            var pencilNotifier = helixset.pencilendpoint.shape.clone(); 
+
+            pencilNotifier.off("mousedown");
+            pencilNotifier.off("click");
+            pencilNotifier.setFill("#FF0000");
+
+            this.tempLayer.add(pencilNotifier);
+            this.tempLayer.draw();
+
+            pencilNotifier.on("click", function() { //click again = cancel
+                helixset.pencilendpoint.tempLayer.destroyChildren();
+                pencilNotifier.destroy();
+                helixset.pencilendpoint.tempLayer.draw();
+                helixset.pencilendpoint = undefined;
+            });
+        }
+        else {
+            console.log('in 5 prime function');
+
+            var s5p = helixset.pencilendpoint.parent.modelStrand;
+            var s5pIdx = s5p.idx3Prime();
+            var s3p = this.parent.modelStrand;
+            var s3pIdx = s3p.idx5Prime();
+            console.log(s5p);
+            console.log(s3p);
+            console.log(this.prime);
+            console.log(s5p.strandSet.isScaffold());
+            console.log(s3p.strandSet.isScaffold());
+
+            if(this.prime !== 5 || 
+            (s5p.strandSet.isScaffold()^s3p.strandSet.isScaffold())) 
+                return;
+
+            console.log('in 5 prime function passed checks');
+            helixset.pencilendpoint.tempLayer.destroyChildren();
+            helixset.pencilendpoint.tempLayer.draw();
+            helixset.pencilendpoint = undefined;
+
+            var part = s5p.strandSet.part;
+            part.createXover(s5p, s5pIdx, s3p, s3pIdx);
+
+            this.finalLayer.destroyChildren();
+            this.finalLayer.draw();
+            return;
+        }
     },
 
     show: function(flag){
