@@ -42,7 +42,6 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.autoScale = Math.min(1,innerLayout.state.center.innerWidth/
 				  (this.graphicsSettings.sqLength*(8+2*this.graphicsSettings.divLength*this.graphicsSettings.blkLength))); //adjusted by system
 	this.scaleFactor = this.autoScale * this.userScale;
-	this.pScaleFactor = this.scaleFactor;
 	this.zoom();
 
 	//active slice item is the reddish movable bar
@@ -96,16 +95,10 @@ var PathHelixSetItem = Backbone.View.extend({
 
 	//changing stage size
 	this.adjustStageSize();
-	//no scale factor changes, just redraw backlayer
-	if(this.scaleFactor === this.pScaleFactor) {
-	    this.backlayer.draw();
-	}
-	//scale factor changed, have to rescale and redraw every layer (except temp which should have nothing on it)
-	else {
-	    this.redrawLayers();
-	}
+	this.backlayer.draw();
     },
 
+    //redraw every layer, now obsolete
     redrawLayers: function() {
         this.backlayer.draw();
 	this.prexoverlayer.draw();
@@ -114,7 +107,6 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.strandlayer.draw();
 	this.alterationlayer.draw();
 	this.finallayer.draw();
-	this.pScaleFactor = this.scaleFactor;
     },
 
     adjustStageSize: function() {

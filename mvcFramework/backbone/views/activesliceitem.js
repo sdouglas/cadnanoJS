@@ -73,6 +73,7 @@ var ActiveSliceItem = Backbone.View.extend({
 	this.group.add(this.rect);
 	this.group.add(this.counterText);
 	this.layer.add(this.group);
+	this.group.hide();
     },
 
     update: function() { //puts group in correct location
