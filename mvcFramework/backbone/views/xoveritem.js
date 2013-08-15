@@ -10,7 +10,7 @@ var XoverNode = Backbone.View.extend({
 	this.panel = this.parent.panel;
 
 	//temporary layer that will be used for fast rendering
-	this.tempLayer = this.phItem.options.parent.templayer;
+	this.tempLayer = this.phItem.parent.templayer;
 
 	//graphics
 	this.divLength = this.parent.divLength;
@@ -116,7 +116,7 @@ var XoverNode = Backbone.View.extend({
 
             console.log(this.parent.modelStrand);
             console.log('trying to create xoveritem');
-            var phSetItem = this.parent.parent.options.parent;
+            var phSetItem = this.parent.parent.parent;
             var phItem = phSetItem.getPathHelixItem(otherStrand.strandSet.helix.id);
             var otherStItem = phItem.getStrandItem(
                     otherStrand.strandSet.isScaffold(),
@@ -180,7 +180,7 @@ var XoverItem = Backbone.View.extend({
 	}
 
 	this.isScaf = this.node3.isScaf; //we don't need to check node5 because the strands must be both scafs or both staps
-	this.helixset = this.node3.parent.parent.options.parent;
+	this.helixset = this.node3.parent.parent.parent;
 	this.panel = this.helixset.panel;
 	this.layer = this.node3.parent.layer;
 	this.finalLayer = this.helixset.finallayer;
@@ -402,5 +402,73 @@ var XoverItem = Backbone.View.extend({
     function(){
         this.group.destroyChildren();
         this.close();
+    },
+});
+
+var XoverNodeImage = Backbone.View.extend({
+	initialize: function(phItem, y, x, strandItem) {
+	this.stItem = strandItem;
+	this.x = x;
+	this.dir = y; //0 = left, 1 = right
+	this.sqLength = phItem.sqLength;
+	this.centerX = phItem.startX+(x+0.5)*this.sqLength;
+	this.centerY = phItem.startY+(y+0.5)*this.sqLength;
+	this.linkageX = this.centerX;
+	this.linkageY = 0;
+
+        var xStart;
+        if(!this.dir) {xStart = this.centerX;}
+        else {xStart = this.centerX-this.sqLength/2;}
+        this.hLine = new Kinetic.Rect({
+	    x: xStart,
+	    y: this.centerY-1,
+	    width: this.sqLength/2,
+	    height: 2,
+	    fill: colours.red,
+	    stroke: colours.red,
+	    strokeWidth: 1
+	});
+        var yStart;
+        if(!y) {
+            yStart = this.centerY-this.sqLength/2;
+            this.linkageY = this.centerY-this.sqLength/2;
+        }
+        else {
+            yStart = this.centerY-1;
+            this.linkageY = this.centerY+this.sqLength/2;
+        }
+        this.vLine = new Kinetic.Rect({
+	    x: this.centerX-1,
+	    y: yStart,
+	    width: 2,
+	    height: this.sqLength/2+1,
+	    fill: colours.red,
+	    stroke: colours.red,
+	    strokeWidth: 1
+	});
+
+	this.group = new Kinetic.Group();
+	this.group.add(this.hLine);
+	this.group.add(this.vLine);
+	phItem.parent.templayer.add(this.group);
+    }
+});
+
+var XoverItemImage = Backbone.View.extend({
+	initialize: function(x1,x2,y1,y2,dir) {
+        this.connection = new Kinetic.Shape({
+	    stroke: this.itemColor,
+	    strokeWidth: 2
+	});
+	this.connection.superobj = this;
+	this.connection.setDrawFunc(function(canvas) {
+	    var context = canvas.getContext();
+	    var ctrlpt = this.superobj.quadCtrlPt(x1,y1,x2,y2,0);
+	    context.beginPath();
+	    context.moveTo(x1,y1);
+	    context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
+	    canvas.stroke(this);
+	});
+
     },
 });

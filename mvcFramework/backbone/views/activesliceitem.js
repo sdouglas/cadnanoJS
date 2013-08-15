@@ -1,8 +1,9 @@
 //the reddish movable bar on top of PathHelixItems
 var ActiveSliceItem = Backbone.View.extend({
     initialize: function(){
-	this.layer = this.options.parent.activeslicelayer;
-	this.panel = this.options.parent.panel;
+	this.parent = this.options.parent;
+	this.layer = this.parent.activeslicelayer;
+	this.panel = this.parent.panel;
 
 	//graphics variables
 	this.divLength = this.options.graphics.divLength;
@@ -12,13 +13,13 @@ var ActiveSliceItem = Backbone.View.extend({
 	this.bot = 0;
 
 	//counters
-	this.initcounter = this.divLength*this.blkLength*this.options.parent.part.getStep()/2; //initial counter is used to determine absolute position
+	this.initcounter = this.divLength*this.blkLength*this.parent.part.getStep()/2; //initial counter is used to determine absolute position
 	this.counter = this.initcounter; //current counter
 	this.pCounter = this.counter; //previous counter is used to determine when to update
 
 	//signals sent from document.js
-	this.listenTo(this.options.parent.part.currDoc,cadnanoEvents.moveSliceItemToFirstSignal,this.moveSliceItemToFirstSlot);
-	this.listenTo(this.options.parent.part.currDoc,cadnanoEvents.moveSliceItemToLastSignal,this.moveSliceItemToLastSlot);
+	this.listenTo(this.parent.part.currDoc,cadnanoEvents.moveSliceItemToFirstSignal,this.moveSliceItemToFirstSlot);
+	this.listenTo(this.parent.part.currDoc,cadnanoEvents.moveSliceItemToLastSignal,this.moveSliceItemToLastSlot);
 
 	this.rect = new Kinetic.Rect({
 	    x: 5*this.sqLength+this.counter*this.sqLength,
@@ -60,14 +61,14 @@ var ActiveSliceItem = Backbone.View.extend({
 	    //51 accounts for the slice button div width
 	    //innerLayout.state.west.innerWidth accounts for the slice view div width
 	    //panel.scrollLeft accounts for left-right scrolling
-	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.options.parent.scaleFactor)/this.superobj.sqLength-5);
+	    var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.parent.scaleFactor)/this.superobj.sqLength-5);
 	    this.superobj.adjustCounter(tempCounter); //counter should always be between 0 and grid length
 	    if(this.superobj.counter !== this.superobj.pCounter) { //only draws when counter is changed; more efficient
 		this.superobj.pCounter = this.superobj.counter;
 		this.superobj.update();
 		//throw out signals here
 		//change the model object.
-		this.superobj.options.parent.part.setActiveBaseIndex(this.superobj.counter);
+		this.superobj.parent.part.setActiveBaseIndex(this.superobj.counter);
 	    }
 	});
 	this.group.add(this.rect);
@@ -84,25 +85,25 @@ var ActiveSliceItem = Backbone.View.extend({
     },
 
     moveSliceItemToFirstSlot: function() {
-	if(this.options.parent.phItemArray.defined.length > 0) {
+	if(this.parent.phItemArray.defined.length > 0) {
 	    this.counter = 0;
 	    this.pCounter = this.counter;
 	    this.update();
-	    this.options.parent.part.setActiveBaseIndex(this.superobj.counter);
+	    this.parent.part.setActiveBaseIndex(this.superobj.counter);
 	}
     },
 
     moveSliceItemToLastSlot: function() {
-	if(this.options.parent.phItemArray.defined.length > 0) {
-	    this.counter = this.divLength*this.blkLength*this.options.parent.part.getStep()-1;
+	if(this.parent.phItemArray.defined.length > 0) {
+	    this.counter = this.divLength*this.blkLength*this.parent.part.getStep()-1;
 	    this.pCounter = this.counter;
 	    this.update();
-	    this.options.parent.part.setActiveBaseIndex(this.superobj.counter);
+	    this.parent.part.setActiveBaseIndex(this.superobj.counter);
 	}
     },
 
     updateHeight: function() { //makes the bar span through all PathHelixItem
-	var numItems = this.options.parent.phItemArray.defined.length;
+	var numItems = this.parent.phItemArray.defined.length;
 	if(numItems >= 1){
 	    this.group.show();
 	    this.bot = 5*this.sqLength+4*this.sqLength*numItems;
@@ -115,6 +116,6 @@ var ActiveSliceItem = Backbone.View.extend({
     },
 
     adjustCounter: function(n) { //counter (and hence the bar itself) is limited to valid indices
-	this.counter = Math.min(Math.max(0,n),this.blkLength*this.divLength*this.options.parent.part.getStep()-1);
+	this.counter = Math.min(Math.max(0,n),this.blkLength*this.divLength*this.parent.part.getStep()-1);
     },
 });

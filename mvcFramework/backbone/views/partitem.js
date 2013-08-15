@@ -200,6 +200,7 @@ var PathPartItem = PartItem.extend({
 
     events: {
 	"mousedown" : "onmousedown",
+	"mousemove" : "onmousemove",
     },
 
     partVirtualHelixAddedSlot: function(virtualHelix){
@@ -227,43 +228,42 @@ var PathPartItem = PartItem.extend({
 	this.pathItemSet.prexoverlayer.destroyChildren();
 
 	if(virtualHelix){
-	console.log('in updatePreXoverItemsSlot');
-        var xoverList = this.part.potentialCrossoverList(virtualHelix);
-
-	for(var i=0; i<xoverList.length; i++) {
-        /*
-           console.log(
-           virtualHelix.id+','+
-           xoverList[i][0].id+','+
-           xoverList[i][1]+','+
-           xoverList[i][2]+','+
-           xoverList[i][3]
-           );
-
-           console.log(
-           xoverList[i][0].id+','+
-           virtualHelix.id+','+
-           xoverList[i][1]+','+
-           xoverList[i][2]+','+
-           xoverList[i][3]
-           );
-           */
-
-	    var preXover = new PreXoverItem(
-                this.pathItemSet.phItemArray[virtualHelix.id],
-                this.pathItemSet.phItemArray[xoverList[i][0].id],
-                xoverList[i][1],
-                xoverList[i][2],
-                xoverList[i][3]);
-
-	    var preXoverC = new PreXoverItem(
-                this.pathItemSet.phItemArray[xoverList[i][0].id],
-                this.pathItemSet.phItemArray[virtualHelix.id],
-                xoverList[i][1],
-                xoverList[i][2],
-                xoverList[i][3]
-                );
-	}
+	    console.log('in updatePreXoverItemsSlot');
+	    var xoverList = this.part.potentialCrossoverList(virtualHelix);
+	    
+	    for(var i=0; i<xoverList.length; i++) {
+		/*
+		  console.log(
+		  virtualHelix.id+','+
+		  xoverList[i][0].id+','+
+		  xoverList[i][1]+','+
+		  xoverList[i][2]+','+
+		  xoverList[i][3]
+		  );
+		  
+		  console.log(
+		  xoverList[i][0].id+','+
+		  virtualHelix.id+','+
+		  xoverList[i][1]+','+
+		  xoverList[i][2]+','+
+		  xoverList[i][3]
+		  );
+		*/
+		
+		var preXover = new PreXoverItem(
+			this.pathItemSet.phItemArray[virtualHelix.id],
+			this.pathItemSet.phItemArray[xoverList[i][0].id],
+			xoverList[i][1],
+			xoverList[i][2],
+			xoverList[i][3]);
+		
+		var preXoverC = new PreXoverItem(
+			this.pathItemSet.phItemArray[xoverList[i][0].id],
+			this.pathItemSet.phItemArray[virtualHelix.id],
+			xoverList[i][1],
+			xoverList[i][2],
+			xoverList[i][3]);
+	    }
 	}
 	this.pathItemSet.prexoverlayer.draw();
     },
@@ -298,6 +298,92 @@ var PathPartItem = PartItem.extend({
 	    this.pathItemSet.strandlayer.draw();
 	}
 	*/
+    },
+
+    onmousemove: function(pos) {
+	var pathTool = this.part.currDoc.pathTool;
+	var pis = this.pathItemSet;
+	if(pathTool === "pencil") {
+	    if(pis.pencilEP) {
+		//destroy old images
+		pis.templayer.get("#xoverimage").destroy();
+		var ni = pis.templayer.get("#nodeimage");
+		if(ni) {ni.destroy();}
+		//variables
+		var point1X = pis.pencilEP.linkageX;
+		var point1Y = pis.pencilEP.linkageY;
+		var posX = (pos.pageX-51-innerLayout.state.west.innerWidth+pis.panel.scrollLeft)/pis.scaleFactor;
+		var posY = (pos.pageY-54+pis.panel.scrollTop)/pis.scaleFactor;
+		//determine if we're in a PathHelixItem or not
+		var inHelix = false;
+		var sqLength = pis.pencilEP.sqLength;
+		var panelYLevel = Math.floor(posY/sqLength)-5;
+		if(panelYLevel >= 0 && panelYLevel < 4*this.pathItemSet.phItemArray.defined.length && panelYLevel%4 < 2) {
+		    var panelXLevel = Math.floor(posX/sqLength-5);
+		    if(panelXLevel >= 0 && panelXLevel < this.pathItemSet.phItemArray[this.pathItemSet.phItemArray.defined[0]].grLength) {
+			inHelix = true;
+		    }
+		}
+		var point2X, point2Y;
+		if(inHelix) {
+		    var phItem = pis.getHelixItemFromOrder(Math.floor(panelYLevel/4));
+		    var nodeImage = new XoverNodeImage(phItem, panelYLevel%4, panelXLevel);
+		    nodeImage.group.setId("nodeimage");
+		    point2X = nodeImage.linkageX;
+		    point2Y = nodeImage.linkageY;
+		}
+		else {
+		    point2X = posX;
+		    point2Y = posY;
+		}
+		//make the connection
+		var connectionImage = new Kinetic.Line({
+		    points: [point1X, point1Y, point2X, point2Y],
+		    stroke: colours.red,
+		    strokeWidth: 2,
+		    id: "xoverimage"
+		});
+		pis.templayer.add(connectionImage);
+		pis.templayer.draw();
+	    }
+	}
+    },
+
+    quadCtrlPt: function(x1,y1,x2,y2,dir) { //for pencil function above
+        if(x1 === x2) { //vertical case                                                                                                                               
+            if(!dir) {
+                return {x:x1+sqLength/4, y:(y1+y2)/2}
+            }
+            else {
+                return {x:x1-sqLength/4, y:(y1+y2)/2}
+            }
+        }
+        //deciding the 3rd point of right triangle                                                                                                                    
+        var x3 = 0;
+        var y3 = 0;
+        if(y1 > y2) {
+            x3 = x1;
+            y3 = y2;
+        }
+        else if(y1 < y2) {
+            x3 = x2;
+            y3 = y1;
+        }
+        else { //horizontal case                                                                                                                                      
+            if(!dir) {
+                return {x:(x1+x2)/2, y:y1-sqLength}
+            }
+            else {
+                return {x:(x1+x2)/2, y:y1+sqLength}
+            }
+        }
+        var d1 = Math.abs(x1-x2);
+        var d2 = Math.abs(y1-y2);
+        var d3 = Math.sqrt(d1*d1+d2*d2);
+        return {
+            x: (d1*x1+d2*x2+d3*x3)/(d1+d2+d3),
+	    y: (d1*y1+d2*y2+d3*y3)/(d1+d2+d3)
+	}
     },
 
 });

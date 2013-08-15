@@ -6,25 +6,26 @@ var StrandItem = Backbone.View.extend({
         this.xStart = modelStrand.low();
         this.xEnd = modelStrand.high();
         this.modelStrand = modelStrand;
-	    this.parent = phItem;
-	    this.layer = layer;
-	    if(layer === undefined) { //default value for layer
-	        this.layer = this.parent.options.parent.strandlayer;
-	    }
+	this.parent = phItem;
+	this.layer = layer;
+	if(layer === undefined) { //default value for layer
+	    this.layer = this.parent.parent.strandlayer;
+	}
         //Start listening to resize events.
         this.connectSignalsSlots();
 
-        this.panel = this.parent.options.parent.panel;
-        this.divLength = this.parent.options.graphics.divLength;
-        this.blkLength = this.parent.options.graphics.blkLength;
-        this.sqLength = this.parent.options.graphics.sqLength;
+        this.panel = this.parent.parent.panel;
+	var graphics = this.parent.options.graphics;
+        this.divLength = graphics.divLength;
+        this.blkLength = graphics.blkLength;
+        this.sqLength = graphics.sqLength;
 
         //see explanation in EndPointItem.js; 
         //the implementation of these two classes share many similarities
-        this.tempLayer = this.parent.options.parent.templayer;
+        this.tempLayer = this.parent.parent.templayer;
 
         //final layer is for post-sequencing DNAs
-        this.finalLayer = this.parent.options.parent.finallayer;
+        this.finalLayer = this.parent.parent.finallayer;
 
         this.group = new Kinetic.Group({
             draggable: true,
@@ -99,10 +100,11 @@ var StrandItem = Backbone.View.extend({
         //for more explanation, visit EndPointItem.js
         var isScaf = this.isScaf;
         
+	var currDoc = this.parent.parent.part.currDoc;
         this.group.on("mousedown", function(pos) {
-            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+            var pathTool = currDoc.pathTool;
 	    //critiria:
-	    //1. path tool is select
+	    //1. path tool is "select"
 	    //2. strands are selectable
 	    //3. strand is scaffold and scaf is selectable, or strand is staple and stap is selectable
             if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
@@ -112,11 +114,14 @@ var StrandItem = Backbone.View.extend({
 
         this.group.on("click", function(pos) {
 	    //reset PreXoverItems
-	    this.superobj.parent.options.parent.prexoverlayer.destroyChildren();
-	    this.superobj.parent.options.parent.part.setActiveVirtualHelix(this.superobj.parent.options.model);
-            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-            var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.parent.options.parent.scaleFactor)/this.superobj.sqLength)-5;
-            if(pathTool === "break") {
+	    this.superobj.parent.parent.prexoverlayer.destroyChildren();
+	    this.superobj.parent.parent.part.setActiveVirtualHelix(this.superobj.parent.options.model);
+            var pathTool = currDoc.pathTool;
+            var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.parent.parent.scaleFactor)/this.superobj.sqLength)-5;
+	    if(pathTool === "pencil") {
+		this.superobj.createPencilXoverSite(counter);
+	    }
+            else if(pathTool === "break") {
                 this.superobj.breakStrand(counter);
             }
             else if(pathTool === "paint") {
@@ -135,14 +140,14 @@ var StrandItem = Backbone.View.extend({
         });
 
         this.group.on("dragmove", function(pos) {
-            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+            var pathTool = currDoc.pathTool;
             if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
                 this.superobj.selectMove(pos);
             }
         });
 
         this.group.on("dragend", function(pos) {
-            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+            var pathTool = currDoc.pathTool;
             if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
                 this.superobj.selectEnd();
             }
@@ -243,8 +248,8 @@ var StrandItem = Backbone.View.extend({
 
         this.invisConnection.setX(this.xStartCoord);
         this.invisConnection.setWidth(this.xEndCoord-this.xStartCoord);
-        this.parent.options.parent.prexoverlayer.destroyChildren();
-        this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
+        this.parent.parent.prexoverlayer.destroyChildren();
+        this.parent.parent.part.setActiveVirtualHelix(this.parent.options.model);
     },
 
     //update the Y position
@@ -278,7 +283,7 @@ var StrandItem = Backbone.View.extend({
 
     selectStart: function(pos) {
 	//counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
-	this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.dragCounterInit = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.parent.scaleFactor/this.sqLength-5);
 	this.dragCounter = this.dragCounterInit;
 	this.pDragCounter = this.dragCounter;
 	this.minMaxIndices = this.modelStrand.getLowHighIndices();
@@ -304,7 +309,7 @@ var StrandItem = Backbone.View.extend({
     },
 
     selectMove: function(pos) {
-	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	//have to watch out for both left and right end in counter adjustment here
 	var diff = this.dragCounter-this.dragCounterInit;
 	this.dragCounter = this.adjustCounter(this.dragCounterInit, this.dragCounter);
@@ -356,6 +361,27 @@ var StrandItem = Backbone.View.extend({
         return dcI+Math.min(d,rightD);
     },
 
+    createPencilXoverSite: function(counter) {
+	var pep = this.parent.parent.pencilEP;
+	if(!pep) {
+	    if(this.canBreakStrand(counter)) {
+		this.parent.parent.pencilEP = new XoverNodeImage(this.parent, this.yLevel, counter, this);
+		this.parent.parent.templayer.draw();
+	    }
+	}
+	else {
+	    if(this.endPointL.prime === 3) {
+		this.parent.parent.part.createXover(this.modelStrand, counter, pep.stItem.modelStrand, pep.x);
+	    }
+	    else {
+		this.parent.parent.part.createXover(pep.stItem.modelStrand, pep.x, this.modelStrand, counter);
+	    }
+	    this.parent.parent.templayer.destroyChildren();
+	    this.parent.parent.templayer.draw();
+	    this.parent.parent.pencilEP = undefined;
+	}
+    },
+
     canBreakStrand: function(counter) {
 	if(this.endItemL.prime === 5) {
 	    return this.xEnd-counter > 1 && counter > this.xStart;
@@ -398,7 +424,7 @@ var StrandItem = Backbone.View.extend({
     },
 
     paintStrand: function() {
-	var colour = this.parent.options.parent.paintcolor;
+	var colour = this.parent.parent.paintcolor;
 	this.itemColor = colour;
 	this.connection.setFill(colour);
 	this.connection.setStroke(colour);
@@ -718,7 +744,7 @@ var InsertItem = Backbone.View.extend({
 		}
 	    }
 	});
-	this.parent.options.parent.alterationlayer.add(this.skipInsertGroup);
+	this.parent.parent.alterationlayer.add(this.skipInsertGroup);
 	this.parent.alterationArray[this.position] = this;
 	this.parent.updateSkipInsertItemsSlot(); //redraw skip/insert items
     },
@@ -780,7 +806,7 @@ var SkipItem = Backbone.View.extend({
 	    this.stapGroup.add(slashB2);
 	}
 
-	this.parent.options.parent.alterationlayer.add(this.skipInsertGroup);
+	this.parent.parent.alterationlayer.add(this.skipInsertGroup);
 	this.parent.alterationArray[this.position] = this;
 	this.parent.updateSkipInsertItemsSlot();
     },
@@ -789,8 +815,8 @@ var SkipItem = Backbone.View.extend({
 var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is not connected to model or mouse functionalities
     initialize: function(phItem, y, x1, x2) {
 	this.parent = phItem;
-	this.layer = this.parent.options.parent.templayer;
-	this.panel = this.parent.options.parent.panel;
+	this.layer = this.parent.parent.templayer;
+	this.panel = this.parent.parent.panel;
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;

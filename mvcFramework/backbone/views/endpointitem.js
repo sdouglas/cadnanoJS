@@ -5,11 +5,11 @@ var EndPointItem = Backbone.View.extend({
         this.parent = strandItem;
         this.phItem = this.parent.parent;
         this.layer = this.parent.layer;
-        this.finalLayer = this.phItem.options.parent.finallayer;
+        this.finalLayer = this.phItem.parent.finallayer;
         this.panel = this.parent.panel;
 
         //temporary layer that will be used for fast rendering
-        this.tempLayer = this.phItem.options.parent.templayer;
+        this.tempLayer = this.phItem.parent.templayer;
 
         //graphics
         this.divLength = this.parent.divLength;
@@ -78,8 +78,8 @@ var EndPointItem = Backbone.View.extend({
 	var isScaf = this.isScaf;
 	
 	this.shape.on("click", function(pos) {
-	    this.superobj.phItem.options.parent.prexoverlayer.destroyChildren();
-	    this.superobj.phItem.options.parent.part.setActiveVirtualHelix(this.superobj.phItem.options.model);
+	    this.superobj.phItem.parent.prexoverlayer.destroyChildren();
+	    this.superobj.phItem.parent.part.setActiveVirtualHelix(this.superobj.phItem.options.model);
 	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
 	    if(pathTool === "pencil") {
 		this.superobj.createXover();
@@ -95,7 +95,7 @@ var EndPointItem = Backbone.View.extend({
 	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
 	      further.
 	    */
-	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18){ 
+	    if(this.superobj.phItem.parent.part.getDoc().getKey() === 18){ 
 		//holding ALT = extend to furthest possible location (works regardless of path tool)
 		if(this.superobj.dir === "L") {
 		    this.superobj.counter = this.superobj.minMaxIndices[0];
@@ -167,7 +167,7 @@ var EndPointItem = Backbone.View.extend({
     },
 
     selectStart: function(pos) {
-	this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength); //should not be changed
+	this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.parent.scaleFactor-5*this.sqLength)/this.sqLength); //should not be changed
 	this.redBox = new Kinetic.Rect({ //temporary red box to show position while leaving strand layer untouched
 	    x: this.centerX-this.sqLength/2,
 	    y: this.centerY-this.sqLength/2,
@@ -190,7 +190,7 @@ var EndPointItem = Backbone.View.extend({
 
     selectMove: function(pos) {
 	//we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
-	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	this.adjustCounter(tempCounter);
 	if(this.counter !== this.pCounter) {
 	    //redrawing red box
@@ -209,18 +209,18 @@ var EndPointItem = Backbone.View.extend({
 
     /*
     itemSelectedP1: function() {
-	this.phItem.options.parent.selectedItemsTemp.push(this);
+	this.phItem.parent.selectedItemsTemp.push(this);
     },
 
     itemSelected: function() {
 	this.shape.setFill(colours.red);
-	this.selectedIndex = this.phItem.options.parent.selectedItems.length;
-	this.phItem.options.parent.selectedItems.push(this);
+	this.selectedIndex = this.phItem.parent.selectedItems.length;
+	this.phItem.parent.selectedItems.push(this);
     },
 
     itemDeselected: function() {
 	this.shape.setFill(this.itemColor);
-	this.phItem.options.parent.selectedItems[this.selectedIndex] = undefined;
+	this.phItem.parent.selectedItems[this.selectedIndex] = undefined;
 	this.selectedIndex = -1;
     },
     */
@@ -250,7 +250,7 @@ var EndPointItem = Backbone.View.extend({
     },
 
     createXover: function() {
-	var helixset = this.phItem.options.parent;
+	var helixset = this.phItem.parent;
 	if(helixset.pencilendpoint === undefined) { //clicking the first endpoint only stores its info
 	    helixset.pencilendpoint = this;
 	    var pencilNotifier = helixset.pencilendpoint.shape.clone(); //a red shape that lies on top of original as indicator
@@ -269,11 +269,11 @@ var EndPointItem = Backbone.View.extend({
 	}
 	else {
 	    if(this.prime === 5) {
-		this.phItem.options.parent.part.createXover(helixset.pencilendpoint.parent.modelStrand,helixset.pencilendpoint.counter,
+		this.phItem.parent.part.createXover(helixset.pencilendpoint.parent.modelStrand,helixset.pencilendpoint.counter,
 							    this.parent.modelStrand,this.counter);
 	    }
 	    else {
-		this.phItem.options.parent.part.createXover(this.parent.modelStrand,this.counter,
+		this.phItem.parent.part.createXover(this.parent.modelStrand,this.counter,
 							    helixset.pencilendpoint.parent.modelStrand,helixset.pencilendpoint.counter);
 	    }
 	    this.tempLayer.destroyChildren();
