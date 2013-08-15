@@ -15,7 +15,7 @@ var PartItem = Backbone.View.extend({
             );
         this.listenTo(this.part,
             cadnanoEvents.partVirtualHelixRemovedSignal,
-            this.partVirtualHelixAddedSlot
+            this.partVirtualHelixRemovedSlot
             );
         this.listenTo(this.part,
             cadnanoEvents.partHelicesInitializedSignal,
@@ -130,9 +130,14 @@ var SlicePartItem = PartItem.extend({
         //Change the color of the virtual helix item
         //to show selection.
         this.vhItemSet.render();
-
-    },
-
+    }, 
+    partVirtualHelixRemovedSlot: function(virtualHelix){
+        //Add the virtual helix item to a hash.
+        //Change the color of the virtual helix item
+        //to show selection.
+        this.vhItemSet.render();
+    }, 
+   
     partStrandChangedSlot: function(){
         this.vhItemSet.render();
     },
@@ -204,17 +209,27 @@ var PathPartItem = PartItem.extend({
         //Add in a new path in the path view panel.
     },
 
+    partVirtualHelixRemovedSlot:
+    function(virtualHelix){
+	this.pathItemSet.removeHelix(virtualHelix.id);
+	this.pathItemSet.activesliceItem.updateHeight();
+    },
+
     updatePreXoverItemsSlot:
     function(virtualHelix){
-        console.log('in updatePreXoverItemsSlot');
-        var xoverList = this.part.potentialCrossoverList(virtualHelix);
-	/*
+     	/*
 	  0: complementary VirtualHelix
 	  1: position
 	  2: 1 = is staple strand
 	  3: true = on left
 	 */
+
 	this.pathItemSet.prexoverlayer.destroyChildren();
+
+	if(virtualHelix){
+	console.log('in updatePreXoverItemsSlot');
+        var xoverList = this.part.potentialCrossoverList(virtualHelix);
+
 	for(var i=0; i<xoverList.length; i++) {
         /*
            console.log(
@@ -248,6 +263,7 @@ var PathPartItem = PartItem.extend({
                 xoverList[i][2],
                 xoverList[i][3]
                 );
+	}
 	}
 	this.pathItemSet.prexoverlayer.draw();
     },

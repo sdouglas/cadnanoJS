@@ -12,17 +12,17 @@ var XoverNode = Backbone.View.extend({
 	//temporary layer that will be used for fast rendering
 	this.tempLayer = this.phItem.options.parent.templayer;
 
-    //graphics
+	//graphics
 	this.divLength = this.parent.divLength;
 	this.blkLength = this.parent.blkLength;
 	this.sqLength = this.parent.sqLength;
 
 	//counters
 	if(dir === "L") {
-        this.initcounter = this.parent.modelStrand.low();
+	    this.initcounter = this.parent.modelStrand.low();
 	}
 	else if(dir === "R") {
-        this.initcounter = this.parent.modelStrand.high();
+	    this.initcounter = this.parent.modelStrand.high();
 	}
 	this.counter = this.initcounter;
 
@@ -200,7 +200,7 @@ var XoverItem = Backbone.View.extend({
 	    },
 	});
 	this.group.superobj = this;
-	this.connection = new Kinetic.Shape({
+	this.connection = new Kinetic.Shape({ //same trick, visible thin line + invisible rect for easy clicking
 	    stroke: this.itemColor,
 	    strokeWidth: 3
 	});
@@ -219,7 +219,7 @@ var XoverItem = Backbone.View.extend({
 	});
 	this.group.add(this.connection);
 
-	this.invisConnection = new Kinetic.Rect({ //need to change opacity to 0 later
+	this.invisConnection = new Kinetic.Rect({
 	    x: Math.min(this.node3.centerX,this.node5.centerX)-this.sqLength/2,
 	    y: Math.min(this.node3.centerY,this.node5.centerY)-this.sqLength/2,
 	    width: Math.abs(this.node3.centerX-this.node5.centerX)+this.sqLength,

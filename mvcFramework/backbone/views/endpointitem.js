@@ -59,6 +59,7 @@ var EndPointItem = Backbone.View.extend({
             ];
         }
 
+	//the square/triangle depending on 3p/5p
 	this.shape = new Kinetic.Polygon({
 	    points: polypts,
 	    fill: this.itemColor,
@@ -129,10 +130,10 @@ var EndPointItem = Backbone.View.extend({
 	});
 	
     this.layer.add(this.shape);
-	this.parent.addEndItem(this,dir,skipRedraw); //finally linking this item back to strand
+	this.parent.addEndItem(this,dir,skipRedraw); //finally linking this item back to StrandItem
     },
 
-    updateCounter: function(){
+    updateCounter: function(){ //get counter from model
         if(this.dir === "L") {
             this.counter = this.parent.modelStrand.low();
         }
@@ -145,20 +146,20 @@ var EndPointItem = Backbone.View.extend({
         this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
     },
 
-    update: function() {
+    update: function() { //update graphics variables, everything is based on counter except for counter itself
         this.updateCounter();
         this.updateCenterX();
         this.pCounter = this.counter;
         this.shape.setX((this.counter-this.initcounter)*this.sqLength);
     },
 
-    updateY: function() {
+    updateY: function() { //updates Y position
 	var diff = this.parent.yCoord-this.centerY;
 	this.centerY = this.parent.yCoord;
 	this.shape.setY(this.shape.getY()+diff);
     },
 
-    adjustCounter: function(n) {
+    adjustCounter: function(n) { //limit counter range
 	this.counter = Math.min(
             Math.max(this.minMaxIndices[0],n),
             this.minMaxIndices[1]
@@ -166,8 +167,8 @@ var EndPointItem = Backbone.View.extend({
     },
 
     selectStart: function(pos) {
-	this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
-	this.redBox = new Kinetic.Rect({
+	this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength); //should not be changed
+	this.redBox = new Kinetic.Rect({ //temporary red box to show position while leaving strand layer untouched
 	    x: this.centerX-this.sqLength/2,
 	    y: this.centerY-this.sqLength/2,
 	    width: this.sqLength,

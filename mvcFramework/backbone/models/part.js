@@ -72,6 +72,7 @@ var Part = Backbone.Model.extend({
        //Remove the views.
        this.trigger(cadnanoEvents.partVirtualHelixRemovedSignal,
          helix);
+       this.trigger(cadnanoEvents.updatePreXoverItemsSignal);
        //this.trigger(cadnanoEvents.partActiveSliceResizedSignal, 
        //  helix);
     },

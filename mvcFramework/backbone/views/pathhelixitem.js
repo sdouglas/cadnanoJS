@@ -67,7 +67,7 @@ var PathHelixSetItem = Backbone.View.extend({
         "mousemove" : "onMouseMove",
     },
     render: function(){
-	if(!this.collection.length) { //no virtual helix
+	if(!this.collection.length) { //hide buttons and bar if no virtual helix present
 	    this.buttonlayer.hide();
 	    this.activeslicelayer.hide();
 	}
@@ -107,7 +107,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.backlayer.draw();
     },
 
-    removeHelix: function(id) {
+    removeHelix: function(id) { //remove a helix in path view given its ID
 	var idx;
 	if(this.phItemArray[id]) { //can't remove an nonexistent item
 	    var order = this.phItemArray[id].order;
@@ -117,7 +117,7 @@ var PathHelixSetItem = Backbone.View.extend({
 		    phItem.order -= 1; //everything after the deleted helix needs to be shifted up
 		    phItem.updateY();
 		}
-		else if(phItem.order === order) {
+		else if(phItem.order === order) { //index of the (soon) removed helix in defined
 		    idx = i;
 		}
 	    }
@@ -139,14 +139,14 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.finallayer.draw();
     },
 
-    adjustStageSize: function() {
+    adjustStageSize: function() { //change stage size; the setSize also comes with a free redraw
 	var newWidth = this.graphicsSettings.sqLength*(8+this.part.getStep()*this.graphicsSettings.divLength*this.graphicsSettings.blkLength)*this.scaleFactor;
 	var newHeight = this.graphicsSettings.sqLength*(7+4*this.phItemArray.defined.length)*this.scaleFactor;
 	this.handler.handler.setSize(Math.max(newWidth, innerLayout.state.center.innerWidth),
 				     Math.max(newHeight, innerLayout.state.center.innerHeight));
     },
 
-    zoom: function(skipAdjustment) {
+    zoom: function(skipAdjustment) { //adjust layers' scale after zooming in/out. if skipAdjustment is true the stage will not be adjusted
 	this.scaleFactor = this.autoScale * this.userScale;
 	this.backlayer.setScale(this.scaleFactor);
 	this.prexoverlayer.setScale(this.scaleFactor);
@@ -251,6 +251,7 @@ var PathHelixItem = Backbone.View.extend ({
 	this.layer.add(this.group);
 	this.connectSignalsSlots();
 	
+	//these variables are outside so there is only one version and can be reset properly
 	var self = this;
 	var zf;
 	var yLevel;
@@ -265,6 +266,7 @@ var PathHelixItem = Backbone.View.extend ({
 	});
 	this.group.on("dragstart", function(pos) {
 	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
+		//initialize/reset variables
 		zf = this.superobj.options.parent.scaleFactor;
 		yLevel = Math.floor(((pos.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
 		strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
@@ -279,11 +281,11 @@ var PathHelixItem = Backbone.View.extend ({
 		strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
 		strandCounter = adjustCounter(strandCounter);
 		if(strandCounter !== strandPCounter) {
-		    stItemImage.remove();
-		    stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
+		    stItemImage.remove(); //this removes the visuals of StrandItemImage
+		    stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter); //we just make a new image so we don't have to adjust params
 		    strandPCounter = strandCounter;
 		}
-		function adjustCounter(n) {
+		function adjustCounter(n) { //limit strandCounter to a valid range
 		    var strandSet;
 		    if(yLevel^self.options.model.isEvenParity()) { //^ is xor (exclusive or)
 			strandSet = self.options.model.scafStrandSet;
@@ -346,11 +348,12 @@ var PathHelixItem = Backbone.View.extend ({
 	var oldY = this.startY;
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
 	for(var i=0; i<this.scafItemArray.length; i++) {
-	    this.scafItemArray[i].updateY();
+	    this.scafItemArray[i].updateY(); //change Y position of StrandItems
 	}
 	for(var i=0; i<this.stapItemArray.length; i++) {
 	    this.stapItemArray[i].updateY();
 	}
+	//change Y position of skips and inserts
         for(var i=0; i<this.grLength; i++) {
 	    if(this.alterationArray[i]) {
 		var group = this.alterationArray[i].skipInsertGroup;
@@ -463,7 +466,7 @@ var PathHelixItem = Backbone.View.extend ({
 		    this.alterationArray[i].scafGroup.show();
 		}
 		else {
-		    this.alterationArray[i].scafGroup.hide();
+		    this.alterationArray[i].scafGroup.hide(); //hide item if it is not on a strand
 		    scafHidden = true;
 		}
 		if(this.getStrandItem(false, i)) { //if staple strand exists
@@ -682,7 +685,7 @@ var ColorChangeItem = Backbone.View.extend({
 	    fill: this.options.parent.paintcolor
 	});
 	rect.superobj = this;
-	rect.on("click", function(pos) { //someone fix the duplicate dialog bug (it is also in stranditem.js)
+	rect.on("click", function(pos) {
 	    //this function makes use of jQuery UI dialog
 	    window.localStorage.setItem("cadnanoPaint",rect.superobj.options.parent.paintcolor); //the other page will load current color into picker
 	    var newDialog = $('<link rel="stylesheet" href="ui/css/jquery-ui/jquery.ui-1.9.2.min.css"><div><iframe src="cadnanoPaint.html" width="195" height="224"></div>');
@@ -694,14 +697,14 @@ var ColorChangeItem = Backbone.View.extend({
 		show: "clip",
 		hide: "clip",
 		buttons: {
-		    OK: function() {update(); $(newDialog).dialog("close");},
+			OK: function() {update(); $(newDialog).dialog("close");}, //$(this) only closes 1 dialog
 		    Cancel: function() {$(newDialog).dialog("close");}
 		}
 	    });
 	    $(".ui-dialog-titlebar-close", this.parentNode).hide();
 	})
 	function update() {
-	    rect.superobj.options.parent.paintcolor = window.localStorage.getItem("cadnanoPaint");
+	    rect.superobj.options.parent.paintcolor = window.localStorage.getItem("cadnanoPaint"); //the value is set by cadnanoPaint.html
 	    rect.setFill(rect.superobj.options.parent.paintcolor);
 	    layer.draw();		
 	}

@@ -59,8 +59,8 @@ var StrandItem = Backbone.View.extend({
         this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
         this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
         this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
-        //the visible thin line connecting the two enditems
 
+        //the visible thin line connecting the two enditems
         this.connection = new Kinetic.Rect({
             x: this.xStartCoord,
             y: this.yCoord-1,
@@ -82,8 +82,8 @@ var StrandItem = Backbone.View.extend({
 
         this.group.add(this.connection);
         this.connection.moveToBottom();
-        //invisible rectangle that makes dragging the line much easier
 
+        //invisible rectangle that makes dragging the line much easier
         this.invisConnection = new Kinetic.Rect({
             x: this.xStartCoord,
             y: this.yCoord-this.sqLength/2,
@@ -101,12 +101,17 @@ var StrandItem = Backbone.View.extend({
         
         this.group.on("mousedown", function(pos) {
             var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+	    //critiria:
+	    //1. path tool is select
+	    //2. strands are selectable
+	    //3. strand is scaffold and scaf is selectable, or strand is staple and stap is selectable
             if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
                 this.superobj.selectStart(pos);
             }
         });
 
         this.group.on("click", function(pos) {
+	    //reset PreXoverItems
 	    this.superobj.parent.options.parent.prexoverlayer.destroyChildren();
 	    this.superobj.parent.options.parent.part.setActiveVirtualHelix(this.superobj.parent.options.model);
             var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
@@ -218,7 +223,7 @@ var StrandItem = Backbone.View.extend({
         this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
     },
 
-    update: function() {
+    update: function() { //update graphics and graphics variables
         this.updateXStartCoord();
         this.updateXEndCoord();
         this.connection.setX(this.xStartCoord);
@@ -227,7 +232,7 @@ var StrandItem = Backbone.View.extend({
         if(!this.isScaf) {
             var stapLen = this.xEnd-this.xStart; //should change to the length of whole staple
             if(stapLen < 18 || stapLen > 50) {
-                this.connection.setY(this.yCoord-3);
+                this.connection.setY(this.yCoord-3); //length not in recommended range = thicker line
                 this.connection.setHeight(6);
             }
             else {
