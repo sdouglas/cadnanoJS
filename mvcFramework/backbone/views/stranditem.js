@@ -6,30 +6,28 @@ var StrandItem = Backbone.View.extend({
         this.xStart = modelStrand.low();
         this.xEnd = modelStrand.high();
         this.modelStrand = modelStrand;
-	    this.parent = phItem;
-	    this.layer = layer;
-	    if(layer === undefined) { //default value for layer
-	        this.layer = this.parent.options.parent.strandlayer;
-	    }
+	this.parent = phItem;
+	this.layer = layer;
+	if(layer === undefined) { //default value for layer
+	    this.layer = this.parent.parent.strandlayer;
+	}
         //Start listening to resize events.
         this.connectSignalsSlots();
 
-        //I hope you're used to the massive number of property values by now
-        this.panel = this.parent.options.parent.panel;
-        this.divLength = this.parent.options.graphics.divLength;
-        this.blkLength = this.parent.options.graphics.blkLength;
-        this.sqLength = this.parent.options.graphics.sqLength;
-        this.strandColor = this.parent.options.parent.paintcolor;
+        this.panel = this.parent.parent.panel;
+	    var graphics = this.parent.options.graphics;
+        this.divLength = graphics.divLength;
+        this.blkLength = graphics.blkLength;
+        this.sqLength = graphics.sqLength;
 
         this.alterationArray = new Array();
-        //this.alterationGroupArray = new Array();
 
         //see explanation in EndPointItem.js; 
         //the implementation of these two classes share many similarities
-        this.tempLayer = this.parent.options.parent.templayer;
+        this.tempLayer = this.parent.parent.templayer;
 
         //final layer is for post-sequencing DNAs
-        this.finalLayer = this.parent.options.parent.finallayer;
+        this.finalLayer = this.parent.parent.finallayer;
 
         this.group = new Kinetic.Group({
             draggable: true,
@@ -55,24 +53,24 @@ var StrandItem = Backbone.View.extend({
 
         //all scaffold has the same color (unless changed by paint tool)
         if(this.isScaf) {
-            this.strandColor = colours.bluestroke;
+            this.itemColor = colours.bluestroke;
         }
         else {
-            this.strandColor = this.generateRandomColor();
+            this.itemColor = this.generateRandomColor();
         }
 
         this.yCoord = this.parent.startY+(this.yLevel+0.5)*this.sqLength;
         this.xStartCoord = this.parent.startX+(this.xStart+1)*this.sqLength;
         this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
-        //the visible thin line connecting the two enditems
 
+        //the visible thin line connecting the two enditems
         this.connection = new Kinetic.Rect({
             x: this.xStartCoord,
             y: this.yCoord-1,
             width: this.xEndCoord-this.xStartCoord,
             height: 2,
-            fill: this.strandColor,
-            stroke: this.strandColor,
+            fill: this.itemColor,
+            stroke: this.itemColor,
             strokeWidth: 1
         });
 
@@ -87,15 +85,15 @@ var StrandItem = Backbone.View.extend({
 
         this.group.add(this.connection);
         this.connection.moveToBottom();
-        //invisible rectangle that makes dragging the line much easier
 
+        //invisible rectangle that makes dragging the line much easier
         this.invisConnection = new Kinetic.Rect({
             x: this.xStartCoord,
             y: this.yCoord-this.sqLength/2,
             width: this.xEndCoord-this.xStartCoord,
             height: this.sqLength,
-            fill: "#FFFFFF",
-            stroke: "#FFFFFF",
+            fill: colours.white,
+            stroke: colours.white,
             strokeWidth: 1,
             opacity: 0
         });
@@ -104,17 +102,30 @@ var StrandItem = Backbone.View.extend({
         //for more explanation, visit EndPointItem.js
         var isScaf = this.isScaf;
         
-        this.group.on("mousedown", function(pos) {
-            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+	var pathHelixSetItem = this.parent.parent;
+	var currDoc = pathHelixSetItem.part.currDoc;
+	this.group.on("mousedown", function(pos) {
+            var pathTool = currDoc.pathTool;
+	    //critiria:
+	    //1. path tool is "select"
+	    //2. strands are selectable
+	    //3. strand is scaffold and scaf is selectable, or strand is staple and stap is selectable
             if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
                 this.superobj.selectStart(pos);
             }
         });
 
         this.group.on("click", function(pos) {
-            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
-            var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.parent.options.parent.scaleFactor)/this.superobj.sqLength)-5;
-            if(pathTool === "break") {
+	    //reset PreXoverItems
+	
+	    pathHelixSetItem.prexoverlayer.destroyChildren();
+	    pathHelixSetItem.part.setActiveVirtualHelix(this.superobj.parent.options.model);
+            var pathTool = currDoc.pathTool;
+            var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/pathHelixSetItem.scaleFactor)/this.superobj.sqLength)-5;
+	    if(pathTool === "pencil") {
+		this.superobj.createPencilXoverSite(counter);
+	    }
+            else if(pathTool === "break") {
                 this.superobj.breakStrand(counter);
             }
             else if(pathTool === "paint") {
@@ -134,14 +145,14 @@ var StrandItem = Backbone.View.extend({
         });
 
         this.group.on("dragmove", function(pos) {
-            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+            var pathTool = currDoc.pathTool;
             if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
                 this.superobj.selectMove(pos);
             }
         });
 
         this.group.on("dragend", function(pos) {
-            var pathTool = this.superobj.parent.options.model.part.currDoc.pathTool;
+            var pathTool = currDoc.pathTool;
             if(pathTool === "select" && tbSelectArray[5] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
                 this.superobj.selectEnd();
             }
@@ -155,10 +166,10 @@ var StrandItem = Backbone.View.extend({
         this.endPointR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
 
         //LAST LINE
-        this.drawStrand();
+        this.render();
     },
 
-    drawStrand: function(){
+    render: function(){
         this.endPointR.show(false);
         this.endPointL.show(false);
         this.XoverL.show(false);
@@ -215,7 +226,7 @@ var StrandItem = Backbone.View.extend({
         this.xEndCoord = this.parent.startX+this.xEnd*this.sqLength;
     },
 
-    update: function() {
+    update: function() { //update graphics and graphics variables
         this.updateXStartCoord();
         this.updateXEndCoord();
         this.connection.setX(this.xStartCoord);
@@ -224,7 +235,7 @@ var StrandItem = Backbone.View.extend({
         if(!this.isScaf) {
             var stapLen = this.xEnd-this.xStart; //should change to the length of whole staple
             if(stapLen < 18 || stapLen > 50) {
-                this.connection.setY(this.yCoord-3);
+                this.connection.setY(this.yCoord-3); //length not in recommended range = thicker line
                 this.connection.setHeight(6);
             }
             else {
@@ -235,8 +246,8 @@ var StrandItem = Backbone.View.extend({
 
         this.invisConnection.setX(this.xStartCoord);
         this.invisConnection.setWidth(this.xEndCoord-this.xStartCoord);
-        this.parent.options.parent.prexoverlayer.destroyChildren();
-        this.parent.options.parent.part.setActiveVirtualHelix(this.parent.options.model);
+        this.parent.parent.prexoverlayer.destroyChildren();
+        this.parent.parent.part.setActiveVirtualHelix(this.parent.options.model);
     },
 
     //update the Y position
@@ -277,7 +288,7 @@ var StrandItem = Backbone.View.extend({
 
     selectStart: function(pos) {
 	//counter has to be set up seperately because unlike EndPointItem, base-StrandItem is not a bijective relation. init is used for relative comparison later on.
-	this.dragCounterInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.dragCounterInit = Math.floor((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.parent.scaleFactor/this.sqLength-5);
 	this.dragCounter = this.dragCounterInit;
 	this.pDragCounter = this.dragCounter;
 	this.minMaxIndices = this.modelStrand.getLowHighIndices();
@@ -290,7 +301,7 @@ var StrandItem = Backbone.View.extend({
 	    width: this.sqLength*(this.xEnd-this.xStart+1),
 	    height: this.sqLength,
 	    fill: "transparent",
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2,
 	});
 	this.redBox.superobj = this;
@@ -303,7 +314,7 @@ var StrandItem = Backbone.View.extend({
     },
 
     selectMove: function(pos) {
-	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	this.dragCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.parent.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	//have to watch out for both left and right end in counter adjustment here
 	var diff = this.dragCounter-this.dragCounterInit;
 	this.dragCounter = this.adjustCounter(this.dragCounterInit, this.dragCounter);
@@ -327,6 +338,7 @@ var StrandItem = Backbone.View.extend({
         //redrawing the line
         this.xStart += diff;
         this.xEnd += diff;
+
         //moving the inserts and skips
         for(var i=0; i<this.alterationArray.length; i++) {
             this.alterationArray[i].setX(this.alterationArray[i].getX()+diff*this.sqLength);
@@ -359,6 +371,36 @@ var StrandItem = Backbone.View.extend({
         return dcI+Math.min(d,rightD);
     },
 
+    createPencilXoverSite: function(counter) {
+	var pep = this.parent.parent.pencilEP;
+	if(!pep) {
+	    if(this.canBreakStrand(counter)) {
+		this.parent.parent.pencilEP = new XoverNodeImage(this.parent, this.yLevel, counter, this);
+		this.parent.parent.templayer.draw();
+	    }
+	}
+	else {
+	    if(this.endPointL.prime === 3) {
+		this.parent.parent.part.createXover(this.modelStrand, counter, pep.stItem.modelStrand, pep.x);
+	    }
+	    else {
+		this.parent.parent.part.createXover(pep.stItem.modelStrand, pep.x, this.modelStrand, counter);
+	    }
+	    this.parent.parent.templayer.destroyChildren();
+	    this.parent.parent.templayer.draw();
+	    this.parent.parent.pencilEP = undefined;
+	}
+    },
+
+    canBreakStrand: function(counter) {
+	if(this.endItemL.prime === 5) {
+	    return this.xEnd-counter > 1 && counter > this.xStart;
+	}
+	else {
+	    return counter-this.xStart > 1 && counter < this.xEnd;
+	}
+    },
+
     breakStrand: function(counter) {
         var strandSet = this.modelStrand.strandSet;
         if(strandSet.canSplitStrand(this.modelStrand,counter)){
@@ -377,8 +419,8 @@ var StrandItem = Backbone.View.extend({
     },
 
     paintStrand: function() {
-	var colour = this.parent.options.parent.paintcolor;
-	this.strandColor = colour;
+	var colour = this.parent.parent.paintcolor;
+	this.itemColor = colour;
 	this.connection.setFill(colour);
 	this.connection.setStroke(colour);
 	//rest of recursion goes in here
@@ -428,7 +470,7 @@ var StrandItem = Backbone.View.extend({
 			text: seq.charAt(seqIndex),
 			fontSize: this.sqLength*0.4,
 			fontFamily: "Calibri",
-			fill: "#000000",
+			fill: colours.black,
 		    });
 		    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 		    if(this.yLevel === 1) {
@@ -451,7 +493,7 @@ var StrandItem = Backbone.View.extend({
 			    text: seq.charAt(seqIndex),
 			    fontSize: this.sqLength*0.4,
 			    fontFamily: "Calibri",
-			    fill: "#000000",
+			    fill: colours.black,
 			});
 			text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 			if(this.yLevel === 1) {
@@ -466,7 +508,7 @@ var StrandItem = Backbone.View.extend({
 			    text: seq.substring(seqIndex),
 			    fontSize: this.sqLength*0.4,
 			    fontFamily: "Calibri",
-			    fill: "#000000",
+			    fill: colours.black,
 			});
 			if(seqIndex+additionalBase <= seq.length) {
 			    additionalText.setText(seq.substring(seqIndex,seqIndex+additionalBase));
@@ -489,7 +531,7 @@ var StrandItem = Backbone.View.extend({
 			text: seq.charAt(seqIndex),
 			fontSize: this.sqLength*0.4,
 			fontFamily: "Calibri",
-			fill: "#000000",
+			fill: colours.black,
 		    });
                     text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
                     if(this.yLevel === 1) {
@@ -512,7 +554,7 @@ var StrandItem = Backbone.View.extend({
 			    text: seq.substring(seqIndex),
 			    fontSize: this.sqLength*0.4,
 			    fontFamily: "Calibri",
-			    fill: "#000000",
+			    fill: colours.black,
 			});
 			if(seqIndex+additionalBase <= seq.length) {
 			    additionalText.setText(seq.substring(seqIndex,seqIndex+additionalBase));
@@ -531,7 +573,7 @@ var StrandItem = Backbone.View.extend({
 				text: seq.charAt(seqIndex),
 				fontSize: this.sqLength*0.4,
 				fontFamily: "Calibri",
-				fill: "#000000",
+				fill: colours.black,
 			    });
 			    text.setOffset({x: text.getWidth()/2, y: text.getHeight()/2});
 			    if(this.yLevel === 1) {
@@ -581,7 +623,7 @@ var StrandItem = Backbone.View.extend({
         //as an argument.
         //It updates the xoveritem incase an xover is created/deleted.
         console.log('strandUpdateSlot called');
-        this.drawStrand();
+        this.render();
     },
 
     //Assumption: model would trigger signal only if an insertion item
@@ -814,30 +856,30 @@ var SkipItem = Backbone.View.extend({
 
         var slashT1 = new Kinetic.Line({
             points: [this.startX+this.position*this.sqLength, this.yCoordTop-this.sqLength/2,
-            this.startX+(this.position+1)*this.sqLength, this.yCoordTop+this.sqLength/2],
-            stroke: "#FF0000",
-            strokeWidth: 2
+		     this.startX+(this.position+1)*this.sqLength, this.yCoordTop+this.sqLength/2],
+	    stroke: colours.red,
+	    strokeWidth: 2
         });
 
         var slashT2 = new Kinetic.Line({
             points: [this.startX+(this.position+1)*this.sqLength, this.yCoordTop-this.sqLength/2,
-            this.startX+this.position*this.sqLength, this.yCoordTop+this.sqLength/2],
-            stroke: "#FF0000",
-            strokeWidth: 2
+		     this.startX+this.position*this.sqLength, this.yCoordTop+this.sqLength/2],
+	    stroke: colours.red,
+	    strokeWidth: 2
         });
 
         var slashB1 = new Kinetic.Line({
             points: [this.startX+this.position*this.sqLength, this.yCoordBot-this.sqLength/2,
-            this.startX+(this.position+1)*this.sqLength, this.yCoordBot+this.sqLength/2],
-            stroke: "#FF0000",
-            strokeWidth: 2
+		     this.startX+(this.position+1)*this.sqLength, this.yCoordBot+this.sqLength/2],
+	    stroke: colours.red,
+	    strokeWidth: 2
         });
         
         var slashB2 = new Kinetic.Line({
             points: [this.startX+(this.position+1)*this.sqLength, this.yCoordBot-this.sqLength/2,
-            this.startX+this.position*this.sqLength, this.yCoordBot+this.sqLength/2],
-            stroke: "#FF0000",
-            strokeWidth: 2
+		     this.startX+this.position*this.sqLength, this.yCoordBot+this.sqLength/2],
+	    stroke: colours.red,
+	    strokeWidth: 2
         });
 
         //grouping
@@ -866,12 +908,12 @@ var SkipItem = Backbone.View.extend({
 var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is not connected to model or mouse functionalities
     initialize: function(phItem, y, x1, x2) {
 	this.parent = phItem;
-	this.layer = this.parent.options.parent.templayer;
-	this.panel = this.parent.options.parent.panel;
+	this.layer = this.parent.parent.templayer;
+	this.panel = this.parent.parent.panel;
 	this.divLength = this.parent.options.graphics.divLength;
 	this.blkLength = this.parent.options.graphics.blkLength;
 	this.sqLength = this.parent.options.graphics.sqLength;
-	this.strandColor = "#AA0000";
+	this.itemColor = colours.darkred;
 	this.yLevel = y;
 	this.xStart = Math.min(x1,x2);
 	this.xEnd = Math.max(x1,x2);
@@ -887,8 +929,8 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 		y: this.yCoord-1,
 		width: this.xEndCoord-this.xStartCoord,
 		height: 2,
-		fill: this.strandColor,
-		stroke: this.strandColor,
+		fill: this.itemColor,
+		stroke: this.itemColor,
 		strokeWidth: 1
 	    });
 	    if(!this.yLevel) { //5->3
@@ -898,16 +940,16 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength-this.sqLength*0.2,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord-this.sqLength*0.35],
-		    fill: this.strandColor,
-		    stroke: "#AA0000",
+		    fill: this.itemColor,
+		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
 		this.endP2 = new Kinetic.Polygon({
 		    points: [this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.3,this.yCoord,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord-this.sqLength*0.5,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord+this.sqLength*0.5],
-		    fill: this.strandColor,
-		    stroke: "#AA0000",
+		    fill: this.itemColor,
+		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
 	    }
@@ -917,16 +959,16 @@ var StrandItemImage = Backbone.View.extend({ //a StrandItem look-alike that is n
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength-this.sqLength*0.5,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.2,this.yCoord+this.sqLength*0.35,
 			     this.parent.startX+(this.xEnd+0.5)*this.sqLength+this.sqLength*0.2,this.yCoord-this.sqLength*0.35],
-		    fill: this.strandColor,
-		    stroke: "#AA0000",
+		    fill: this.itemColor,
+		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
                 this.endP2 = new Kinetic.Polygon({
 		    points: [this.parent.startX+(this.xStart+0.5)*this.sqLength-this.sqLength*0.3,this.yCoord,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord-this.sqLength*0.5,
 			     this.parent.startX+(this.xStart+0.5)*this.sqLength+this.sqLength*0.5,this.yCoord+this.sqLength*0.5],
-		    fill: this.strandColor,
-		    stroke: "#AA0000",
+		    fill: this.itemColor,
+		    stroke: colours.darkred,
 		    strokeWidth: 1,
 		});
 	    }

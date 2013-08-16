@@ -1,8 +1,11 @@
 var PathHelixSetItem = Backbone.View.extend({
     initialize: function(){
 	//pathTool variables
+	this.selectedItems = new Array();
+	this.selectedItemsTemp = new Array();
 	this.pencilendpoint = undefined; //used for pencil
-	this.paintcolor = "#008800"; //used for paint
+	this.pencilEP = undefined;
+	this.paintcolor = colours.bluestroke; //used for paint
 	//PathHelixSetItem should contains variables that multiple sub-classes need
     this.handler = this.options.handler;
     this.part = this.options.part;
@@ -42,7 +45,6 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.autoScale = Math.min(1,innerLayout.state.center.innerWidth/
 				  (this.graphicsSettings.sqLength*(8+2*this.graphicsSettings.divLength*this.graphicsSettings.blkLength))); //adjusted by system
 	this.scaleFactor = this.autoScale * this.userScale;
-	this.pScaleFactor = this.scaleFactor;
 	this.zoom();
 
 	//active slice item is the reddish movable bar
@@ -51,16 +53,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	    parent: this,
 	    graphics: this.graphicsSettings
 	});
-    },
 
-    events: {
-        "mousemove" : "onMouseMove",
-    },
-    
-    render: function(){
-	//removing all old shapes before drawing new ones
-	this.buttonlayer.removeChildren();
-	//buttons
 	this.c2Item = new ColorChangeItem({
 	    parent: this,
 	});
@@ -71,13 +64,27 @@ var PathHelixSetItem = Backbone.View.extend({
 	    graphics: this.graphicsSettings
 	});
 	
+	this.buttonlayer.hide();
+	this.activeslicelayer.hide();
+    },
+    
+    render: function(){
+	if(!this.collection.length) { //hide buttons and bar if no virtual helix present
+	    this.buttonlayer.hide();
+	    this.activeslicelayer.hide();
+	}
+	else {
+	    this.buttonlayer.show();
+	    this.activeslicelayer.show();
+	}
     //variables that the items created in foreach loop can access
-        var h = this.handler;
-	var dims = this.graphicsSettings;
-	dims.grLength = dims.blkLength*dims.divLength*this.part.getStep();
-	var helixset = this;
-	var pharray = this.phItemArray;
-	//for each VirtualHelixItem, we create a path helix and a path helix handler
+    var h = this.handler;
+    var dims = this.graphicsSettings;
+    dims.grLength = dims.blkLength*dims.divLength*this.part.getStep();
+    var helixset = this;
+    var pharray = this.phItemArray;
+    //for each VirtualHelixItem, we create a path helix and a path helix handler
+
         this.collection.each(function(vh){
 	    if(pharray[vh.id]) return; //create PathHelixItem only if it is new - increase performance
 	    var phItem = new PathHelixItem({
@@ -100,16 +107,31 @@ var PathHelixSetItem = Backbone.View.extend({
 
 	//changing stage size
 	this.adjustStageSize();
-	//no scale factor changes, just redraw backlayer
-	if(this.scaleFactor === this.pScaleFactor) {
-	    this.backlayer.draw();
-	}
-	//scale factor changed, have to rescale and redraw every layer (except temp which should have nothing on it)
-	else {
-	    this.redrawLayers();
+	this.backlayer.draw();
+    },
+
+    removeHelix: function(id) { //remove a helix in path view given its ID
+	var idx;
+	if(this.phItemArray[id]) { //can't remove an nonexistent item
+	    var order = this.phItemArray[id].order;
+	    for(var i=0; i<this.phItemArray.defined.length; i++) {
+		var phItem = this.phItemArray[this.phItemArray.defined[i]];
+		if(phItem.order > order) {
+		    phItem.order -= 1; //everything after the deleted helix needs to be shifted up
+		    phItem.updateY();
+		}
+		else if(phItem.order === order) { //index of the (soon) removed helix in defined
+		    idx = i;
+		}
+	    }
+	    this.phItemArray[id].group.destroy();
+	    this.phItemArray[id] = undefined;
+	    this.phItemArray.defined.splice(idx,1);
+	    this.redrawBack();
 	}
     },
 
+    //redraw every layer, now obsolete
     redrawLayers: function() {
         this.backlayer.draw();
 	this.prexoverlayer.draw();
@@ -118,17 +140,16 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.strandlayer.draw();
 	this.alterationlayer.draw();
 	this.finallayer.draw();
-	this.pScaleFactor = this.scaleFactor;
     },
 
-    adjustStageSize: function() {
+    adjustStageSize: function() { //change stage size; the setSize also comes with a free redraw
 	var newWidth = this.graphicsSettings.sqLength*(8+this.part.getStep()*this.graphicsSettings.divLength*this.graphicsSettings.blkLength)*this.scaleFactor;
-	this.handler.handler.setWidth(Math.max(newWidth, innerLayout.state.center.innerWidth));
 	var newHeight = this.graphicsSettings.sqLength*(7+4*this.phItemArray.defined.length)*this.scaleFactor;
-	this.handler.handler.setHeight(Math.max(newHeight, innerLayout.state.center.innerHeight));
+	this.handler.handler.setSize(Math.max(newWidth, innerLayout.state.center.innerWidth),
+				     Math.max(newHeight, innerLayout.state.center.innerHeight));
     },
 
-    zoom: function() {
+    zoom: function(skipAdjustment) { //adjust layers' scale after zooming in/out. if skipAdjustment is true the stage will not be adjusted
 	this.scaleFactor = this.autoScale * this.userScale;
 	this.backlayer.setScale(this.scaleFactor);
 	this.prexoverlayer.setScale(this.scaleFactor);
@@ -138,7 +159,9 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.alterationlayer.setScale(this.scaleFactor);
 	this.finallayer.setScale(this.scaleFactor);
 	this.templayer.setScale(this.scaleFactor);
-	this.adjustStageSize();
+	if(!skipAdjustment) {
+	    this.adjustStageSize();
+	}
     },
 
     //redrawing the items in back layer
@@ -146,16 +169,10 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.prexoverlayer.destroyChildren();
 	this.backlayer.destroyChildren();
 	for(var i=0; i<this.phItemArray.defined.length; i++) {
-	    this.phItemArray[this.phItemArray.defined[i]].redraw();
+	    this.phItemArray[this.phItemArray.defined[i]].render();
 	    this.phItemArray[this.phItemArray.defined[i]].helixhandler.initialize();
 	}
 	this.backlayer.draw();
-    },
-
-    onMouseMove: function(e){
-    },
-
-    remove: function(){
     },
 
     clear: function(){
@@ -174,13 +191,22 @@ var PathHelixSetItem = Backbone.View.extend({
         return this.phItemArray[id];
     },
 
+    getHelixItemFromOrder: function(order) {
+	for(var i=0; i<this.phItemArray.defined.length; i++) {
+	    var phi = this.phItemArray[this.phItemArray.defined[i]];
+	    if(phi.order === order) {
+		return phi;
+	    }
+	}
+    },
 });
 
 //the long rectangular base grid
 var PathHelixItem = Backbone.View.extend ({
     initialize: function(){
-	this.panel = this.options.parent.panel;
-	this.layer = this.options.parent.backlayer;
+	this.parent = this.options.parent;
+	this.panel = this.parent.panel;
+	this.layer = this.parent.backlayer;
 	//The group will not move even when dragged (because of dragBoundFunc), but we set draggable to true
 	//so that we can use dragstart/dragmove/dragend functions, which are superior to mousedown/mousemove/
 	//mouseup because drag functions work even when the mouse is outside of the object. However, drag
@@ -198,7 +224,7 @@ var PathHelixItem = Backbone.View.extend ({
 	this.divLength = this.options.graphics.divLength;
 	this.blkLength = this.options.graphics.blkLength;
 	this.sqLength = this.options.graphics.sqLength;
-	this.order = this.options.parent.phItemArray.defined.length;
+	this.order = this.parent.phItemArray.defined.length;
 	this.scafItemArray = new Array();
 	this.stapItemArray = new Array();
 	this.startX = 5*this.sqLength;
@@ -213,8 +239,8 @@ var PathHelixItem = Backbone.View.extend ({
 		    y: this.startY+j*this.sqLength,
 		    width: this.sqLength,
 		    height: this.sqLength,
-		    fill: "#FFFFFF",
-		    stroke: "#DDDDDD",
+		    fill: colours.white,
+		    stroke: colours.lightgraystroke,
 		    strokeWidth: 2,
 		});
 		this.group.add(rect);
@@ -223,7 +249,7 @@ var PathHelixItem = Backbone.View.extend ({
 		var divLineXStart = this.startX+i*this.sqLength;
 		var divLine = new Kinetic.Line({
 		    points: [divLineXStart,this.startY-1,divLineXStart,this.startY+2*this.sqLength+1],
-		    stroke: "#666666",
+		    stroke: colours.graystroke,
 		    strokeWidth: 2
 		});
 		this.group.add(divLine);
@@ -232,6 +258,7 @@ var PathHelixItem = Backbone.View.extend ({
 	this.layer.add(this.group);
 	this.connectSignalsSlots();
 	
+	//these variables are outside so there is only one version and can be reset properly
 	var self = this;
 	var zf;
 	var yLevel;
@@ -241,12 +268,13 @@ var PathHelixItem = Backbone.View.extend ({
 	//This is for the pencil object to drag and draw.
 	this.group.superobj = this;
 	this.group.on("mousedown", function() {
-	    this.superobj.options.parent.prexoverlayer.destroyChildren();
-	    this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
+	    this.superobj.parent.prexoverlayer.destroyChildren();
+	    this.superobj.parent.part.setActiveVirtualHelix(this.superobj.options.model);
 	});
 	this.group.on("dragstart", function(pos) {
-	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
-		zf = this.superobj.options.parent.scaleFactor;
+	    if(this.superobj.currDoc().pathTool === "pencil") {
+		//initialize/reset variables
+		zf = this.superobj.parent.scaleFactor;
 		yLevel = Math.floor(((pos.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
 		strandInitCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
 		strandCounter = strandInitCounter;
@@ -255,16 +283,16 @@ var PathHelixItem = Backbone.View.extend ({
 	    }
 	});
 	this.group.on("dragmove", function(pos) {
-	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
-		zf = this.superobj.options.parent.scaleFactor;
+	    if(this.superobj.currDoc().pathTool === "pencil") {
+		zf = this.superobj.parent.scaleFactor;
 		strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
 		strandCounter = adjustCounter(strandCounter);
 		if(strandCounter !== strandPCounter) {
-		    stItemImage.remove();
-		    stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter);
+		    stItemImage.remove(); //this removes the visuals of StrandItemImage
+		    stItemImage = new StrandItemImage(this.superobj, yLevel, strandCounter, strandInitCounter); //we just make a new image so we don't have to adjust params
 		    strandPCounter = strandCounter;
 		}
-		function adjustCounter(n) {
+		function adjustCounter(n) { //limit strandCounter to a valid range
 		    var strandSet;
 		    if(yLevel^self.options.model.isEvenParity()) { //^ is xor (exclusive or)
 			strandSet = self.options.model.scafStrandSet;
@@ -278,9 +306,9 @@ var PathHelixItem = Backbone.View.extend ({
 	    }
 	});
 	this.group.on("dragend", function() {
-	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil" && Math.abs(strandCounter-strandInitCounter) >= 2) { //minimum length limit from cadnano2
+	    if(this.superobj.currDoc().pathTool === "pencil" && Math.abs(strandCounter-strandInitCounter) >= 2) { //minimum length limit from cadnano2
 		stItemImage.remove();
-		this.superobj.options.parent.templayer.draw();
+		this.superobj.parent.templayer.draw();
 		//Call model with create strand.
 		var left = Math.min(strandCounter,strandInitCounter); //unlike StrandItemImage, you have to specify what is left and what is right for Strand and StrandItem
 		var right = Math.max(strandCounter,strandInitCounter);
@@ -297,6 +325,11 @@ var PathHelixItem = Backbone.View.extend ({
 		}
 	    }
 	});
+    },
+
+    currDoc: 
+    function() {
+	return this.parent.part.currDoc;
     },
 
     /**
@@ -324,20 +357,20 @@ var PathHelixItem = Backbone.View.extend ({
 
     //updates the Y position of items after moving PathHelixHandlerItem
     updateY: function() {
-	var oldY = this.startY;
-	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
-	for(var i=0; i<this.scafItemArray.length; i++) {
-	    this.scafItemArray[i].updateY();
-	}
-	for(var i=0; i<this.stapItemArray.length; i++) {
-	    this.stapItemArray[i].updateY();
-	}
+        var oldY = this.startY;
+        this.startY = 5*this.sqLength+4*this.order*this.sqLength;
+        for(var i=0; i<this.scafItemArray.length; i++) {
+            this.scafItemArray[i].updateY(); //change Y position of StrandItems
+        }
+        for(var i=0; i<this.stapItemArray.length; i++) {
+            this.stapItemArray[i].updateY();
+        }
     },
 
     //redrawing a particular PathHelixItem
-    redraw: function() {
+    render: function() {
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
-	this.grLength = this.blkLength*this.divLength*this.options.parent.part.getStep();
+	this.grLength = this.blkLength*this.divLength*this.parent.part.getStep();
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
 		var rect = new Kinetic.Rect({
@@ -345,8 +378,8 @@ var PathHelixItem = Backbone.View.extend ({
 		    y: this.startY+j*this.sqLength,
 		    width: this.sqLength,
 		    height: this.sqLength,
-		    fill: "#FFFFFF",
-		    stroke: "#DDDDDD",
+		    fill: colours.white,
+		    stroke: colours.lightgraystroke,
 		    strokeWidth: 2,
 		});
 		this.group.add(rect);
@@ -355,7 +388,7 @@ var PathHelixItem = Backbone.View.extend ({
 		var divLineXStart = this.startX+i*this.sqLength;
 		var divLine = new Kinetic.Line({
 		    points: [divLineXStart,this.startY-1,divLineXStart,this.startY+2*this.sqLength+1],
-		    stroke: "#666666",
+		    stroke: colours.graystroke,
 		    strokeWidth: 2
 		});
 		this.group.add(divLine);
@@ -391,10 +424,7 @@ var PathHelixItem = Backbone.View.extend ({
 
     strandAddedSlot: function(strand, id) {
         //Create a strand item object.
-	var stItem = new StrandItem(
-	    strand,
-	    this
-	);
+	var stItem = new StrandItem(strand,this);
 	if(stItem.isScaf) {
 	    this.scafItemArray.push(stItem);
 	}
@@ -430,9 +460,10 @@ var PathHelixItem = Backbone.View.extend ({
 //the circle next to PathHelixItem
 var PathHelixHandlerItem = Backbone.View.extend({
     initialize: function() {
+	this.parent = this.options.parent;
 	this.sqLength = this.options.graphics.sqLength;
 	this.part = this.options.model.getPart();
-	this.layer = this.options.parent.backlayer;
+	this.layer = this.parent.backlayer;
 	this.helixitem = this.options.helixitem;
 	this.helixitem.helixhandler = this;
         this.group = new Kinetic.Group({
@@ -460,7 +491,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	    text: helixNum,
 	    fontSize: this.sqLength,
 	    fontFamily: "Calibri",
-	    fill: "#000000",
+	    fill: colours.black,
 	});
 	helixNumText.setOffset({
 	    x: helixNumText.getWidth()/2
@@ -468,16 +499,16 @@ var PathHelixHandlerItem = Backbone.View.extend({
         //end: number on the circle
 
 	//mouse functions for handler selection
-	var tempLayer = this.options.parent.templayer;
+	var tempLayer = this.parent.templayer;
 	var pPosY; //previous Y position
 	var zf; //zoom factor
 	var dragCirc; //temporary circle to show handler location
 	this.group.superobj = this;
 	this.group.on("mousedown", function(pos) { //reason for mousedown: we want dragCirc to show as soon as we press mouse
-	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+	    var pathTool = this.superobj.currDoc().pathTool;
 	    pPosY = pos.y;
 	    if(pathTool === "select" && tbSelectArray[2]) {
-		zf = this.superobj.options.parent.scaleFactor;
+		zf = this.superobj.parent.scaleFactor;
 		dragCirc = new Kinetic.Circle({
 		    x: circ.getX(),
 		    y: this.superobj.helixitem.startY+this.superobj.sqLength,
@@ -492,7 +523,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	    }
 	});
 	this.group.on("dragmove", function(pos) {
-	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+	    var pathTool = this.superobj.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[2]) {
 		dragCirc.setY(dragCirc.getY()+(pos.y-pPosY)/zf); //move dragCirc by comparing its location to previous location
 		pPosY = pos.y;
@@ -500,12 +531,12 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	    }
 	});
 	this.group.on("dragend", function() {
-	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+	    var pathTool = this.superobj.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[2]) {
 		var order = Math.floor((dragCirc.getY()/this.superobj.sqLength-2)/4);
-		order = Math.min(Math.max(0,order),this.superobj.options.parent.phItemArray.defined.length);
+		order = Math.min(Math.max(0,order),this.superobj.parent.phItemArray.defined.length);
 		if(order-this.superobj.helixitem.order < 0) { //handler moved upward
-		    var pharray = this.superobj.options.parent.phItemArray;
+		    var pharray = this.superobj.parent.phItemArray;
 		    for(var i=0; i<pharray.defined.length; i++) {
 			//only helixes between the old and new location needs to be changed
 			if(pharray[pharray.defined[i]].order >= order && pharray[pharray.defined[i]].order < this.superobj.helixitem.order) {
@@ -516,7 +547,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 		    this.superobj.helixitem.order = order;
 		}
 		else if(order-this.superobj.helixitem.order > 1) { //handler moved downward
-		    var pharray = this.superobj.options.parent.phItemArray;
+		    var pharray = this.superobj.parent.phItemArray;
 		    for(var i=0; i<pharray.defined.length; i++) {
 			//only helixes between the old and new location needs to be changed
 			if(pharray[pharray.defined[i]].order < order && pharray[pharray.defined[i]].order > this.superobj.helixitem.order) {
@@ -528,30 +559,37 @@ var PathHelixHandlerItem = Backbone.View.extend({
 		}
 		//changing the moved helix
 		this.superobj.helixitem.updateY();
-		this.superobj.options.parent.redrawBack();
-		this.superobj.options.parent.strandlayer.draw();
-		this.superobj.options.parent.alterationlayer.draw();
+		
+        this.superobj.parent.redrawBack();
+		this.superobj.parent.strandlayer.draw();
+		this.superobj.parent.alterationlayer.draw();
+
 		dragCirc.destroy();
 		dragCirc = undefined;
 		tempLayer.draw();
-		this.superobj.options.parent.prexoverlayer.destroyChildren();
-		this.superobj.options.parent.part.setActiveVirtualHelix(this.superobj.options.model);
+		this.superobj.parent.prexoverlayer.destroyChildren();
+		this.superobj.parent.part.setActiveVirtualHelix(this.superobj.options.model);
 	    }
 	});
 	this.group.add(circ);
         this.group.add(helixNumText);
 	this.layer.add(this.group);
     },
+
+    currDoc:
+    function(){
+	return this.options.model.part.currDoc;
+    },
 });
 
 //the two arrows on the top left corner that can change the length of PathHelixItem
 var PathBaseChangeItem = Backbone.View.extend({
     initialize: function() {
-	var part = this.options.parent.part;
-	var canvas = this.options.handler.handler;
-	var layer = this.options.parent.buttonlayer;
-	var baseperblk = this.options.graphics.blkLength*this.options.graphics.divLength;
 	var parent = this.options.parent;
+	var part = parent.part;
+	var canvas = this.options.handler.handler;
+	var layer = parent.buttonlayer;
+	var baseperblk = this.options.graphics.blkLength*this.options.graphics.divLength;
 
 	var removeBaseImg = new Image();
 	removeBaseImg.onload = function() {
@@ -618,12 +656,12 @@ var ColorChangeItem = Backbone.View.extend({
 	    y: 5,
 	    width: 20,
 	    height: 20,
-	    stroke: "#000000",
+	    stroke: colours.black,
 	    strokeWidth: 1,
 	    fill: this.options.parent.paintcolor
 	});
 	rect.superobj = this;
-	rect.on("click", function(pos) { //someone fix the duplicate dialog bug (it is also in stranditem.js)
+	rect.on("click", function(pos) {
 	    //this function makes use of jQuery UI dialog
 	    window.localStorage.setItem("cadnanoPaint",rect.superobj.options.parent.paintcolor); //the other page will load current color into picker
 	    var newDialog = $('<link rel="stylesheet" href="ui/css/jquery-ui/jquery.ui-1.9.2.min.css"><div><iframe src="cadnanoPaint.html" width="195" height="224"></div>');
@@ -635,14 +673,14 @@ var ColorChangeItem = Backbone.View.extend({
 		show: "clip",
 		hide: "clip",
 		buttons: {
-		    OK: function() {update(); $(newDialog).dialog("close");},
+			OK: function() {update(); $(newDialog).dialog("close");}, //$(this) only closes 1 dialog
 		    Cancel: function() {$(newDialog).dialog("close");}
 		}
 	    });
 	    $(".ui-dialog-titlebar-close", this.parentNode).hide();
 	})
 	function update() {
-	    rect.superobj.options.parent.paintcolor = window.localStorage.getItem("cadnanoPaint");
+	    rect.superobj.options.parent.paintcolor = window.localStorage.getItem("cadnanoPaint"); //the value is set by cadnanoPaint.html
 	    rect.setFill(rect.superobj.options.parent.paintcolor);
 	    layer.draw();		
 	}

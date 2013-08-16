@@ -215,12 +215,17 @@ var ResizeCommand = Undo.Command.extend({
         this.strand.setIdx(this.newIdxs);
         console.log(this.newIdxs);
         this.strand.trigger(cadnanoEvents.strandUpdateSignal);
-        this.strand.part().trigger(cadnanoEvents.partStrandChangedSignal);
+
+        //Note: I only need to update the 5p strand, since it
+        //contains the xoveritem with it.
+        if(this.strand.connection5p())
+            this.strand.connection5p().trigger(cadnanoEvents.strandUpdateSignal);
+
+        this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
 
         //update the path view.
         this.strand.part().trigger(cadnanoEvents.updatePreXoverItemsSignal,
             this.strand.strandSet.helix);
-        //this.strand.strandSet.trigger(cadnanoEvents.updateSkipInsertItemsSignal);
     },
     execute:
     function(){},

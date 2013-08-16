@@ -41,6 +41,10 @@ var cadnanoEvents = {
 
 /* Slice View Colours */
 var colours = {
+    white: '#ffffff',
+    black: '#000000',
+    red: '#ff0000',
+    darkred: '#aa0000',
     bluefill: '#99ccff',
     bluestroke: '#0066cc',
     bluishstroke: '',
@@ -50,6 +54,8 @@ var colours = {
     lightorangestroke: '#ea8451',
     grayfill: '#eeeeee',
     graystroke: '#666666',
+    lightgraystroke: '#dddddd',
+    lightergraystroke: '#b0b0b0',
     strokewidth: 1,
     hoverstrokewidth: 3,
 };

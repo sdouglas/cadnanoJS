@@ -10,24 +10,24 @@ var XoverNode = Backbone.View.extend({
 	this.panel = this.parent.panel;
 
 	//temporary layer that will be used for fast rendering
-	this.tempLayer = this.phItem.options.parent.templayer;
+	this.tempLayer = this.phItem.parent.templayer;
 
-    //graphics
+	//graphics
 	this.divLength = this.parent.divLength;
 	this.blkLength = this.parent.blkLength;
 	this.sqLength = this.parent.sqLength;
 
 	//counters
 	if(dir === "L") {
-        this.initcounter = this.parent.modelStrand.low();
+	    this.initcounter = this.parent.modelStrand.low();
 	}
 	else if(dir === "R") {
-        this.initcounter = this.parent.modelStrand.high();
+	    this.initcounter = this.parent.modelStrand.high();
 	}
 	this.counter = this.initcounter;
 
 	//starting position
-	this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;
+	this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
 	this.centerY = this.parent.yCoord;
 	this.linkageX = this.centerX;
 	this.linkageY = 0; //will be initialized later
@@ -47,8 +47,8 @@ var XoverNode = Backbone.View.extend({
 	    y: this.centerY-1,
 	    width: this.sqLength/2,
 	    height: 2,
-	    fill: this.parent.strandColor,
-	    stroke: this.parent.strandColor,
+	    fill: this.parent.itemColor,
+	    stroke: this.parent.itemColor,
 	    strokeWidth: 1
 	});
 	var yStart;
@@ -65,8 +65,8 @@ var XoverNode = Backbone.View.extend({
 	    y: yStart,
 	    width: 2,
 	    height: this.sqLength/2+1,
-	    fill: this.parent.strandColor,
-	    stroke: this.parent.strandColor,
+	    fill: this.parent.itemColor,
+	    stroke: this.parent.itemColor,
 	    strokeWidth: 1
 	});
 
@@ -86,7 +86,7 @@ var XoverNode = Backbone.View.extend({
         }
     },
     updateCenterX: function() {
-        this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;
+        this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
     },
     updateLinkageX: function() {
         this.linkageX = this.centerX;
@@ -97,7 +97,6 @@ var XoverNode = Backbone.View.extend({
         this.updateCenterX();
         this.updateLinkageX();
         this.group.setX((this.counter-this.initcounter)*this.sqLength);
-        console.log(this.counter);
 
         console.log('did i enter this function: ' + this.prime);
         //Delete existing xoveritem.
@@ -117,7 +116,7 @@ var XoverNode = Backbone.View.extend({
 
             console.log(this.parent.modelStrand);
             console.log('trying to create xoveritem');
-            var phSetItem = this.parent.parent.options.parent;
+            var phSetItem = this.phItem.parent;
             var phItem = phSetItem.getPathHelixItem(otherStrand.strandSet.helix.id);
             var otherStItem = phItem.getStrandItem(
                     otherStrand.strandSet.isScaffold(),
@@ -181,11 +180,11 @@ var XoverItem = Backbone.View.extend({
 	}
 
 	this.isScaf = this.node3.isScaf; //we don't need to check node5 because the strands must be both scafs or both staps
-	this.helixset = this.node3.parent.parent.options.parent;
+	this.helixset = this.node3.parent.parent.parent;
 	this.panel = this.helixset.panel;
 	this.layer = this.node3.parent.layer;
 	this.finalLayer = this.helixset.finallayer;
-        this.strandColor = this.node3.parent.strandColor;
+        this.itemColor = this.node3.parent.itemColor;
 	this.divLength = this.helixset.graphicsSettings.divLength;
 	this.blkLength = this.helixset.graphicsSettings.blkLength;
 	this.sqLength = this.helixset.graphicsSettings.sqLength;
@@ -201,8 +200,8 @@ var XoverItem = Backbone.View.extend({
 	    },
 	});
 	this.group.superobj = this;
-	this.connection = new Kinetic.Shape({
-	    stroke: this.strandColor,
+	this.connection = new Kinetic.Shape({ //same trick, visible thin line + invisible rect for easy clicking
+	    stroke: this.itemColor,
 	    strokeWidth: 3
 	});
 	this.connection.superobj = this;
@@ -220,13 +219,13 @@ var XoverItem = Backbone.View.extend({
 	});
 	this.group.add(this.connection);
 
-	this.invisConnection = new Kinetic.Rect({ //need to change opacity to 0 later
+	this.invisConnection = new Kinetic.Rect({
 	    x: Math.min(this.node3.centerX,this.node5.centerX)-this.sqLength/2,
 	    y: Math.min(this.node3.centerY,this.node5.centerY)-this.sqLength/2,
 	    width: Math.abs(this.node3.centerX-this.node5.centerX)+this.sqLength,
 	    height: Math.abs(this.node3.centerY-this.node5.centerY)+this.sqLength,
-	    fill: "#FFFFFF",
-	    stroke: "#FFFFFF",
+	    fill: colours.white,
+	    stroke: colours.white,
 	    strokeWidth: 1,
 	    opacity: 0
 	});
@@ -235,19 +234,19 @@ var XoverItem = Backbone.View.extend({
 	//path view tools
 	var isScaf = this.isScaf;
         this.group.on("mousedown", function(pos) {
-	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.node3.phItem.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[4] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
 	    }
 	});
         this.group.on("dragmove", function(pos) {
-	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.node3.phItem.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[4] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectMove(pos);
 	    }
 	});
         this.group.on("dragend", function(pos) {
-	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.node3.phItem.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[4] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectEnd(pos);
 	    }
@@ -263,7 +262,7 @@ var XoverItem = Backbone.View.extend({
     update: function() { //redraws XoverItem
 	this.connection.remove();
 	this.connection = new Kinetic.Shape({
-	    stroke: this.strandColor,
+	    stroke: this.itemColor,
 	    strokeWidth: 3
 	});
 	this.connection.superobj = this;
@@ -279,6 +278,7 @@ var XoverItem = Backbone.View.extend({
 	    context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
 	    canvas.stroke(this);
 	});
+	console.log(this.invisConnection);
 	this.group.add(this.connection);
 	this.invisConnection.setX(Math.min(this.node3.centerX,this.node5.centerX)-this.sqLength/2);
 	this.invisConnection.setY(Math.min(this.node3.centerY,this.node5.centerY)-this.sqLength/2);
@@ -339,7 +339,7 @@ var XoverItem = Backbone.View.extend({
 	    width: this.invisConnection.getWidth(),
 	    height: this.invisConnection.getHeight(),
 	    fill: "transparent",
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2,
 	});
 	this.redBox.superobj = this;
@@ -377,29 +377,18 @@ var XoverItem = Backbone.View.extend({
 	this.redBox.remove();
 	this.tempLayer.draw();
 
-	this.node3.counter += diff;
-	this.node3.update();
-	this.node5.counter += diff;
-	this.node5.update();
-	this.update();
-
-	var strand3 = this.node3.parent;
-	if(this.node3.dir === "L") {
-	    strand3.xStart += diff;
-	}
-	else {
-	    strand3.xEnd += diff;
-	}
-	strand3.update();
-	var strand5 = this.node5.parent;
 	if(this.node5.dir === "L") {
-	    strand5.xStart += diff;
+	    this.node5.parent.modelStrand.resize(this.node5.counter+diff, this.node5.parent.modelStrand.high());
 	}
 	else {
-	    strand5.xEnd += diff;
+	    this.node5.parent.modelStrand.resize(this.node5.parent.modelStrand.low(), this.node5.counter+diff);
 	}
-	strand5.update();
-	this.layer.draw();
+	if(this.node3.dir === "L") {
+	    this.node3.parent.modelStrand.resize(this.node3.counter+diff, this.node3.parent.modelStrand.high());
+	}
+	else {
+	    this.node3.parent.modelStrand.resize(this.node3.parent.modelStrand.low(), this.node3.counter+diff);
+	}
 
         this.finalLayer.destroyChildren();
         this.finalLayer.draw();
@@ -411,7 +400,75 @@ var XoverItem = Backbone.View.extend({
 
     getRidOf:
     function(){
-        this.group.removeChildren();
+        this.group.destroyChildren();
         this.close();
+    },
+});
+
+var XoverNodeImage = Backbone.View.extend({
+	initialize: function(phItem, y, x, strandItem) {
+	this.stItem = strandItem;
+	this.x = x;
+	this.dir = y; //0 = left, 1 = right
+	this.sqLength = phItem.sqLength;
+	this.centerX = phItem.startX+(x+0.5)*this.sqLength;
+	this.centerY = phItem.startY+(y+0.5)*this.sqLength;
+	this.linkageX = this.centerX;
+	this.linkageY = 0;
+
+        var xStart;
+        if(!this.dir) {xStart = this.centerX;}
+        else {xStart = this.centerX-this.sqLength/2;}
+        this.hLine = new Kinetic.Rect({
+	    x: xStart,
+	    y: this.centerY-1,
+	    width: this.sqLength/2,
+	    height: 2,
+	    fill: colours.red,
+	    stroke: colours.red,
+	    strokeWidth: 1
+	});
+        var yStart;
+        if(!y) {
+            yStart = this.centerY-this.sqLength/2;
+            this.linkageY = this.centerY-this.sqLength/2;
+        }
+        else {
+            yStart = this.centerY-1;
+            this.linkageY = this.centerY+this.sqLength/2;
+        }
+        this.vLine = new Kinetic.Rect({
+	    x: this.centerX-1,
+	    y: yStart,
+	    width: 2,
+	    height: this.sqLength/2+1,
+	    fill: colours.red,
+	    stroke: colours.red,
+	    strokeWidth: 1
+	});
+
+	this.group = new Kinetic.Group();
+	this.group.add(this.hLine);
+	this.group.add(this.vLine);
+	phItem.parent.templayer.add(this.group);
+    }
+});
+
+var XoverItemImage = Backbone.View.extend({
+	initialize: function(x1,x2,y1,y2,dir) {
+        this.connection = new Kinetic.Shape({
+	    stroke: this.itemColor,
+	    strokeWidth: 2
+	});
+	this.connection.superobj = this;
+	this.connection.setDrawFunc(function(canvas) {
+	    var context = canvas.getContext();
+	    var ctrlpt = this.superobj.quadCtrlPt(x1,y1,x2,y2,0);
+	    context.beginPath();
+	    context.moveTo(x1,y1);
+	    context.quadraticCurveTo(ctrlpt.x,ctrlpt.y,x2,y2);
+	    canvas.stroke(this);
+	});
+
     },
 });

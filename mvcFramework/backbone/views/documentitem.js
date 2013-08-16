@@ -12,11 +12,21 @@ var DocumentItem = Backbone.View.extend({
         $(document).bind('keypress',this.undohere);
 	$(document).bind('keydown',this.keydown);
         $(document).bind('keyup',this.keyup);
-	$("#drawnPanels").bind('mousedown',this.autoresize); //we will check where we are clicking in autoresize
+	$("#drawnPanels").bind('mousedown',this.resizerResize); //we will check where we are clicking in resizerResize
+
+	//for resizing browser window
+	$(window).bind('resize', this.windowResize);
+	this.rtime = new Date(1, 1, 2000, 12,00,00);
+	this.timeout = false;
+	this.delta = 200;   
 
         //Rest of init.
         this.currDoc = this.options.currDoc;
-        this.listenTo(  this.currDoc,
+        this.connectSignalsSlots();
+	},
+	
+    connectSignalsSlots: function(){
+	this.listenTo(  this.currDoc,
                         cadnanoEvents.documentPartAddedSignal,
                         this.documentPartAddedSlot
                 );
@@ -31,22 +41,25 @@ var DocumentItem = Backbone.View.extend({
         console.log("called documentPartAddedSlot");
 
         //Slice View Parameters.
-        var jSliceView = $('#sliceView');
-        var svWidth = jSliceView.css('width');
-        if('0px' === svWidth || !svWidth) 
-            svWidth = Constants.SliceViewWidth;
-
-        var svHeight = jSliceView.css('height');
-        if('0px' === svHeight || !svHeight) 
-            svHeight = Constants.SliceViewHeight;
-
         //The parseInt converts the string to a number.
         //Kinetic.js doesn't work with 100px, but works with
         //the literal 100.
+        var jSliceView = $('#sliceView');
+	var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius(); //for square change 1.732 to 2
+        var svWidth = jSliceView.css('width');
+        if('0px' === svWidth || !svWidth) 
+            svWidth = Constants.SliceViewWidth;
+	svWidth = Math.max(parseInt(svWidth,10), svMinWidth);
+	var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius(); //for square change 3 to 2
+        var svHeight = jSliceView.css('height');
+        if('0px' === svHeight || !svHeight) 
+            svHeight = Constants.SliceViewHeight;
+	svHeight = Math.max(parseInt(svHeight,10), svMinHeight);
+
         var svParams = {
             container:   'sliceView', 
-            width:  parseInt(svWidth,10), 
-            height: parseInt(svHeight,10),
+            width:  svWidth, 
+            height: svHeight,
         };
         
         //Note: Its important to pass in the "el" element in the constructor
@@ -190,18 +203,18 @@ var DocumentItem = Backbone.View.extend({
 	    }
 	    if(zoomLvl !== 12) {
 		zoomLvl += 1;
-		var oldZf = this.sliceView.zoomFactor;
 		this.sliceView.zoomFactor = zoomArray[zoomLvl];
-		//change the stage's properties
-		this.sliceView.handler.handler.setWidth(this.sliceView.handler.handler.getWidth()*this.sliceView.zoomFactor/oldZf);
-		this.sliceView.handler.handler.setHeight(this.sliceView.handler.handler.getHeight()*this.sliceView.zoomFactor/oldZf);
 		//change the layers' scaling factor
 		this.sliceView.handler.textLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.shapeLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.helixLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.hoverLayer.setScale(this.sliceView.zoomFactor);
-		//redraw every layer; will take up some time
-		this.sliceView.handler.render();
+		//change the stage's properties
+		var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius();
+		var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius();
+		this.sliceView.handler.handler.setSize(Math.max(svMinWidth*this.sliceView.zoomFactor,innerLayout.state.west.innerWidth),
+							Math.max(svMinHeight*this.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
+		//stage is automatically redrawn when we change its size, so no need to call render
 	    }
 	}
 	else if(e.keyCode === 109) { //minus sign- zoom out
@@ -211,15 +224,15 @@ var DocumentItem = Backbone.View.extend({
 	    }
 	    if(zoomLvl !== 0) {
 		zoomLvl -= 1;
-		var oldZf = this.sliceView.zoomFactor;
 		this.sliceView.zoomFactor = zoomArray[zoomLvl];
-		this.sliceView.handler.handler.setWidth(this.sliceView.handler.handler.getWidth()*this.sliceView.zoomFactor/oldZf);
-		this.sliceView.handler.handler.setHeight(this.sliceView.handler.handler.getHeight()*this.sliceView.zoomFactor/oldZf);
 		this.sliceView.handler.textLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.shapeLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.helixLayer.setScale(this.sliceView.zoomFactor);
 		this.sliceView.handler.hoverLayer.setScale(this.sliceView.zoomFactor);
-		this.sliceView.handler.render();
+		var svMinWidth = this.currDoc.part().getOrigin()+1.732*this.currDoc.part().getCols()*this.currDoc.part().getRadius();
+		var svMinHeight = this.currDoc.part().getOrigin()+3*this.currDoc.part().getRows()*this.currDoc.part().getRadius();
+		this.sliceView.handler.handler.setSize(Math.max(svMinWidth*this.sliceView.zoomFactor,innerLayout.state.west.innerWidth),
+							Math.max(svMinHeight*this.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
 	    }
 	}
     },
@@ -228,49 +241,46 @@ var DocumentItem = Backbone.View.extend({
 	var zoomArray = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
 	if(e.keyCode === 107) { //plus sign
 	    var zoomLvl;
-	    for(var i=0; i<zoomArray.length; i++) {
-		if(zoomArray[i] === this.pathView.pathItemSet.userScale) {zoomLvl = i; break;}
-	    }
-	    if(zoomLvl !== 12) {
+	    if(this.pathView.pathItemSet.userScale !== 5) {
+		for(var i=0; i<zoomArray.length; i++) {
+		    if(zoomArray[i] === this.pathView.pathItemSet.userScale) {zoomLvl = i; break;}
+		}
 		zoomLvl += 1;
 		this.pathView.pathItemSet.userScale = zoomArray[zoomLvl];
 		//zoom function changes stage properties and layer scaling factor
 		this.pathView.pathItemSet.zoom();
-		this.pathView.pathItemSet.redrawLayers();
 	    }
 	}
 	else if(e.keyCode === 109) { //minus sign
 	    var zoomLvl;
-	    for(var i=0; i<zoomArray.length; i++) {
-		if(zoomArray[i] === this.pathView.pathItemSet.userScale) {zoomLvl = i; break;}
-	    }
-	    if(zoomLvl !== 0) {
+	    if(this.pathView.pathItemSet.userScale !== 0.5) {
+		for(var i=0; i<zoomArray.length; i++) {
+		    if(zoomArray[i] === this.pathView.pathItemSet.userScale) {zoomLvl = i; break;}
+		}
 		zoomLvl -= 1;
 		this.pathView.pathItemSet.userScale = zoomArray[zoomLvl];
 		this.pathView.pathItemSet.zoom();
-		this.pathView.pathItemSet.redrawLayers();
 	    }
 	}
     },
 
-    autoresize: function(pos) {
+    resizerResize: function(pos) {
 	if(pos.pageX-50-innerLayout.state.west.innerWidth <= 0 && pos.pageX-50-innerLayout.state.west.innerWidth >= -4) { //checking if we're clicking divider
 	    var self = this;
 	    var originalPos = pos.pageX;
 	    $("#drawnPanels").on("mouseup", function(pos) { //dragging is essentially mousedown -> mousemove -> mouseup
 		if(self.sliceView instanceof SlicePartItem) { //only change handler properties if it exists
 		    var posDiff = pos.pageX-originalPos;
-		    var sliceHandler = self.sliceView.handler.handler;
-		    self.sliceView.handler.handler.setWidth(sliceHandler.getWidth()+posDiff*self.sliceView.zoomFactor);
-		    var pathHandler = self.pathView.handler.handler;
+		    var svMinWidth = self.currDoc.part().getOrigin()+1.732*self.currDoc.part().getCols()*self.currDoc.part().getRadius();
+		    self.sliceView.handler.handler.setWidth(Math.max(svMinWidth*self.sliceView.zoomFactor,innerLayout.state.west.innerWidth+posDiff));
+
 		    //innerWidth is not updated yet in this function
-		    self.pathView.pathItemSet.autoScale = Math.min(1,(innerLayout.state.center.innerWidth-posDiff)/
-								   (self.pathView.pathItemSet.graphicsSettings.sqLength*
-								    (8+2*self.pathView.pathItemSet.graphicsSettings.divLength*
-								     self.pathView.pathItemSet.graphicsSettings.blkLength)));
-		    self.pathView.pathItemSet.zoom();
-		    pathHandler.setWidth(Math.max(pathHandler.getWidth(), innerLayout.state.center.innerWidth-posDiff));
-		    self.pathView.pathItemSet.redrawLayers();
+		    var pathHandler = self.pathView.handler.handler;
+		    var pvGraphics = self.pathView.pathItemSet.graphicsSettings;
+		    var pvMinWidth = pvGraphics.sqLength*(8+self.currDoc.part().getStep()*pvGraphics.divLength*pvGraphics.blkLength);
+		    self.pathView.pathItemSet.autoScale = Math.min(1,(innerLayout.state.center.innerWidth-posDiff)/pvMinWidth);
+		    self.pathView.pathItemSet.zoom(true);
+		    pathHandler.setWidth(Math.max(pvMinWidth*self.pathView.pathItemSet.scaleFactor, innerLayout.state.center.innerWidth-posDiff));
 		}
 		$("#drawnPanels").off("mouseup"); //without this line, clicking on path view will trigger the mouseup handler
 	    });
@@ -278,26 +288,38 @@ var DocumentItem = Backbone.View.extend({
 	//note: resizing browser will still causes problems
     },
 
-});
+    windowResize: function() {
+	var self = this;
+	this.rtime = new Date();
+	this.resizeEnd = function() {
+	    if(new Date()-self.rtime < self.delta) {
+		setTimeout(self.resizeEnd, self.delta);
+	    }
+	    else {
+		self.timeout = false;
+		if(self.currDoc.part()) {
+		    //innerWidth and innerHeight is already updated by this point
+		    //slice view
+		    var svMinWidth = self.currDoc.part().getOrigin()+1.732*self.currDoc.part().getCols()*self.currDoc.part().getRadius();
+		    var svMinHeight = self.currDoc.part().getOrigin()+3*self.currDoc.part().getRows()*self.currDoc.part().getRadius();
+		    self.sliceView.handler.handler.setSize(Math.max(svMinWidth*self.sliceView.zoomFactor,innerLayout.state.west.innerWidth),
+							   Math.max(svMinHeight*self.sliceView.zoomFactor,innerLayout.state.west.innerHeight));
+		    //path view
+		    var pathHandler = self.pathView.handler.handler;
+		    var pvGraphics = self.pathView.pathItemSet.graphicsSettings;
+		    var pvMinWidth = pvGraphics.sqLength*(8+self.currDoc.part().getStep()*pvGraphics.divLength*pvGraphics.blkLength);
+		    var pvMinHeight = pvGraphics.sqLength*(7+4*self.pathView.pathItemSet.phItemArray.defined.length);
+		    self.pathView.pathItemSet.autoScale = Math.min(1,innerLayout.state.center.innerWidth/pvMinWidth);
+		    self.pathView.pathItemSet.zoom(true);
+		    pathHandler.setSize(Math.max(pvMinWidth*self.pathView.pathItemSet.scaleFactor, innerLayout.state.center.innerWidth),
+					 Math.max(pvMinHeight*self.pathView.pathItemSet.scaleFactor, innerLayout.state.center.innerHeight));
+		}
+	    }
+	};
+	if(!this.timeout) {
+	    this.timeout = true;
+	    setTimeout(this.resizeEnd, this.delta);
+	}
+    },
 
-//resizing browser
-var rtime = new Date(1, 1, 2000, 12,00,00);
-var timeout = false;
-var delta = 200;
-$(window).resize(function() {
-    rtime = new Date();
-    if (timeout === false) {
-	timeout = true;
-	setTimeout(resizeend, delta);
-    }
 });
-
-function resizeend() {
-    if(new Date()-rtime < delta) {
-	setTimeout(resizeend, delta);
-    }
-    else {
-        timeout = false;
-	//innerWidth and innerHeight is already updated by this point
-    }
-}

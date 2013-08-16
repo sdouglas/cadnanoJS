@@ -15,7 +15,7 @@ var PartItem = Backbone.View.extend({
             );
         this.listenTo(this.part,
             cadnanoEvents.partVirtualHelixRemovedSignal,
-            this.partVirtualHelixAddedSlot
+            this.partVirtualHelixRemovedSlot
             );
         this.listenTo(this.part,
             cadnanoEvents.partHelicesInitializedSignal,
@@ -130,9 +130,14 @@ var SlicePartItem = PartItem.extend({
         //Change the color of the virtual helix item
         //to show selection.
         this.vhItemSet.render();
-
-    },
-
+    }, 
+    partVirtualHelixRemovedSlot: function(virtualHelix){
+        //Add the virtual helix item to a hash.
+        //Change the color of the virtual helix item
+        //to show selection.
+        this.vhItemSet.render();
+    }, 
+   
     partStrandChangedSlot: function(){
         this.vhItemSet.render();
     },
@@ -193,6 +198,11 @@ var PathPartItem = PartItem.extend({
 		      );
     },
 
+    events: {
+	"mousedown" : "onmousedown",
+	"mousemove" : "onmousemove",
+    },
+
     partVirtualHelixAddedSlot: function(virtualHelix){
 	this.pathItemSet.render();
 	this.pathItemSet.activesliceItem.updateHeight();
@@ -200,52 +210,62 @@ var PathPartItem = PartItem.extend({
         //Add in a new path in the path view panel.
     },
 
+    partVirtualHelixRemovedSlot:
+    function(virtualHelix){
+	this.pathItemSet.removeHelix(virtualHelix.id);
+	this.pathItemSet.activesliceItem.updateHeight();
+    },
+
     updatePreXoverItemsSlot:
     function(virtualHelix){
-        console.log('in updatePreXoverItemsSlot');
-        var xoverList = this.part.potentialCrossoverList(virtualHelix);
-	/*
+     	/*
 	  0: complementary VirtualHelix
 	  1: position
 	  2: 1 = is staple strand
 	  3: true = on left
 	 */
+
 	this.pathItemSet.prexoverlayer.destroyChildren();
-	for(var i=0; i<xoverList.length; i++) {
-        /*
-           console.log(
-           virtualHelix.id+','+
-           xoverList[i][0].id+','+
-           xoverList[i][1]+','+
-           xoverList[i][2]+','+
-           xoverList[i][3]
-           );
 
-           console.log(
-           xoverList[i][0].id+','+
-           virtualHelix.id+','+
-           xoverList[i][1]+','+
-           xoverList[i][2]+','+
-           xoverList[i][3]
-           );
-           */
-
-        var preXover = new PreXoverItem(
-                this.pathItemSet.phItemArray[virtualHelix.id],
-                this.pathItemSet.phItemArray[xoverList[i][0].id],
-                xoverList[i][1],
-                xoverList[i][2],
-                xoverList[i][3]);
-
-        var preXoverC = new PreXoverItem(
-                this.pathItemSet.phItemArray[xoverList[i][0].id],
-                this.pathItemSet.phItemArray[virtualHelix.id],
-                xoverList[i][1],
-                xoverList[i][2],
-                xoverList[i][3]
-                );
-    }
-    this.pathItemSet.prexoverlayer.draw();
+	if(virtualHelix){
+	    console.log('in updatePreXoverItemsSlot');
+	    var xoverList = this.part.potentialCrossoverList(virtualHelix);
+	    
+	    for(var i=0; i<xoverList.length; i++) {
+		/*
+		  console.log(
+		  virtualHelix.id+','+
+		  xoverList[i][0].id+','+
+		  xoverList[i][1]+','+
+		  xoverList[i][2]+','+
+		  xoverList[i][3]
+		  );
+		  
+		  console.log(
+		  xoverList[i][0].id+','+
+		  virtualHelix.id+','+
+		  xoverList[i][1]+','+
+		  xoverList[i][2]+','+
+		  xoverList[i][3]
+		  );
+		*/
+		
+		var preXover = new PreXoverItem(
+			this.pathItemSet.phItemArray[virtualHelix.id],
+			this.pathItemSet.phItemArray[xoverList[i][0].id],
+			xoverList[i][1],
+			xoverList[i][2],
+			xoverList[i][3]);
+		
+		var preXoverC = new PreXoverItem(
+			this.pathItemSet.phItemArray[xoverList[i][0].id],
+			this.pathItemSet.phItemArray[virtualHelix.id],
+			xoverList[i][1],
+			xoverList[i][2],
+			xoverList[i][3]);
+	    }
+	}
+	this.pathItemSet.prexoverlayer.draw();
     },
 
     partStepSizeChangedSlot: function(){
@@ -256,6 +276,55 @@ var PathPartItem = PartItem.extend({
 	    slicebar.update();
 	}
 	this.pathItemSet.render();
+    },
+
+    onmousemove: function(pos) {
+	var pathTool = this.part.currDoc.pathTool;
+	var pis = this.pathItemSet;
+	if(pathTool === "pencil") {
+	    if(pis.pencilEP) {
+		//destroy old images
+		pis.templayer.get("#xoverimage").destroy();
+		var ni = pis.templayer.get("#nodeimage");
+		if(ni) {ni.destroy();}
+		//variables
+		var point1X = pis.pencilEP.linkageX;
+		var point1Y = pis.pencilEP.linkageY;
+		var posX = (pos.pageX-51-innerLayout.state.west.innerWidth+pis.panel.scrollLeft)/pis.scaleFactor;
+		var posY = (pos.pageY-54+pis.panel.scrollTop)/pis.scaleFactor;
+		//determine if we're in a PathHelixItem or not
+		var inHelix = false;
+		var sqLength = pis.pencilEP.sqLength;
+		var panelYLevel = Math.floor(posY/sqLength)-5;
+		if(panelYLevel >= 0 && panelYLevel < 4*this.pathItemSet.phItemArray.defined.length && panelYLevel%4 < 2) {
+		    var panelXLevel = Math.floor(posX/sqLength-5);
+		    if(panelXLevel >= 0 && panelXLevel < this.pathItemSet.phItemArray[this.pathItemSet.phItemArray.defined[0]].grLength) {
+			inHelix = true;
+		    }
+		}
+		var point2X, point2Y;
+		if(inHelix) {
+		    var phItem = pis.getHelixItemFromOrder(Math.floor(panelYLevel/4));
+		    var nodeImage = new XoverNodeImage(phItem, panelYLevel%4, panelXLevel);
+		    nodeImage.group.setId("nodeimage");
+		    point2X = nodeImage.linkageX;
+		    point2Y = nodeImage.linkageY;
+		}
+		else {
+		    point2X = posX;
+		    point2Y = posY;
+		}
+		//make the connection
+		var connectionImage = new Kinetic.Line({
+		    points: [point1X, point1Y, point2X, point2Y],
+		    stroke: colours.red,
+		    strokeWidth: 2,
+		    id: "xoverimage"
+		});
+		pis.templayer.add(connectionImage);
+		pis.templayer.draw();
+	    }
+	}
     },
 
 });

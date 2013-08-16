@@ -73,6 +73,7 @@ var Part = Backbone.Model.extend({
        //Remove the views.
        this.trigger(cadnanoEvents.partVirtualHelixRemovedSignal,
          helix);
+       this.trigger(cadnanoEvents.updatePreXoverItemsSignal);
        //this.trigger(cadnanoEvents.partActiveSliceResizedSignal, 
        //  helix);
     },
@@ -88,6 +89,14 @@ var Part = Backbone.Model.extend({
 
     getCols: function(){
         return this.maxCol;
+    },
+
+    getOrigin: function() {
+	return this.origin;
+    },
+
+    getRadius: function() {
+	return this.radius;
     },
 
     getStorageID: function(row,col){

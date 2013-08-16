@@ -10,7 +10,7 @@ var PreXoverItem = Backbone.View.extend({
 	this.divLength = this.parent.divLength;
 	this.blkLength = this.parent.blkLength;
 	this.sqLength = this.parent.sqLength;
-	this.layer = this.parent.options.parent.prexoverlayer;
+	this.layer = this.parent.parent.prexoverlayer;
 	this.centerX = this.parent.startX+(this.pos+0.5)*this.sqLength;
 	var clickable; //a PreXoverItem is clickable only if there is a strand at given position of phItem and cHelixItem
 	if(this.parent.getStrandItem(this.isScaf,this.pos) && this.cHelixItem.getStrandItem(this.isScaf,this.pos)) {
@@ -19,7 +19,7 @@ var PreXoverItem = Backbone.View.extend({
 	}
 	else {
 	    clickable = false;
-	    this.colour = "#B0B0B0"; //greyish
+	    this.colour = colours.lightergraystroke; //greyish
 	}
 
 	this.group = new Kinetic.Group();

@@ -5,23 +5,25 @@ var EndPointItem = Backbone.View.extend({
         this.parent = strandItem;
         this.phItem = this.parent.parent;
         this.layer = this.parent.layer;
-        this.finalLayer = this.phItem.options.parent.finallayer;
+        this.finalLayer = this.phItem.parent.finallayer;
         this.panel = this.parent.panel;
 
         //temporary layer that will be used for fast rendering
-        this.tempLayer = this.phItem.options.parent.templayer;
+        this.tempLayer = this.phItem.parent.templayer;
 
         //graphics
         this.divLength = this.parent.divLength;
         this.blkLength = this.parent.blkLength;
         this.sqLength = this.parent.sqLength;
+	this.itemColor = this.parent.itemColor;
 	
         //misc. properties
         this.dir = dir;
         this.prime = type;
         this.yLevel = this.parent.yLevel;
         this.isScaf = this.parent.isScaf;
-	
+	this.selectedIndex = -1;	
+
         //counters
     	this.updateCounter();
         this.initcounter = this.counter;
@@ -57,10 +59,11 @@ var EndPointItem = Backbone.View.extend({
             ];
         }
 
+	//the square/triangle depending on 3p/5p
 	this.shape = new Kinetic.Polygon({
 	    points: polypts,
-	    fill: this.parent.strandColor,
-	    stroke: "#000000",
+	    fill: this.itemColor,
+	    stroke: colours.black,
 	    strokeWidth: 1,
 	    draggable: true,
 	    dragBoundFunc: function(pos) {
@@ -73,8 +76,17 @@ var EndPointItem = Backbone.View.extend({
 
 	this.shape.superobj = this; //javascript y u no have pointers?!
 	var isScaf = this.isScaf;
-	this.shape.on("mouseup", function(pos) {
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+	
+	this.shape.on("click", function(pos) {
+	    this.superobj.phItem.parent.prexoverlayer.destroyChildren();
+	    this.superobj.phItem.parent.part.setActiveVirtualHelix(this.superobj.phItem.options.model);
+	    var pathTool = this.superobj.phItem.currDoc().pathTool;
+	    if(pathTool === "pencil") {
+		this.superobj.createXover();
+	    }
+	});
+
+	this.shape.on("mousedown", function(pos) {
 	    //recalculate range of movement of this endpointitem.
 	    this.superobj.minMaxIndices = this.superobj.parent.modelStrand.getLowHighIndices(this.superobj.prime);
 	    /*
@@ -83,54 +95,45 @@ var EndPointItem = Backbone.View.extend({
 	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
 	      further.
 	    */
-	    console.log(this.superobj.phItem.options.parent.part.getDoc().getKey());
-	    if(this.superobj.phItem.options.parent.part.getDoc().getKey() === 18){ 
-            //holding ALT = extend to furthest possible location (works regardless of path tool)
-            console.log("EXTENDING");
-            if(this.superobj.dir === "L") {
-                this.superobj.counter = this.superobj.minMaxIndices[0];
-                this.superobj.move();
-            }
-            else {
-                this.superobj.counter = this.superobj.minMaxIndices[1];
-                this.superobj.move();
-            }
+	    if(this.superobj.phItem.currDoc().getKey() === 18){ 
+		//holding ALT = extend to furthest possible location (works regardless of path tool)
+		if(this.superobj.dir === "L") {
+		    this.superobj.counter = this.superobj.minMaxIndices[0];
+		    this.superobj.move();
+		}
+		else {
+		    this.superobj.counter = this.superobj.minMaxIndices[1];
+		    this.superobj.move();
+		}
+		return;
 	    }
-	});
 
-	this.shape.on("click", function(pos) {
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
-        if(pathTool === "pencil"){
-            this.superobj.createXover();
-        }
-	});
-
-	this.shape.on("dragstart", function(pos) {
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+	    var pathTool = this.superobj.phItem.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
+		//this.superobj.itemSelectedP1();
 	    }
 	});
 
 	this.shape.on("dragmove", function(pos) {
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.phItem.currDoc().pathTool;
         if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
             this.superobj.selectMove(pos);
 	    }
 	});
 
 	this.shape.on("dragend", function(pos) {
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.phItem.currDoc().pathTool;
         if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
             this.superobj.selectEnd();
 	    }
 	});
 	
     this.layer.add(this.shape);
-	this.parent.addEndItem(this,dir,skipRedraw); //finally linking this item back to strand
+	this.parent.addEndItem(this,dir,skipRedraw); //finally linking this item back to StrandItem
     },
 
-    updateCounter: function(){
+    updateCounter: function(){ //get counter from model
         if(this.dir === "L") {
             this.counter = this.parent.modelStrand.low();
         }
@@ -143,20 +146,20 @@ var EndPointItem = Backbone.View.extend({
         this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
     },
 
-    update: function() {
+    update: function() { //update graphics variables, everything is based on counter except for counter itself
         this.updateCounter();
         this.updateCenterX();
         this.pCounter = this.counter;
         this.shape.setX((this.counter-this.initcounter)*this.sqLength);
     },
 
-    updateY: function() {
+    updateY: function() { //updates Y position
 	var diff = this.parent.yCoord-this.centerY;
 	this.centerY = this.parent.yCoord;
 	this.shape.setY(this.shape.getY()+diff);
     },
 
-    adjustCounter: function(n) {
+    adjustCounter: function(n) { //limit counter range
 	this.counter = Math.min(
             Math.max(this.minMaxIndices[0],n),
             this.minMaxIndices[1]
@@ -164,14 +167,14 @@ var EndPointItem = Backbone.View.extend({
     },
 
     selectStart: function(pos) {
-	this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
-	this.redBox = new Kinetic.Rect({
+	this.dragInit = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.parent.scaleFactor-5*this.sqLength)/this.sqLength); //should not be changed
+	this.redBox = new Kinetic.Rect({ //temporary red box to show position while leaving strand layer untouched
 	    x: this.centerX-this.sqLength/2,
 	    y: this.centerY-this.sqLength/2,
 	    width: this.sqLength,
 	    height: this.sqLength,
 	    fill: "transparent",
-	    stroke: "#FF0000",
+	    stroke: colours.red,
 	    strokeWidth: 2,
 	});
 	this.redBox.superobj = this;
@@ -187,9 +190,9 @@ var EndPointItem = Backbone.View.extend({
 
     selectMove: function(pos) {
 	//we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
-	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.options.parent.scaleFactor-5*this.sqLength)/this.sqLength);
+	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	this.adjustCounter(tempCounter);
-	if(this.counter !== this.pCounter) {
+	if(this.counter !== this.pCounter) { //idea: only reset params and redraw when counter changes, and change params based on the change
 	    //redrawing red box
 	    this.redBox.setX(this.redBox.getX()+(this.counter-this.pCounter)*this.sqLength)
 	    this.tempLayer.draw();
@@ -203,6 +206,24 @@ var EndPointItem = Backbone.View.extend({
         this.tempLayer.draw();
         this.move();
     },
+
+    /*
+    itemSelectedP1: function() {
+	this.phItem.parent.selectedItemsTemp.push(this);
+    },
+
+    itemSelected: function() {
+	this.shape.setFill(colours.red);
+	this.selectedIndex = this.phItem.parent.selectedItems.length;
+	this.phItem.parent.selectedItems.push(this);
+    },
+
+    itemDeselected: function() {
+	this.shape.setFill(this.itemColor);
+	this.phItem.parent.selectedItems[this.selectedIndex] = undefined;
+	this.selectedIndex = -1;
+    },
+    */
 
     move: function() {
         //redraw shape; wait for all elements to be adjusted to correct location before rendering
@@ -244,7 +265,7 @@ var EndPointItem = Backbone.View.extend({
 
             pencilNotifier.off("mousedown");
             pencilNotifier.off("click");
-            pencilNotifier.setFill("#FF0000");
+            pencilNotifier.setFill(colours.red);
 
             this.tempLayer.add(pencilNotifier);
             this.tempLayer.draw();
