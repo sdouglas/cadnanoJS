@@ -278,28 +278,6 @@ var PathPartItem = PartItem.extend({
 	this.pathItemSet.render();
     },
 
-    onmousedown: function() {
-	/*
-	var itemArray = this.pathItemSet.selectedItems;
-	var itemArrayLength = itemArray.length;
-	for(var i=0; i<itemArrayLength; i++) {
-	    itemArray[i].itemDeselected();
-	}
-	this.pathItemSet.selectedItems.length = 0;
-
-	var itemArrayTemp = this.pathItemSet.selectedItemsTemp;
-	var itemArrayTempLength = itemArrayTemp.length;
-	for(var i=0; i<itemArrayTempLength; i++) {
-	    itemArrayTemp[i].itemSelected();
-	}
-	this.pathItemSet.selectedItemsTemp.length = 0;
-
-	if(itemArrayLength !== itemArrayTempLength) {
-	    this.pathItemSet.strandlayer.draw();
-	}
-	*/
-    },
-
     onmousemove: function(pos) {
 	var pathTool = this.part.currDoc.pathTool;
 	var pis = this.pathItemSet;
@@ -346,43 +324,6 @@ var PathPartItem = PartItem.extend({
 		pis.templayer.add(connectionImage);
 		pis.templayer.draw();
 	    }
-	}
-    },
-
-    quadCtrlPt: function(x1,y1,x2,y2,dir) { //for pencil function above
-        if(x1 === x2) { //vertical case                                                                                                                               
-            if(!dir) {
-                return {x:x1+sqLength/4, y:(y1+y2)/2}
-            }
-            else {
-                return {x:x1-sqLength/4, y:(y1+y2)/2}
-            }
-        }
-        //deciding the 3rd point of right triangle                                                                                                                    
-        var x3 = 0;
-        var y3 = 0;
-        if(y1 > y2) {
-            x3 = x1;
-            y3 = y2;
-        }
-        else if(y1 < y2) {
-            x3 = x2;
-            y3 = y1;
-        }
-        else { //horizontal case                                                                                                                                      
-            if(!dir) {
-                return {x:(x1+x2)/2, y:y1-sqLength}
-            }
-            else {
-                return {x:(x1+x2)/2, y:y1+sqLength}
-            }
-        }
-        var d1 = Math.abs(x1-x2);
-        var d2 = Math.abs(y1-y2);
-        var d3 = Math.sqrt(d1*d1+d2*d2);
-        return {
-            x: (d1*x1+d2*x2+d3*x3)/(d1+d2+d3),
-	    y: (d1*y1+d2*y2+d3*y3)/(d1+d2+d3)
 	}
     },
 

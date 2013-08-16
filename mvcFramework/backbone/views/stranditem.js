@@ -100,8 +100,9 @@ var StrandItem = Backbone.View.extend({
         //for more explanation, visit EndPointItem.js
         var isScaf = this.isScaf;
         
-	var currDoc = this.parent.parent.part.currDoc;
-        this.group.on("mousedown", function(pos) {
+	var pathHelixSetItem = this.parent.parent;
+	var currDoc = pathHelixSetItem.part.currDoc;
+	this.group.on("mousedown", function(pos) {
             var pathTool = currDoc.pathTool;
 	    //critiria:
 	    //1. path tool is "select"
@@ -114,10 +115,11 @@ var StrandItem = Backbone.View.extend({
 
         this.group.on("click", function(pos) {
 	    //reset PreXoverItems
-	    this.superobj.parent.parent.prexoverlayer.destroyChildren();
-	    this.superobj.parent.parent.part.setActiveVirtualHelix(this.superobj.parent.options.model);
+	
+	    pathHelixSetItem.prexoverlayer.destroyChildren();
+	    pathHelixSetItem.part.setActiveVirtualHelix(this.superobj.parent.options.model);
             var pathTool = currDoc.pathTool;
-            var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/this.superobj.parent.parent.scaleFactor)/this.superobj.sqLength)-5;
+            var counter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/pathHelixSetItem.scaleFactor)/this.superobj.sqLength)-5;
 	    if(pathTool === "pencil") {
 		this.superobj.createPencilXoverSite(counter);
 	    }
@@ -161,10 +163,10 @@ var StrandItem = Backbone.View.extend({
         this.endPointR = new EndPointItem(this,"R",4+(2*this.yLevel-1),true);
 
         //LAST LINE
-        this.drawStrand();
+        this.render();
     },
 
-    drawStrand: function(){
+    render: function(){
         this.endPointR.show(false);
         this.endPointL.show(false);
         this.XoverL.show(false);
@@ -626,7 +628,7 @@ var StrandItem = Backbone.View.extend({
         //as an argument.
         //It updates the xoveritem incase an xover is created/deleted.
         console.log('strandUpdateSlot called');
-        this.drawStrand();
+        this.render();
     },
     
     //returns string of form #XXXXXX

@@ -80,7 +80,7 @@ var EndPointItem = Backbone.View.extend({
 	this.shape.on("click", function(pos) {
 	    this.superobj.phItem.parent.prexoverlayer.destroyChildren();
 	    this.superobj.phItem.parent.part.setActiveVirtualHelix(this.superobj.phItem.options.model);
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+	    var pathTool = this.superobj.phItem.currDoc().pathTool;
 	    if(pathTool === "pencil") {
 		this.superobj.createXover();
 	    }
@@ -95,7 +95,7 @@ var EndPointItem = Backbone.View.extend({
 	      on a separate layer so render speed is fast. Both the implementation and idea are very similar to ActiveSliceItem, but this (and StrandItem) takes it a step
 	      further.
 	    */
-	    if(this.superobj.phItem.parent.part.getDoc().getKey() === 18){ 
+	    if(this.superobj.phItem.currDoc().getKey() === 18){ 
 		//holding ALT = extend to furthest possible location (works regardless of path tool)
 		if(this.superobj.dir === "L") {
 		    this.superobj.counter = this.superobj.minMaxIndices[0];
@@ -108,7 +108,7 @@ var EndPointItem = Backbone.View.extend({
 		return;
 	    }
 
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+	    var pathTool = this.superobj.phItem.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
 		//this.superobj.itemSelectedP1();
@@ -116,14 +116,14 @@ var EndPointItem = Backbone.View.extend({
 	});
 
 	this.shape.on("dragmove", function(pos) {
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.phItem.currDoc().pathTool;
         if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
             this.superobj.selectMove(pos);
 	    }
 	});
 
 	this.shape.on("dragend", function(pos) {
-	    var pathTool = this.superobj.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.phItem.currDoc().pathTool;
         if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
             this.superobj.selectEnd();
 	    }
@@ -192,7 +192,7 @@ var EndPointItem = Backbone.View.extend({
 	//we still want to keep track of the location (by counter in this case) so we know where we should draw the red square
 	var tempCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.panel.scrollLeft)/this.phItem.parent.scaleFactor-5*this.sqLength)/this.sqLength);
 	this.adjustCounter(tempCounter);
-	if(this.counter !== this.pCounter) {
+	if(this.counter !== this.pCounter) { //idea: only reset params and redraw when counter changes, and change params based on the change
 	    //redrawing red box
 	    this.redBox.setX(this.redBox.getX()+(this.counter-this.pCounter)*this.sqLength)
 	    this.tempLayer.draw();

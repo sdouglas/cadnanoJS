@@ -22,7 +22,11 @@ var DocumentItem = Backbone.View.extend({
 
         //Rest of init.
         this.currDoc = this.options.currDoc;
-        this.listenTo(  this.currDoc,
+        this.connectSignalsSlots();
+	},
+	
+    connectSignalsSlots: function(){
+	this.listenTo(  this.currDoc,
                         cadnanoEvents.documentPartAddedSignal,
                         this.documentPartAddedSlot
                 );
@@ -167,9 +171,6 @@ var DocumentItem = Backbone.View.extend({
 	else if(e.keyCode === 65) { //A- change path tool to seq
 	    this.currDoc.pathTool = "seq";
 	    document.getElementById("pb6").checked = true;
-	}
-	else if(e.keyCode === 90) { //Z- testing purpose
-	    this.pathView.pathItemSet.removeHelix(this.pathView.pathItemSet.phItemArray.defined[0]);
 	}
        this.currDoc.setKey(null);
     },

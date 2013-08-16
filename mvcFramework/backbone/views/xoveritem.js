@@ -27,7 +27,7 @@ var XoverNode = Backbone.View.extend({
 	this.counter = this.initcounter;
 
 	//starting position
-	this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;
+	this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
 	this.centerY = this.parent.yCoord;
 	this.linkageX = this.centerX;
 	this.linkageY = 0; //will be initialized later
@@ -86,7 +86,7 @@ var XoverNode = Backbone.View.extend({
         }
     },
     updateCenterX: function() {
-        this.centerX = this.parent.parent.startX+(this.counter+0.5)*this.sqLength;
+        this.centerX = this.phItem.startX+(this.counter+0.5)*this.sqLength;
     },
     updateLinkageX: function() {
         this.linkageX = this.centerX;
@@ -116,7 +116,7 @@ var XoverNode = Backbone.View.extend({
 
             console.log(this.parent.modelStrand);
             console.log('trying to create xoveritem');
-            var phSetItem = this.parent.parent.parent;
+            var phSetItem = this.phItem.parent;
             var phItem = phSetItem.getPathHelixItem(otherStrand.strandSet.helix.id);
             var otherStItem = phItem.getStrandItem(
                     otherStrand.strandSet.isScaffold(),
@@ -234,19 +234,19 @@ var XoverItem = Backbone.View.extend({
 	//path view tools
 	var isScaf = this.isScaf;
         this.group.on("mousedown", function(pos) {
-	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.node3.phItem.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[4] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
 	    }
 	});
         this.group.on("dragmove", function(pos) {
-	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.node3.phItem.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[4] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectMove(pos);
 	    }
 	});
         this.group.on("dragend", function(pos) {
-	    var pathTool = this.superobj.node3.phItem.options.model.part.currDoc.pathTool;
+		var pathTool = this.superobj.node3.phItem.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[4] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectEnd(pos);
 	    }

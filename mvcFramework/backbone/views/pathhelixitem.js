@@ -64,9 +64,7 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.buttonlayer.hide();
 	this.activeslicelayer.hide();
     },
-    events: {
-        "mousemove" : "onMouseMove",
-    },
+    
     render: function(){
 	if(!this.collection.length) { //hide buttons and bar if no virtual helix present
 	    this.buttonlayer.hide();
@@ -167,16 +165,10 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.prexoverlayer.destroyChildren();
 	this.backlayer.destroyChildren();
 	for(var i=0; i<this.phItemArray.defined.length; i++) {
-	    this.phItemArray[this.phItemArray.defined[i]].redraw();
+	    this.phItemArray[this.phItemArray.defined[i]].render();
 	    this.phItemArray[this.phItemArray.defined[i]].helixhandler.initialize();
 	}
 	this.backlayer.draw();
-    },
-
-    onMouseMove: function(e){
-    },
-
-    remove: function(){
     },
 
     clear: function(){
@@ -276,7 +268,7 @@ var PathHelixItem = Backbone.View.extend ({
 	    this.superobj.parent.part.setActiveVirtualHelix(this.superobj.options.model);
 	});
 	this.group.on("dragstart", function(pos) {
-	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
+	    if(this.superobj.currDoc().pathTool === "pencil") {
 		//initialize/reset variables
 		zf = this.superobj.parent.scaleFactor;
 		yLevel = Math.floor(((pos.y-54+this.superobj.panel.scrollTop)/zf-this.superobj.startY)/this.superobj.sqLength);
@@ -287,7 +279,7 @@ var PathHelixItem = Backbone.View.extend ({
 	    }
 	});
 	this.group.on("dragmove", function(pos) {
-	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil") {
+	    if(this.superobj.currDoc().pathTool === "pencil") {
 		zf = this.superobj.parent.scaleFactor;
 		strandCounter = Math.floor(((pos.x-51-innerLayout.state.west.innerWidth+this.superobj.panel.scrollLeft)/zf-this.superobj.startX)/this.superobj.sqLength);
 		strandCounter = adjustCounter(strandCounter);
@@ -310,7 +302,7 @@ var PathHelixItem = Backbone.View.extend ({
 	    }
 	});
 	this.group.on("dragend", function() {
-	    if(this.superobj.options.model.part.currDoc.pathTool === "pencil" && Math.abs(strandCounter-strandInitCounter) >= 2) { //minimum length limit from cadnano2
+	    if(this.superobj.currDoc().pathTool === "pencil" && Math.abs(strandCounter-strandInitCounter) >= 2) { //minimum length limit from cadnano2
 		stItemImage.remove();
 		this.superobj.parent.templayer.draw();
 		//Call model with create strand.
@@ -329,6 +321,11 @@ var PathHelixItem = Backbone.View.extend ({
 		}
 	    }
 	});
+    },
+
+    currDoc: 
+    function() {
+	return this.parent.part.currDoc;
     },
 
     /**
@@ -374,7 +371,7 @@ var PathHelixItem = Backbone.View.extend ({
     },
 
     //redrawing a particular PathHelixItem
-    redraw: function() {
+    render: function() {
 	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
 	this.grLength = this.blkLength*this.divLength*this.parent.part.getStep();
 	for(var i=0; i<this.grLength; i++) {
@@ -430,10 +427,7 @@ var PathHelixItem = Backbone.View.extend ({
 
     strandAddedSlot: function(strand, id) {
         //Create a strand item object.
-	var stItem = new StrandItem(
-	    strand,
-	    this
-	);
+	var stItem = new StrandItem(strand,this);
 	if(stItem.isScaf) {
 	    this.scafItemArray.push(stItem);
 	}
@@ -549,7 +543,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	var dragCirc; //temporary circle to show handler location
 	this.group.superobj = this;
 	this.group.on("mousedown", function(pos) { //reason for mousedown: we want dragCirc to show as soon as we press mouse
-	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+	    var pathTool = this.superobj.currDoc().pathTool;
 	    pPosY = pos.y;
 	    if(pathTool === "select" && tbSelectArray[2]) {
 		zf = this.superobj.parent.scaleFactor;
@@ -567,7 +561,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	    }
 	});
 	this.group.on("dragmove", function(pos) {
-	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+	    var pathTool = this.superobj.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[2]) {
 		dragCirc.setY(dragCirc.getY()+(pos.y-pPosY)/zf); //move dragCirc by comparing its location to previous location
 		pPosY = pos.y;
@@ -575,7 +569,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	    }
 	});
 	this.group.on("dragend", function() {
-	    var pathTool = this.superobj.options.model.part.currDoc.pathTool;
+	    var pathTool = this.superobj.currDoc().pathTool;
 	    if(pathTool === "select" && tbSelectArray[2]) {
 		var order = Math.floor((dragCirc.getY()/this.superobj.sqLength-2)/4);
 		order = Math.min(Math.max(0,order),this.superobj.parent.phItemArray.defined.length);
@@ -615,6 +609,11 @@ var PathHelixHandlerItem = Backbone.View.extend({
 	this.group.add(circ);
         this.group.add(helixNumText);
 	this.layer.add(this.group);
+    },
+
+    currDoc:
+    function(){
+	return this.options.model.part.currDoc;
     },
 });
 
