@@ -339,11 +339,6 @@ var StrandItem = Backbone.View.extend({
         this.xStart += diff;
         this.xEnd += diff;
 
-        //moving the inserts and skips
-        for(var i=0; i<this.alterationArray.length; i++) {
-            this.alterationArray[i].setX(this.alterationArray[i].getX()+diff*this.sqLength);
-        }
-
         //redraw enditems as well as updating their values
         this.endItemL.counter += diff;
         this.endItemR.counter += diff;

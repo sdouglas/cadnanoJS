@@ -145,7 +145,7 @@ var XoverNode = Backbone.View.extend({
             this.linkageY = this.centerY+this.sqLength/2;
         }
 	this.group.setY(this.group.getY()+diff);
-	this.xoveritem.update();
+    if(this.xoveritem) this.xoveritem.update();
     },
 
     show: function(flag){
