@@ -764,7 +764,7 @@ var InsertItem = Backbone.View.extend({
                 this.yCoordTop-this.sqLength
                 ],
                 fill: "transparent",
-                stroke: "#000000",
+                stroke: strandItem.itemColor,
                 strokeWidth: 2
             });
             var textTop = new Kinetic.Text({
@@ -773,7 +773,7 @@ var InsertItem = Backbone.View.extend({
                 text: this.extraBase,
                 fontSize: this.sqLength*0.5,
                 fontFamily: "Calibri",
-                fill: "#000000",
+                fill: colours.black,
             });
             textTop.setOffset({
                 x: textTop.getWidth()/2, 
@@ -792,7 +792,7 @@ var InsertItem = Backbone.View.extend({
                 this.yCoordBot+this.sqLength
                 ],
                 fill: "transparent",
-                stroke: "#000000",
+                stroke: strandItem.itemColor,
                 strokeWidth: 2
             });
             var textBot = new Kinetic.Text({
@@ -801,7 +801,7 @@ var InsertItem = Backbone.View.extend({
                 text: this.extraBase,
                 fontSize: this.sqLength*0.5,
                 fontFamily: "Calibri",
-                fill: "#000000",
+                fill: colours.black,
             });
             textBot.setOffset({
                 x: textBot.getWidth()/2, 

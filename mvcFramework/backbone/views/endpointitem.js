@@ -76,7 +76,7 @@ var EndPointItem = Backbone.View.extend({
 
 	this.shape.superobj = this; //javascript y u no have pointers?!
 	var isScaf = this.isScaf;
-	
+
 	this.shape.on("click", function(pos) {
 	    this.superobj.phItem.parent.prexoverlayer.destroyChildren();
 	    this.superobj.phItem.parent.part.setActiveVirtualHelix(this.superobj.phItem.options.model);
@@ -109,7 +109,7 @@ var EndPointItem = Backbone.View.extend({
 	    }
 
 	    var pathTool = this.superobj.phItem.currDoc().pathTool;
-	    if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+	    if(this.superobj.phItem.currDoc().getKey() !== 18 && pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
 		this.superobj.selectStart(pos);
 		//this.superobj.itemSelectedP1();
 	    }
@@ -117,14 +117,14 @@ var EndPointItem = Backbone.View.extend({
 
 	this.shape.on("dragmove", function(pos) {
 		var pathTool = this.superobj.phItem.currDoc().pathTool;
-        if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+		if(this.superobj.phItem.currDoc().getKey() !== 18 && pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
             this.superobj.selectMove(pos);
 	    }
 	});
 
 	this.shape.on("dragend", function(pos) {
 		var pathTool = this.superobj.phItem.currDoc().pathTool;
-        if(pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
+		if(this.superobj.phItem.currDoc().getKey() !== 18 && pathTool === "select" && tbSelectArray[3] && ((isScaf && tbSelectArray[0])||(!isScaf && tbSelectArray[1]))) {
             this.superobj.selectEnd();
 	    }
 	});
