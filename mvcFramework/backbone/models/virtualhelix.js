@@ -25,6 +25,8 @@ var VirtualHelix = Backbone.Model.extend({
             helix: this,
         });
 
+        this.insertions = new Array();
+
         //this.scafStrandSet.populateRandom();
         //this.stapStrandSet.populateRandom();
     },
@@ -71,6 +73,36 @@ var VirtualHelix = Backbone.Model.extend({
     getStrandSets:
     function(){
         return new Array(this.scafStrandSet, this.stapStrandSet);
+    },
+
+    getHelix:
+    function(){
+        return this.helix;
+    },
+
+    getInsertions: function(){
+        return this.insertions;
+    },
+
+    addInsertion:
+    function(insertion){
+        this.insertions[insertion.idx()] = insertion;
+    },
+
+    removeInsertion: 
+    function(insertion){
+        var idx = insertion.idx();
+        var ins = this.insertions[insertion.idx()];
+        if(ins){
+            ins.destroy();
+            delete this.insertions[insertion.idx()];
+        }
+    },
+
+    hasInsertionAt: function(idx){
+        if(this.insertions[idx] instanceof Insertion)
+            return true;
+        return false;
     },
 
 });

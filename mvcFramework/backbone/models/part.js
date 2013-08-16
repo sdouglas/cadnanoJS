@@ -36,6 +36,7 @@ var Part = Backbone.Model.extend({
         this.evenRecycleBin = new minHeap();
 
         this.activeIdx = (this.step-1)*21;
+
         this.init();
     },
 
@@ -67,7 +68,7 @@ var Part = Backbone.Model.extend({
     removeVirtualHelix: 
     function(helix){
        delete this.chosenHelixHash[helix.getRow()][helix.getCol()];
-       this.virtualHelixSet.remove(helix); 
+       this.virtualHelixSet.remove(helix, {silent: true}); 
 
        //Remove the views.
        this.trigger(cadnanoEvents.partVirtualHelixRemovedSignal,
@@ -127,8 +128,6 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
         console.log('CreateVirtualHelixCommand undo');
         this.modelPart.recycleHelixNumber(this.modelHelix.hID);
         this.modelPart.removeVirtualHelix(this.modelHelix);
-        //);
-        
     },
     redo: function(){
         //Get row/column of helix that was clicked.
@@ -381,7 +380,6 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
                     s3pIdx
                     ));
     },
-
 });
 
 var CreateXoverCommand = Undo.Command.extend({

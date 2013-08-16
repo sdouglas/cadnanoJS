@@ -345,6 +345,18 @@ var StrandSet = Backbone.Model.extend({
         return cmd.ret();
     },
 
+    getHelix:
+    function(){
+        return this.helix;
+    },
+
+    complementStrandSet:
+    function(){
+        if(this.scaffold)
+            return this.getHelix().stapStrandSet;
+        return this.getHelix().scafStrandSet;
+    },
+
 });
 
 var CreateStrandCommand = Undo.Command.extend({

@@ -22,7 +22,7 @@ var StrandItem = Backbone.View.extend({
         this.strandColor = this.parent.options.parent.paintcolor;
 
         this.alterationArray = new Array();
-        this.alterationGroupArray = new Array();
+        //this.alterationGroupArray = new Array();
 
         //see explanation in EndPointItem.js; 
         //the implementation of these two classes share many similarities
@@ -121,7 +121,8 @@ var StrandItem = Backbone.View.extend({
                 this.superobj.paintStrand();
             }
             else if(pathTool === "insert") {
-                this.superobj.insertBase(counter);
+                //Default insertion of length 1.
+                this.superobj.insertBase(counter, 1);
             }
             else if(pathTool === "skip") {
                 this.superobj.skipBase(counter);
@@ -188,15 +189,6 @@ var StrandItem = Backbone.View.extend({
                 console.log('in l5');
             }
         }
-        console.log('this is strand: ' + this.modelStrand.low() + ':' +
-                this.modelStrand.high());
-        console.log(this.endItemL);
-        console.log(this.endItemR);
-        console.log('now the items in this order: endPointL, endPointR, XoverL, XoverR');
-        console.log(this.endPointL);
-        console.log(this.endPointR);
-        console.log(this.XoverL);
-        console.log(this.XoverR);
 
         this.update();
         this.endPointL.update();
@@ -206,6 +198,8 @@ var StrandItem = Backbone.View.extend({
         
         this.endItemL.show(true);
         this.endItemR.show(true);
+
+        this.refreshInsertionItems();
 	    this.layer.draw();
     },
 
@@ -257,8 +251,11 @@ var StrandItem = Backbone.View.extend({
         this.connection.setY(this.yCoord-1);
         this.invisConnection.setY(this.yCoord-this.sqLength/2);
         
-        for(var i=0; i<this.alterationGroupArray.length; i++) {
-            this.alterationGroupArray[i].setY(this.alterationGroupArray[i].getY()+diff);
+        for(var i=0; i<this.parent.grLength; i++) {
+            if(this.alterationArray[i]) {
+                var group = this.alterationArray[i].skipInsertGroup;
+                group.setY(group.getY()+diff);
+            }
         }
 
         //TODO: update all 4 objects.
@@ -331,8 +328,8 @@ var StrandItem = Backbone.View.extend({
         this.xStart += diff;
         this.xEnd += diff;
         //moving the inserts and skips
-        for(var i=0; i<this.alterationGroupArray.length; i++) {
-            this.alterationGroupArray[i].setX(this.alterationGroupArray[i].getX()+diff*this.sqLength);
+        for(var i=0; i<this.alterationArray.length; i++) {
+            this.alterationArray[i].setX(this.alterationArray[i].getX()+diff*this.sqLength);
         }
 
         //redraw enditems as well as updating their values
@@ -371,20 +368,12 @@ var StrandItem = Backbone.View.extend({
         this.finalLayer.draw();
     },
 
-    insertBase: function(counter) {
-	if(!this.parent.alterationArray[counter]) {
-	    var insert = new InsertItem(this.parent,counter);
-	    this.finalLayer.destroyChildren();
-	    this.finalLayer.draw();
-	}
+    insertBase: function(counter, length) {
+        this.modelStrand.addInsertion(counter, length);
     },
 
     skipBase: function(counter) {
-	if(!this.parent.alterationArray[counter]) {
-	    var skip = new SkipItem(this.parent,counter);
-	    this.finalLayer.destroyChildren();
-	    this.finalLayer.draw();
-	}
+        this.modelStrand.addInsertion(counter, -1);
     },
 
     paintStrand: function() {
@@ -562,7 +551,9 @@ var StrandItem = Backbone.View.extend({
     connectSignalsSlots: function() {
         this.listenTo(this.modelStrand, cadnanoEvents.strandUpdateSignal,
 		      this.strandUpdateSlot);
+        this.listenTo(this.modelStrand, cadnanoEvents.strandInsertionAddedSignal, this.strandInsertionAddedSlot);
     },
+
     getRidOf:
     function(destroy){
         //remove strand from layer.
@@ -591,6 +582,31 @@ var StrandItem = Backbone.View.extend({
         //It updates the xoveritem incase an xover is created/deleted.
         console.log('strandUpdateSlot called');
         this.drawStrand();
+    },
+
+    //Assumption: model would trigger signal only if an insertion item
+    //was not present.
+    strandInsertionAddedSlot:
+    function(insertion){
+        console.log('inserting insertitem');
+        var counter = insertion.idx();
+        var length = insertion.length();
+        if(insertion.isSkip()){
+        var insert = new SkipItem(
+                this.parent,
+                this,
+                counter
+                );
+        }
+        else{
+        var insert = new InsertItem(
+                this.parent,
+                this,
+                counter, 
+                length);
+        }
+        this.finalLayer.destroyChildren();
+        this.finalLayer.draw();
     },
     
     //returns string of form #XXXXXX
@@ -622,157 +638,228 @@ var StrandItem = Backbone.View.extend({
 	if(colorRGB[2] < 16) {colorArrayHex[2] = "0"+colorArrayHex[2];}
 	return "#"+colorArrayHex[0]+colorArrayHex[1]+colorArrayHex[2];
     },
+
+    /**
+	Redraw the skip items based on whether or not a
+	strand is present.
+    */
+    refreshInsertionItems:
+    function(){
+        console.log('in refreshInsertionItems');
+        var strand = this.modelStrand;
+        var helix = this.getHelix();
+        var insertions = helix.getInsertions();
+        //Remove items incase they are not there, and add
+        //them incase they are.
+        console.log(insertions);
+        console.log(this.alterationArray);
+        
+        var delflag;
+        var idx;
+
+        for(var idx=0; idx<this.parent.grLength; idx++) {
+            delflag = true;
+            if(insertions[idx]){
+                //has insert/skip in the position
+                if(idx >= strand.low() && idx <= strand.high()){
+                    delflag = false;
+                    if(!this.alterationArray[idx]) { 
+                        if(insertions[idx].isSkip()){
+                            this.alterationArray[idx] = new SkipItem(
+                                    this.parent, this, idx, false);
+                        }
+                        else{
+                            this.alterationArray[idx] = new InsertItem(
+                                this.parent, this, idx, 
+                                insertions[idx].length(), false);
+                        }
+                    }
+                }
+            }
+
+            if (delflag && this.alterationArray[idx]){
+                this.alterationArray[idx].skipInsertGroup.destroy();
+                this.alterationArray[idx].close();
+                this.alterationArray.splice(idx,1);
+            }
+        }
+	    this.parent.options.parent.alterationlayer.draw();
+    },
+
+    getHelix:
+    function(){
+        return this.modelStrand.getHelix();
+    },
 });
 
 //insert extra base pair(s) to a strand to make curved structures; shown as triangles on StrandItem
 var InsertItem = Backbone.View.extend({
-    initialize: function(phItem, loc) { //InsertItem has fixed position on PathHelixItem but not on StrandItem
-	this.position = loc;
+    initialize: 
+    function(phItem, strandItem, loc, length, draw) { 
+        //InsertItem has fixed position on PathHelixItem but not on StrandItem
+        var strand = strandItem.modelStrand;
+        this.position = loc;
         this.parent = phItem;
-	this.extraBase = 1;
-	//graphic variables
-	this.sqLength = this.parent.sqLength;
-	this.startX = this.parent.startX;
+        this.extraBase = length;
+
+        //graphic variables
+        this.sqLength = this.parent.sqLength;
+        this.startX = this.parent.startX;
         this.yCoordTop = this.parent.startY+0.5*this.sqLength;
         this.yCoordBot = this.parent.startY+1.5*this.sqLength;
 
-	//top and bottom triangle
-	var triangleTop = new Kinetic.Polygon({
-            points: [this.startX+(this.position+0.7)*this.sqLength, this.yCoordTop-1.5,
-		     this.startX+(this.position+0.3)*this.sqLength, this.yCoordTop-this.sqLength,
-		     this.startX+(this.position+1.1)*this.sqLength, this.yCoordTop-this.sqLength
-		     ],
-	    fill: "transparent",
-	    stroke: "#000000",
-	    strokeWidth: 2
-        });
-	var textTop = new Kinetic.Text({
-	    x: this.startX+(this.position+0.7)*this.sqLength,
-	    y: this.yCoordTop-this.sqLength*2/3,
-	    text: this.extraBase,
-	    fontSize: this.sqLength*0.5,
-	    fontFamily: "Calibri",
-	    fill: "#000000",
-	});
-	textTop.setOffset({x: textTop.getWidth()/2, y: textTop.getHeight()/2});
-	var triangleBot = new Kinetic.Polygon({
-            points: [this.startX+(this.position+0.7)*this.sqLength, this.yCoordBot+1.5,
-		     this.startX+(this.position+0.3)*this.sqLength, this.yCoordBot+this.sqLength,
-		     this.startX+(this.position+1.1)*this.sqLength, this.yCoordBot+this.sqLength
-		     ],
-	    fill: "transparent",
-	    stroke: "#000000",
-	    strokeWidth: 2
-        });
-	var textBot = new Kinetic.Text({
-	    x: this.startX+(this.position+0.7)*this.sqLength,
-	    y: this.yCoordBot+this.sqLength*2/3,
-	    text: this.extraBase,
-	    fontSize: this.sqLength*0.5,
-	    fontFamily: "Calibri",
-	    fill: "#000000",
-	});
-	textBot.setOffset({x: textBot.getWidth()/2, y: textBot.getHeight()/2});
+        //if even and scaffold - top.
+        //if odd and scaffold - bottom
+        //if even and staple - bottom.
+        //if odd and staple - top.
+        var drawOnTop = true;
+        if(this.parent.getHelix().isEvenParity()^strand.strandSet.isScaffold())
+            drawOnTop = false;
 
-	//grouping
-	this.skipInsertGroup = new Kinetic.Group();
-	this.scafGroup = new Kinetic.Group();
-	this.stapGroup = new Kinetic.Group();
-	this.skipInsertGroup.add(this.scafGroup);
-	this.skipInsertGroup.add(this.stapGroup);
-	if(this.parent.options.model.hID%2) { //odd parity
-	    this.scafGroup.add(triangleBot);
-	    this.scafGroup.add(textBot);
-	    this.stapGroup.add(triangleTop);
-	    this.stapGroup.add(textTop);
-	    this.scafGroup.triangle = triangleBot;
-	    this.stapGroup.triangle = triangleTop;
-	}
-	else { //even parity
-	    this.scafGroup.add(triangleTop);
-	    this.scafGroup.add(textTop);
-	    this.stapGroup.add(triangleBot);
-	    this.stapGroup.add(textBot);
-	    this.scafGroup.triangle = triangleTop;
-	    this.stapGroup.triangle = triangleBot;
-	}
-	this.skipInsertGroup.superobj = this;
-	this.skipInsertGroup.on("click", function() {
-	    var newExtra = prompt("Number of insertions","");
-	    if(newExtra !== null) {
-		var nE = parseInt(newExtra,10);
-		if(nE > 0) {
-		    this.superobj.extraBase = nE;
-		    textTop.setText(nE);
-		    textBot.setText(nE);
-		}
-	    }
-	});
-	this.parent.options.parent.alterationlayer.add(this.skipInsertGroup);
-	this.parent.alterationArray[this.position] = this;
-	this.parent.updateSkipInsertItemsSlot(); //redraw skip/insert items
+        if(drawOnTop){
+            //top and bottom triangle
+            var triangleTop = new Kinetic.Polygon({
+                points: [this.startX+(this.position+0.7)*this.sqLength, 
+                this.yCoordTop-1.5,
+                this.startX+(this.position+0.3)*this.sqLength, 
+                this.yCoordTop-this.sqLength,
+                this.startX+(this.position+1.1)*this.sqLength, 
+                this.yCoordTop-this.sqLength
+                ],
+                fill: "transparent",
+                stroke: "#000000",
+                strokeWidth: 2
+            });
+            var textTop = new Kinetic.Text({
+                x: this.startX+(this.position+0.7)*this.sqLength,
+                y: this.yCoordTop-this.sqLength*2/3,
+                text: this.extraBase,
+                fontSize: this.sqLength*0.5,
+                fontFamily: "Calibri",
+                fill: "#000000",
+            });
+            textTop.setOffset({
+                x: textTop.getWidth()/2, 
+                y: textTop.getHeight()/2
+            });
+            triangle = triangleTop;
+            text = textTop;
+        }
+        else{
+            var triangleBot = new Kinetic.Polygon({
+                points: [this.startX+(this.position+0.7)*this.sqLength, 
+                this.yCoordBot+1.5,
+                this.startX+(this.position+0.3)*this.sqLength, 
+                this.yCoordBot+this.sqLength,
+                this.startX+(this.position+1.1)*this.sqLength, 
+                this.yCoordBot+this.sqLength
+                ],
+                fill: "transparent",
+                stroke: "#000000",
+                strokeWidth: 2
+            });
+            var textBot = new Kinetic.Text({
+                x: this.startX+(this.position+0.7)*this.sqLength,
+                y: this.yCoordBot+this.sqLength*2/3,
+                text: this.extraBase,
+                fontSize: this.sqLength*0.5,
+                fontFamily: "Calibri",
+                fill: "#000000",
+            });
+            textBot.setOffset({
+                x: textBot.getWidth()/2, 
+                y: textBot.getHeight()/2
+            });
+            triangle = triangleBot;
+            text = textBot;
+        }
+
+	    //grouping
+        this.skipInsertGroup = new Kinetic.Group();
+        this.skipInsertGroup.add(triangle);
+        this.skipInsertGroup.add(text);
+        this.skipInsertGroup.triangle = triangle;
+
+        this.skipInsertGroup.superobj = this;
+        this.skipInsertGroup.on("click", function() {
+            var newExtra = prompt("Number of insertions","");
+            if(newExtra !== null) {
+                var nE = parseInt(newExtra,10);
+                if(nE > 0) {
+                    this.superobj.extraBase = nE;
+                    text.setText(nE);
+                }
+            }
+	    });
+        strandItem.alterationArray[this.position] = this;
+        strandItem.parent.options.parent.alterationlayer.add(this.skipInsertGroup);
+        if(!draw)
+            strandItem.parent.options.parent.alterationlayer.draw();
     },
 });
 
 //the counterpart of InsertItem where a base pair will be skipped in sequencing
 var SkipItem = Backbone.View.extend({
-    initialize: function(phItem, loc) {
-	this.position = loc;
+    initialize: 
+    function(phItem, strandItem, loc, draw) {
+        this.position = loc;
         this.parent = phItem;
-	this.extraBase = -1;
-	//graphic variables
-	this.sqLength = this.parent.sqLength;
-	this.startX = this.parent.startX;
+        this.extraBase = -1;
+
+        //graphic variables
+        this.sqLength = this.parent.sqLength;
+        this.startX = this.parent.startX;
         this.yCoordTop = this.parent.startY+0.5*this.sqLength;
         this.yCoordBot = this.parent.startY+1.5*this.sqLength;
 
-	var slashT1 = new Kinetic.Line({
+        var slashT1 = new Kinetic.Line({
             points: [this.startX+this.position*this.sqLength, this.yCoordTop-this.sqLength/2,
-		     this.startX+(this.position+1)*this.sqLength, this.yCoordTop+this.sqLength/2],
-	    stroke: "#FF0000",
-	    strokeWidth: 2
+            this.startX+(this.position+1)*this.sqLength, this.yCoordTop+this.sqLength/2],
+            stroke: "#FF0000",
+            strokeWidth: 2
         });
-	var slashT2 = new Kinetic.Line({
+
+        var slashT2 = new Kinetic.Line({
             points: [this.startX+(this.position+1)*this.sqLength, this.yCoordTop-this.sqLength/2,
-		     this.startX+this.position*this.sqLength, this.yCoordTop+this.sqLength/2],
-	    stroke: "#FF0000",
-	    strokeWidth: 2
+            this.startX+this.position*this.sqLength, this.yCoordTop+this.sqLength/2],
+            stroke: "#FF0000",
+            strokeWidth: 2
         });
-	var slashB1 = new Kinetic.Line({
+
+        var slashB1 = new Kinetic.Line({
             points: [this.startX+this.position*this.sqLength, this.yCoordBot-this.sqLength/2,
-		     this.startX+(this.position+1)*this.sqLength, this.yCoordBot+this.sqLength/2],
-	    stroke: "#FF0000",
-	    strokeWidth: 2
+            this.startX+(this.position+1)*this.sqLength, this.yCoordBot+this.sqLength/2],
+            stroke: "#FF0000",
+            strokeWidth: 2
         });
-	var slashB2 = new Kinetic.Line({
+        
+        var slashB2 = new Kinetic.Line({
             points: [this.startX+(this.position+1)*this.sqLength, this.yCoordBot-this.sqLength/2,
-		     this.startX+this.position*this.sqLength, this.yCoordBot+this.sqLength/2],
-	    stroke: "#FF0000",
-	    strokeWidth: 2
+            this.startX+this.position*this.sqLength, this.yCoordBot+this.sqLength/2],
+            stroke: "#FF0000",
+            strokeWidth: 2
         });
 
-	//grouping
-	this.skipInsertGroup = new Kinetic.Group();
-	this.scafGroup = new Kinetic.Group();
-	this.stapGroup = new Kinetic.Group();
-	this.skipInsertGroup.add(this.scafGroup);
-	this.skipInsertGroup.add(this.stapGroup);
-	if(this.parent.options.model.hID%2) { //odd parity
-	    this.scafGroup.add(slashB1);
-	    this.scafGroup.add(slashB2);
-	    this.stapGroup.add(slashT1);
-	    this.stapGroup.add(slashT2);
-	}
-	else { //even parity
-	    this.scafGroup.add(slashT1);
-	    this.scafGroup.add(slashT2);
-	    this.stapGroup.add(slashB1);
-	    this.stapGroup.add(slashB2);
-	}
+        //grouping
+        this.skipInsertGroup = new Kinetic.Group();
 
-	this.parent.options.parent.alterationlayer.add(this.skipInsertGroup);
-	this.parent.alterationArray[this.position] = this;
-	this.parent.updateSkipInsertItemsSlot();
+        var strand = strandItem.modelStrand;
+        var drawOnTop = true;
+        if(this.parent.getHelix().isEvenParity()^strand.strandSet.isScaffold())
+            drawOnTop = false;
+        if(drawOnTop){
+            this.skipInsertGroup.add(slashT1);
+            this.skipInsertGroup.add(slashT2);
+        }
+        else { //even parity
+            this.skipInsertGroup.add(slashB1);
+            this.skipInsertGroup.add(slashB2);
+        }
+
+        this.parent.options.parent.alterationlayer.add(this.skipInsertGroup);
+        strandItem.alterationArray[this.position] = this;
+        if(!draw)
+            strandItem.parent.options.parent.alterationlayer.draw();
     },
 });
 

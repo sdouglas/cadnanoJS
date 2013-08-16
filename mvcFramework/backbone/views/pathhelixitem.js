@@ -4,8 +4,8 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.pencilendpoint = undefined; //used for pencil
 	this.paintcolor = "#008800"; //used for paint
 	//PathHelixSetItem should contains variables that multiple sub-classes need
-        this.handler = this.options.handler;
-        this.part = this.options.part;
+    this.handler = this.options.handler;
+    this.part = this.options.part;
 	this.panel = this.options.handler.handler.getContainer(); //panel is used to account for scrolling
 
 	//path view layers
@@ -52,9 +52,11 @@ var PathHelixSetItem = Backbone.View.extend({
 	    graphics: this.graphicsSettings
 	});
     },
+
     events: {
         "mousemove" : "onMouseMove",
     },
+    
     render: function(){
 	//removing all old shapes before drawing new ones
 	this.buttonlayer.removeChildren();
@@ -62,12 +64,14 @@ var PathHelixSetItem = Backbone.View.extend({
 	this.c2Item = new ColorChangeItem({
 	    parent: this,
 	});
-	this.pbcItem = new PathBaseChangeItem({
+	
+    this.pbcItem = new PathBaseChangeItem({
 	    handler: this.handler,
 	    parent: this,
 	    graphics: this.graphicsSettings
 	});
-	//variables that the items created in foreach loop can access
+	
+    //variables that the items created in foreach loop can access
         var h = this.handler;
 	var dims = this.graphicsSettings;
 	dims.grLength = dims.blkLength*dims.divLength*this.part.getStep();
@@ -169,6 +173,7 @@ var PathHelixSetItem = Backbone.View.extend({
     getPathHelixItem: function(id){
         return this.phItemArray[id];
     },
+
 });
 
 //the long rectangular base grid
@@ -197,8 +202,8 @@ var PathHelixItem = Backbone.View.extend ({
 	this.scafItemArray = new Array();
 	this.stapItemArray = new Array();
 	this.startX = 5*this.sqLength;
-	this.startY = 5*this.sqLength+4*this.order*this.sqLength;
-        this.alterationArray = new Array(); //stores inserts and skips
+    this.startY = 5*this.sqLength+4*this.order*this.sqLength;
+    this.alterationArray = new Array(); //stores inserts and skips
 
 	//drawing each little square
 	for(var i=0; i<this.grLength; i++) {
@@ -327,12 +332,6 @@ var PathHelixItem = Backbone.View.extend ({
 	for(var i=0; i<this.stapItemArray.length; i++) {
 	    this.stapItemArray[i].updateY();
 	}
-        for(var i=0; i<this.grLength; i++) {
-	    if(this.alterationArray[i]) {
-		var group = this.alterationArray[i].skipInsertGroup;
-		group.setY(group.getY()+this.startY-oldY);
-	    }
-        }
     },
 
     //redrawing a particular PathHelixItem
@@ -421,46 +420,11 @@ var PathHelixItem = Backbone.View.extend ({
         }
         return false;
     },
- 
-    /**
-	Redraw the skip items based on whether or not a
-	strand is present.
-    */
-    updateSkipInsertItemsSlot: function(){
-	for(var i=0; i<this.grLength; i++) {
-	    if(this.alterationArray[i]) { //has insert/skip in the position
-		var scafHidden = false;
-		var stapHidden = false;
-		if(this.getStrandItem(true, i)) { //if scaffold strand exists
-		    if(this.alterationArray[i] instanceof InsertItem) {
-			//change InsertItem's color to match the StrandItem
-			this.alterationArray[i].scafGroup.triangle.setStroke(this.getStrandItem(true, i).strandColor);
-		    }
-		    this.alterationArray[i].scafGroup.show();
-		}
-		else {
-		    this.alterationArray[i].scafGroup.hide();
-		    scafHidden = true;
-		}
-		if(this.getStrandItem(false, i)) { //if staple strand exists
-		    if(this.alterationArray[i] instanceof InsertItem) {
-			this.alterationArray[i].stapGroup.triangle.setStroke(this.getStrandItem(false, i).strandColor);
-		    }
-		    this.alterationArray[i].stapGroup.show();
-		}
-		else {
-		    this.alterationArray[i].stapGroup.hide();
-		    stapHidden = true;
-		}
-		if(scafHidden && stapHidden) { //remove if neither strand exists
-		    this.alterationArray[i].skipInsertGroup.destroy();
-		    this.alterationArray[i] = undefined;
-		}
-	    }
-	}
-	this.options.parent.alterationlayer.draw();
-    },
 
+    getHelix: function(){
+        return this.options.model;
+    },
+ 
 });
 
 //the circle next to PathHelixItem
@@ -566,6 +530,7 @@ var PathHelixHandlerItem = Backbone.View.extend({
 		this.superobj.helixitem.updateY();
 		this.superobj.options.parent.redrawBack();
 		this.superobj.options.parent.strandlayer.draw();
+		this.superobj.options.parent.alterationlayer.draw();
 		dragCirc.destroy();
 		dragCirc = undefined;
 		tempLayer.draw();

@@ -42,6 +42,8 @@ var Strand = Backbone.Model.extend({
     resize: function(low, high){
         console.log('just resized the strand');
         var newIdxs = new Array(low,high);
+        //also execute getRemoveInsertionCommands.
+        this.getRemoveInsertionCommands(newIdxs);
         this.undoStack().execute(new ResizeCommand(newIdxs, this));
     },
 
@@ -120,13 +122,51 @@ var Strand = Backbone.Model.extend({
         if(this.strand5p && this.idx5Prime() === idx) return true;
         return false;
     },
+
+    part:
+    function(){
+        return this.getHelix().getPart();
+    },
+
+    getHelix:
+    function(){
+        return this.helix;
+    },
+
+    addInsertion:
+    function(idx, length){
+        if(!this.getHelix().hasInsertionAt(idx))
+        this.undoStack().execute(new AddInsertionCommand(this,idx, length));
+    },
+
+    removeInsertion:
+    function(idx, length){
+        if(this.getHelix().hasInsertionAt(idx))
+        this.undoStack().execute(new AddInsertionCommand(this, idx, length, true));
+    },
+
+    getRemoveInsertionCommands: function(newIdxs){
+        var insertions = this.getHelix().getInsertions();
+        var cStrandSet = this.strandSet.complementStrandSet();
+        var rem = this.removeInsertion;
+        console.log(insertions);
+        for (var i in insertions){
+        //_.each(insertions, function(ins){
+            ins = insertions[i];
+            console.log(ins);
+            if(ins.idx() < newIdxs[0] || ins.idx() > newIdxs[1])
+            if(!cStrandSet.hasStrandAt(ins.idx()))
+                this.removeInsertion(ins.idx(), ins.length());
+        }
+        //);
+    },
 });
 
 var ResizeCommand = Undo.Command.extend({
     constructor:
     function(newIdxs, strand){
-        this.currDoc = strand.helix.part.currDoc;
-        this.helixId = strand.helix.id;
+        this.currDoc = strand.part().currDoc;
+        this.helixId = strand.getHelix().id;
         this.scaffold = strand.strandSet.scaffold;
         this.newIdxs = newIdxs;
         this.oldIdxs = strand.idxs();
@@ -155,12 +195,12 @@ var ResizeCommand = Undo.Command.extend({
         console.log('in strand.js resizecommand undo');
         this.strand.setIdx(this.oldIdxs);
 
-        this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        this.strand.part().trigger(cadnanoEvents.partStrandChangedSignal);
         this.strand.trigger(cadnanoEvents.strandUpdateSignal);
         
         //update the path view.
         //This signal has been renamed from partStrandChangedSignal
-        this.strand.helix.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
+        this.strand.part().trigger(cadnanoEvents.updatePreXoverItemsSignal,
             this.strand.strandSet.helix);
         this.strand.strandSet.trigger(cadnanoEvents.updateSkipInsertItemsSignal);
     },
@@ -175,13 +215,74 @@ var ResizeCommand = Undo.Command.extend({
         this.strand.setIdx(this.newIdxs);
         console.log(this.newIdxs);
         this.strand.trigger(cadnanoEvents.strandUpdateSignal);
-        this.strand.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        this.strand.part().trigger(cadnanoEvents.partStrandChangedSignal);
 
         //update the path view.
-        this.strand.helix.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
+        this.strand.part().trigger(cadnanoEvents.updatePreXoverItemsSignal,
             this.strand.strandSet.helix);
-        this.strand.strandSet.trigger(cadnanoEvents.updateSkipInsertItemsSignal);
+        //this.strand.strandSet.trigger(cadnanoEvents.updateSkipInsertItemsSignal);
     },
     execute:
     function(){},
+});
+
+/**
+ * Adds an insertion to the part model object.
+ * TODO: why are the insertions stored in the part
+ * as opposed to the helix?
+ */
+
+var AddInsertionCommand = Undo.Command.extend({
+    constructor: function(strand, idx, length, isInverse){
+        this.insertion = new Insertion({index: idx, length: length});
+        this.scaffold = strand.strandSet.isScaffold();
+        this.helixId = strand.getHelix().id;
+        this.idxs = strand.idxs();
+        this.currDoc = strand.part().currDoc;
+
+        this.idx = idx;
+        this.length = length;
+        
+        this.redo = this.addItem;
+        this.undo = this.delItem;
+
+        if(isInverse){
+            this.redo = this.delItem;
+            this.undo = this.addItem;
+        }
+        this.redo();
+    },
+
+    getModel: 
+    function(){
+        this.helix = this.currDoc.part().getModelHelix(this.helixId);
+        if(this.scaffold) this.strandSet = this.helix.scafStrandSet;
+        else this.strandSet = this.helix.stapStrandSet;
+        //get the strand object.
+        this.strand = this.strandSet.getStrand(this.strandSet.getStrandIndex(this.idxs[0], this.idxs[1]));
+        this.cstrand = this.strandSet.complementStrandSet().getStrandAt(this.idx);
+    },
+
+    delItem: function(){
+        this.getModel();
+        console.log(this.insertion.idx());
+        this.helix.removeInsertion(this.insertion);
+        console.log(this.insertion.idx());
+
+        this.strand.trigger(cadnanoEvents.strandUpdateSignal);
+        if(this.cstrand)
+            this.cstrand.trigger(cadnanoEvents.strandUpdateSignal);
+    },
+
+    addItem: function(){
+        this.getModel();
+        this.helix.addInsertion(this.insertion);
+        
+        this.strand.trigger(cadnanoEvents.strandInsertionAddedSignal, 
+                this.insertion);
+        if(this.cstrand)
+            this.cstrand.trigger(cadnanoEvents.strandInsertionAddedSignal, 
+                    this.insertion);
+    },
+    execute: function(){},
 });

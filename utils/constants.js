@@ -35,6 +35,7 @@ var cadnanoEvents = {
     updateSkipInsertItemsSignal: 'updateSkipInsertItemsSignal',
     moveSliceItemToFirstSignal: 'moveSliceItemToFirstSignal',
     moveSliceItemToLastSignal: 'moveSliceItemToLastSignal',
+    strandInsertionAddedSignal: 'strandInsertionAddedSignal',
 };
 
 
