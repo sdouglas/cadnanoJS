@@ -3,7 +3,7 @@ var EmptyHelixSetItem = Backbone.View.extend({
         this.handler = this.options.handler;
         this.part = this.options.part;
         this.emptyHelixHash = new Array();
-	this.partItem = this.options.parent;
+        this.partItem = this.options.parent;
     },
     
     createEmptyHelix: function(coord){
@@ -21,7 +21,7 @@ var EmptyHelixSetItem = Backbone.View.extend({
     },
 
     render: function(){
-        this.handler.render();
+        this.handler.shapeRender();
     },
 
     events: {
@@ -30,9 +30,9 @@ var EmptyHelixSetItem = Backbone.View.extend({
 
     onMouseClick: function(e){
 	if(!this.partItem.dontClickHelix) { //prevents triggering mouse click function two times
-	    console.log("clicked the vhsetitem.");
+	    //console.log("clicked the vhsetitem.");
 	    //Figure out which helix was clicked.
-	    console.log(this.part.currDoc);
+	    //console.log(this.part.currDoc);
 	    var coord = this.part.latticePositionXYToCoord(e.pageX, e.pageY, this.partItem.zoomFactor);
 	    if(coord.row === -1 || coord.col === -1) return;
 	    if(coord.row >= this.part.getRows() || coord.col >= this.part.getCols()) return;
@@ -50,7 +50,7 @@ var EmptyHelixSetItem = Backbone.View.extend({
 	    else if(this.part.getDoc().getKey() === 16) { //holding SHIFT = staple strand created
 		var idx = this.part.activeBaseIndex();
 		if (!helixModel.stapStrandSet.hasStrandAt(idx-1,idx+1)){
-		    console.log('creating staple strand at :' + idx);
+		    //console.log('creating staple strand at :' + idx);
 		    if(idx === 0) { //if active slice item is at far left
 			helixModel.stapStrandSet.createStrand(0,1);
 		    }
@@ -65,7 +65,7 @@ var EmptyHelixSetItem = Backbone.View.extend({
 	    else { //otherwise create scaffold strand
 		var idx = this.part.activeBaseIndex();
 		if (!helixModel.scafStrandSet.hasStrandAt(idx-1,idx+1)){
-		    console.log('creating scaffold strand at :' + idx);
+		    //console.log('creating scaffold strand at :' + idx);
 		    if(idx === 0) {
 			helixModel.scafStrandSet.createStrand(0,1);
 		    }

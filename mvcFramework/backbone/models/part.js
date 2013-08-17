@@ -12,12 +12,12 @@ var Crossovers = {
 var Part = Backbone.Model.extend({
     step: 2,
     stepSize: 21,
-    radius: 20,
+    radius: 12,
     turnsPerStep:2,
     helicalPitch: this.step/this.turnsPerStep,
     twistPerBase: 360/this.helicalPitch,
-    maxRow: 10,
-    maxCol: 10,
+    maxRow: 100,
+    maxCol: 100,
     maxRowsEver: 1000,
     root3: 1.732051,
     largestUnusedOddNumber: -1,
@@ -129,21 +129,21 @@ var Part = Backbone.Model.extend({
 
 var CreateVirtualHelixCommand = new Undo.Command.extend({
     constructor: function(part){
-        console.log('CreateVirtualHelixCommand Constructor');
+        //console.log('CreateVirtualHelixCommand Constructor');
         this.modelPart = part;
         this.redo();
     },
     undo: function(){
-        console.log('CreateVirtualHelixCommand undo');
+        //console.log('CreateVirtualHelixCommand undo');
         this.modelPart.recycleHelixNumber(this.modelHelix.hID);
         this.modelPart.removeVirtualHelix(this.modelHelix);
     },
     redo: function(){
         //Get row/column of helix that was clicked.
-        console.log('CreateVirtualHelixCommand redo');
+        //console.log('CreateVirtualHelixCommand redo');
         var parityEven = this.modelPart.isEvenParity(hrow,hcol);
         var idNum = this.modelPart.reserveHelixIDNumber(parityEven);
-        console.log('the helix number received is:' + idNum);
+        //console.log('the helix number received is:' + idNum);
         var helix = new VirtualHelix({
             row:    hrow,
             col:    hcol,
@@ -164,6 +164,7 @@ var CreateVirtualHelixCommand = new Undo.Command.extend({
 
         //Send out the signals to PartItem in order to
         //update their views.
+        
         this.modelPart.trigger(cadnanoEvents.partVirtualHelixAddedSignal, 
                 helix
         );

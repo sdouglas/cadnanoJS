@@ -2,32 +2,45 @@ var VirtualHelixSetItem = Backbone.View.extend({
     initialize: function(){
         this.handler = this.options.handler;
         this.part = this.options.part;
-        this.vhItems = new Array();
-	this.partItem = this.options.parent;
+        this.partItem = this.options.parent;
+        this.vhItemArray = new Array();
     },
+    
     events: {
         "mousemove" : "onMouseMove",
     },
-    render: function(){
+
+    render: function(virtualHelix){
+        var list = this.vhItemArray;
         var h = this.handler;
 
-        //remove existing views.
-        for(var i=0;i<this.vhItems.length;i++){
-        //    console.log(this.vhItems[i]);
-            this.vhItems[i].close();
+        if(virtualHelix) {
+            var vh = virtualHelix;
+            if(list[vh.id] instanceof VirtualHelixItem){
+                list[vh.id].update();
+            }
+            else{
+                var vhItem = new VirtualHelixItem({
+                    model:vh,
+                    handler: h,
+                });
+                list[vh.id] = vhItem;
+            }
+	    this.handler.render();
+            return;
         }
-        //empty the array.
-        this.vhItems.length = 0;
-        this.handler.clearLayers();
 
         //create new ones.
-        var list = this.vhItems;
         this.collection.each(function(vh){
+            if(list[vh.id]) {
+                list[vh.id].update();
+                return;
+            }
             var vhItem = new VirtualHelixItem({
                 model:vh,
                 handler: h,
             });
-            list.push(vhItem);
+            list[vh.id] = vhItem;
         });
         this.handler.render();
     },
@@ -65,31 +78,36 @@ var VirtualHelixItem = Backbone.View.extend ({
         this.part = this.options.model.getPart();
         this.row = this.model.getRow();
         this.col = this.options.model.getCol();
-        var pos = this.part.latticeCoordToPositionXY(this.row,this.col);
+        this.pos = this.part.latticeCoordToPositionXY(this.row,this.col);
         this.handler = this.options.handler;
-        var helixNum = this.options.model.hID;
-
-        var idx = this.part.activeBaseIndex();
+        this.helixNum = this.options.model.hID;
         var params;
+        params = {
+            fill: colours.lightorangefill,
+            stroke: colours.lightorangestroke,
+            strokewidth: colours.strokewidth,
+            layer: Constants.helixLayer,
+        };
+        this.polygon = this.handler.createCircle(this.pos.x, 
+            this.pos.y, this.part.radius, params,
+            this.helixNum
+            );
+        this.update();
+        //this.handler.render();
+    },
+
+    update: function(){
+        console.log('in vhitem render');
+        var idx = this.part.activeBaseIndex();
         if(this.model.hasStrandAt(idx)){
-            params = {
-                fill: colours.orangefill,
-                stroke: colours.orangestroke,
-                strokewidth: colours.strokewidth,
-                layer: Constants.helixLayer,
-            };
+            console.log('yeah already have a strand');
+            this.polygon.setFill(colours.orangefill);
+            this.polygon.setStroke(colours.orangeStroke);
         }
         else{
-            params = {
-                fill: colours.lightorangefill,
-                stroke: colours.lightorangestroke,
-                strokewidth: colours.strokewidth,
-                layer: Constants.helixLayer,
-            };
+            console.log('no strand here');
+            this.polygon.setFill(colours.lightorangefill);
+            this.polygon.setStroke(colours.lightorangeStroke);
         }
-        this.polygon = this.handler.createCircle(pos.x, 
-            pos.y, this.part.radius, params,
-            helixNum
-            );
     },
 });

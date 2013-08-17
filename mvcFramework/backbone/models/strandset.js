@@ -411,10 +411,11 @@ var CreateStrandCommand = Undo.Command.extend({
         console.log(this.strand);
         this.strandSet.trigger(cadnanoEvents.strandSetStrandRemovedSignal, this.strand);
         var ret = this.strandSet.removeStrandRefs(this.strand);
-        this.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        //this.helix.part.trigger(cadnanoEvents.partStrandChangedSignal);
         this.strandSet.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
                     this.strandSet.helix);
-        this.strandSet.trigger(cadnanoEvents.updateSkipInsertItemsSignal);
+        if(this.strandSet.isScaffold())
+            this.helix.part.trigger(cadnanoEvents.partActiveSliceResizeSignal);
         this.strand.destroy();
         console.log('received :' + ret + ', to remove strand');
     },
@@ -434,10 +435,13 @@ var CreateStrandCommand = Undo.Command.extend({
         this.strand = strand;
         this.strandSet.trigger(cadnanoEvents.strandSetStrandAddedSignal,
                 strand, this.strandSet.helix.hID);
-        this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
+        //this.strandSet.part.trigger(cadnanoEvents.partStrandChangedSignal);
         this.strandSet.part.trigger(cadnanoEvents.updatePreXoverItemsSignal,
                     this.strandSet.helix);
-        this.strandSet.trigger(cadnanoEvents.updateSkipInsertItemsSignal);
+        if(this.strandSet.isScaffold()){
+            console.log('just triggered helix add signal');
+            this.helix.part.trigger(cadnanoEvents.partVirtualHelixAddedSignal, this.helix);
+        }
     },
     execute:
     function(){},

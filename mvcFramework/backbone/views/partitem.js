@@ -29,10 +29,6 @@ var PartItem = Backbone.View.extend({
             cadnanoEvents.partActiveSliceResizedSignal,
             this.partActiveSliceResizedSlot
         );
-        this.listenTo(this.part,
-            cadnanoEvents.partStrandChangedSignal,
-            this.partStrandChangedSlot
-        );
     },
 
     isHelixSelected: function(row,col){
@@ -120,7 +116,8 @@ var SlicePartItem = PartItem.extend({
         for (var i in newCoords){
             this.emptyItemSet.createEmptyHelix(newCoords[i]);
         }
-        this.part.initializedHelices(true);
+        //this.part.initializedHelices(true);
+        this.emptyItemSet.render();
     },
     partHelicesInitializedSlot: function(){
         this.emptyItemSet.render();
@@ -129,7 +126,8 @@ var SlicePartItem = PartItem.extend({
         //Add the virtual helix item to a hash.
         //Change the color of the virtual helix item
         //to show selection.
-        this.vhItemSet.render();
+        console.log('calling this on 2nd click');
+        this.vhItemSet.render(virtualHelix);
     }, 
     partVirtualHelixRemovedSlot: function(virtualHelix){
         //Add the virtual helix item to a hash.
@@ -139,7 +137,7 @@ var SlicePartItem = PartItem.extend({
     }, 
    
     partStrandChangedSlot: function(){
-        this.vhItemSet.render();
+        //this.vhItemSet.render();
     },
 
     partRemovedSlot: function(){

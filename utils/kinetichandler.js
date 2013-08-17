@@ -32,9 +32,6 @@ function viewHandlerKinetic(){
         if(typeof helixNum !== 'undefined'){
             this.addTextToCircle(helixNum);
         }
-        this.shapeLayer.draw();
-        this.helixLayer.draw();
-        this.textLayer.draw();
         return circle;
     }
 
@@ -64,12 +61,15 @@ function viewHandlerKinetic(){
     };
 
     this.render = function(){
-        //console.log("kinetichandler render");
-        this.shapeLayer.draw();
+        console.log("kinetichandler render");
         this.helixLayer.draw();
         this.textLayer.draw();
         this.hoverLayer.draw();
     };
+
+    this.shapeRender = function(){
+        this.shapeLayer.draw();
+    },
 
     this.getX = function(){
         return this.x;

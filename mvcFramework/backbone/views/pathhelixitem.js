@@ -69,6 +69,7 @@ var PathHelixSetItem = Backbone.View.extend({
     },
     
     render: function(){
+                console.log('in phitemset render');
 	if(!this.collection.length) { //hide buttons and bar if no virtual helix present
 	    this.buttonlayer.hide();
 	    this.activeslicelayer.hide();
@@ -84,6 +85,9 @@ var PathHelixSetItem = Backbone.View.extend({
     var helixset = this;
     var pharray = this.phItemArray;
     //for each VirtualHelixItem, we create a path helix and a path helix handler
+    /*
+    this.masterGroup = null;
+    */
 
         this.collection.each(function(vh){
 	    if(pharray[vh.id]) return; //create PathHelixItem only if it is new - increase performance
@@ -166,6 +170,7 @@ var PathHelixSetItem = Backbone.View.extend({
 
     //redrawing the items in back layer
     redrawBack: function() {
+                    console.log('in redrawback');
 	this.prexoverlayer.destroyChildren();
 	this.backlayer.destroyChildren();
 	for(var i=0; i<this.phItemArray.defined.length; i++) {
@@ -211,15 +216,6 @@ var PathHelixItem = Backbone.View.extend ({
 	//so that we can use dragstart/dragmove/dragend functions, which are superior to mousedown/mousemove/
 	//mouseup because drag functions work even when the mouse is outside of the object. However, drag
 	//only works with existing objects. (aka you cannot immediately call drag func of a newly-made obj)
-	this.group = new Kinetic.Group({
-	    draggable: true,
-	    dragBoundFunc: function(pos) {
-		return {
-		    x: this.getAbsolutePosition().x,
-		    y: this.getAbsolutePosition().y
-		}
-	    }
-	});
 	this.grLength = this.options.graphics.grLength;
 	this.divLength = this.options.graphics.divLength;
 	this.blkLength = this.options.graphics.blkLength;
@@ -231,6 +227,23 @@ var PathHelixItem = Backbone.View.extend ({
     this.startY = 5*this.sqLength+4*this.order*this.sqLength;
     this.alterationArray = new Array(); //stores inserts and skips
 
+    /*
+    if(this.parent.masterGroup){
+        this.group = this.parent.masterGroup.clone();
+        this.group.setY(this.group.getY()+this.order*4*this.sqLength);
+        return;
+    }
+    */
+
+	this.group = new Kinetic.Group({
+	    draggable: true,
+	    dragBoundFunc: function(pos) {
+		return {
+		    x: this.getAbsolutePosition().x,
+		    y: this.getAbsolutePosition().y
+		}
+	    }
+	});
 	//drawing each little square
 	for(var i=0; i<this.grLength; i++) {
 	    for(var j=0; j<2; j++) {
